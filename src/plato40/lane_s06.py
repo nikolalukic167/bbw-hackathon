@@ -171,6 +171,9 @@ def _preheat(ds: Dataset, settings: Settings, board: _Board, degraded: list[pd.T
             continue
         if any(t - backoff < d <= t for d in degraded):
             continue
+        # A cancellation is known only at arrival (ADR-002), so a rebooked room can come twice.
+        if any(r == room for r, *_ in due.get(t, [])):
+            continue
         due.setdefault(t, []).append((room, booking, arrival, now, stamp(hp_t[i])))
     for t, rooms in sorted(due.items()):
         rooms.sort()
