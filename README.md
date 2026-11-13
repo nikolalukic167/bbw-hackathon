@@ -44,6 +44,7 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 ```bash
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
                               # S03 comes from the s03 bus lane; --no-s03-lane for the old planner
+                              # follow-ups from verify.py; --no-follow-ups to skip them
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
 uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl
                                                         # merge lane proposals (docs/BUS.md)
@@ -91,6 +92,8 @@ src/plato40/
   arbiter.py      judges lane proposals on one shared ledger and merges them with the
                   pipeline's decisions (contract, known-at, roster, policy, message guard)
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
+  verify.py       closed loop: checks each outcome when due and follows up on a miss
+                  (repair held, room still cold, repeat complaint, ready time missed)
   trace.py        run summary, trace file and explain
   ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py

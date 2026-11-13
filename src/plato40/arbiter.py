@@ -5,7 +5,8 @@ s01 turnaround, s03 comfort). A proposal is rejected, with the reason in its ver
 breaks the bus contract or known-at, when it needs a proposal not accepted, when its guest
 message breaks the LLM contract, when a claimed person is not on shift at the claim's start
 (roster as known at ``t``), when a claim overlaps a resource already granted, when the policy
-forbids it, or when the decision built from it breaks the decision contract. An accepted
+forbids it, when it sends the technician to an asset with a dispatch still open (no repair
+completed since), or when the decision built from it breaks the decision contract. An accepted
 proposal is copied unchanged into a decision (``event_id`` = proposal id); the policy then
 sets autonomy and the approval flags.
 
@@ -123,6 +124,23 @@ def _message_problems(p: Mapping[str, Any], req: pd.DataFrame) -> list[str]:
     return why
 
 
+def _open_dispatch(
+    p: Mapping[str, Any], sent: Mapping[str, list[pd.Timestamp]], wo: pd.DataFrame
+) -> list[str]:
+    """Return why a technician dispatch repeats one still open on the same asset.
+
+    A dispatch is open until a work order on the asset completes after it (known at
+    ``completed_utc``).
+    """
+    asset, t = p["assets"][0], pd.Timestamp(p["t"])
+    mine = wo.loc[(wo["asset_id"] == asset) & (wo["completed_utc"] <= t), "completed_utc"]
+    return [
+        f"technician already sent to {asset} at {stamp(t0)} and no repair completed since"
+        for t0 in sent.get(asset, [])
+        if t0 <= t and not (mine > t0).any()
+    ]
+
+
 def _decision(p: Mapping[str, Any]) -> Decision:
     """Return the decision an accepted proposal becomes, before the policy sets its flags."""
     reason = p["reason"]
@@ -183,6 +201,12 @@ def arbitrate(
         )
     )
     roster = Roster(ds)
+    wo = ds.table("work_orders.csv")
+    sent: dict[str, list[pd.Timestamp]] = {}
+    for own in decisions:
+        if own["action"] == "dispatch_technician":
+            asset, t = own["affected_assets"][0], pd.Timestamp(own["timestamp_utc"])
+            sent.setdefault(asset, []).append(t)
     verdicts = []
     accepted: set[str] = set()
     for n, p in proposals:
@@ -195,6 +219,8 @@ def arbitrate(
                 if x not in accepted
             ]
             why += _message_problems(p, req)
+            if p["action"] == "dispatch_technician":
+                why += _open_dispatch(p, sent, wo)
             t = pd.Timestamp(p["t"])
             for c in p.get("claims", []):
                 role = ROSTER_ROLE.get(str(c["res"]))
@@ -227,6 +253,8 @@ def arbitrate(
             for rid, start, end in claims:
                 ledger.grant(rid, start, end, p["id"])
             accepted.add(p["id"])
+            if p["action"] == "dispatch_technician":
+                sent.setdefault(p["assets"][0], []).append(pd.Timestamp(p["t"]))
             decisions.append(d)
             verdict["event_id"] = d["event_id"]
         verdicts.append(verdict)

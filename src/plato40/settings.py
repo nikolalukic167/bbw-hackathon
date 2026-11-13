@@ -198,6 +198,14 @@ class DetectorSettings:
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
+    repair_verify_h: float = 24.0
+    """Hours (h) after a leak repair completes in which a new leak signal means the repair did
+    not hold; a blocked room is released after it (verify.py). One night falls inside it."""
+
+    promise_grace_min: float = 15.0
+    """Minutes (min) after a promised ready time before a room that is not ready gets the
+    guest a late notice (verify.py); one telemetry interval."""
+
     room_reading_h: float = 1.0
     """Look-back (h) for a room's latest temperature, setpoint and window reading, and for
     guests newly in comfort deficit (bus lane s03); readings come every 15 min."""
@@ -229,6 +237,7 @@ class Settings:
     figure_dpi: int = 110
     llm_cache: Path | None = None
     s03_lane: bool = True
+    follow_ups: bool = True
 
     @property
     def figures_dir(self) -> Path:

@@ -80,6 +80,7 @@ def intent_s02(d: dict[str, Any]) -> str:
     return {
         "flag_anomaly": "flag_suspected_leak",
         "block_room": "block_room",
+        "release_room": "release_repaired_room",
         "dispatch_technician": "dispatch_plumber",
         "order_service": "dispatch_plumber",
     }.get(d["action"], "watch_next_night")

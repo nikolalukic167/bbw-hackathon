@@ -50,6 +50,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="plan S03 with the built-in planner instead of the s03 bus lane",
     )
+    run.add_argument(
+        "--no-follow-ups",
+        action="store_true",
+        help="skip the closed-loop follow-up decisions (verify.py)",
+    )
     arb = sub.add_parser("arbiter", help="merge lane proposals from bus files into decisions")
     arb.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     arb.add_argument("bus", type=Path, nargs="+", help="lane bus files (docs/BUS.md)")
@@ -96,11 +101,20 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _run(
-    data_dir: Path, out: Path, trace_path: Path | None, llm_cache: Path | None, s03_lane: bool
+    data_dir: Path,
+    out: Path,
+    trace_path: Path | None,
+    llm_cache: Path | None,
+    s03_lane: bool,
+    follow_ups: bool,
 ) -> int:
     ds = load_dataset(data_dir)
     settings = Settings(
-        data_root=data_dir, out_dir=out.parent, llm_cache=llm_cache, s03_lane=s03_lane
+        data_root=data_dir,
+        out_dir=out.parent,
+        llm_cache=llm_cache,
+        s03_lane=s03_lane,
+        follow_ups=follow_ups,
     )
     result = pipeline.run(ds, settings)
     n = contract.write_decisions(result.decisions, out)
@@ -207,7 +221,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
     args = _parser().parse_args(argv)
     if args.command == "run":
-        return _run(args.data_dir, args.out, args.trace, args.llm_cache, not args.no_s03_lane)
+        return _run(
+            args.data_dir,
+            args.out,
+            args.trace,
+            args.llm_cache,
+            not args.no_s03_lane,
+            not args.no_follow_ups,
+        )
     if args.command == "arbiter":
         return _arbiter(
             args.data_dir, args.bus, args.out, args.verdicts, args.replace, args.llm_cache

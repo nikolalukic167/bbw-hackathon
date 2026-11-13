@@ -67,7 +67,7 @@ IDs: `<lane>-<episode without EP->-sigNN`, `-propNN`, and `<proposal id>-v` for 
 | lane | issue_type | kind | intent | action | cause |
 |---|---|---|---|---|---|
 | **s01** | `room_turnaround` | `request checkin_due overstay checkout ready day_plan` | `clean_first robot_prepass promise_ready_time notify_ready_now notify_day_delay offer_alternative_room withdraw_offer escalate_waiting_guest request_extra_cleaning` | `schedule_cleaning dispatch_robot notify_guest reassign_room request_human_approval release_room defer_action` | none |
-| **s02** | `water_leak` | `night_flow burst burst_flow night_gap night_blank` | `flag_suspected_leak inspect_room inspect_pipes ask_entry_consent block_room dispatch_plumber` *`flag_meter_artefact watch_next_night`* | `request_inspection dispatch_technician block_room notify_guest flag_anomaly request_human_approval defer_action` | *`room_leak pipe_leak guest_use cleaning_use meter_artefact meter_exchange unknown`* |
+| **s02** | `water_leak` | `night_flow burst burst_flow night_gap night_blank` | `flag_suspected_leak inspect_room inspect_pipes ask_entry_consent block_room dispatch_plumber escalate_plumber release_repaired_room` *`flag_meter_artefact watch_next_night`* | `request_inspection dispatch_technician order_service block_room release_room notify_guest flag_anomaly request_human_approval defer_action` | *`room_leak pipe_leak guest_use cleaning_use meter_artefact meter_exchange unknown`* |
 | **s03** | `heating_comfort` | `cop_low comfort_deficit cold_forecast price_peak` | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort preheat_before_cold shift_load_off_peak boost_room_setpoint flag_room_heating` *`flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | `hp_degradation cold_snap sensor_gap unknown` |
 
 `cause` is how S02 and S03 tell a real fault from a look-alike (guest bath, cleaning, meter
@@ -226,27 +226,29 @@ Real lines from `examples/bus/s03.bus.jsonl` (shortened with `…`):
 
 ## The arbiter (`src/plato40/arbiter.py`)
 
-Proposals are judged in time order, then by lane rank (s02 safety, s01 turnaround, s03
-comfort), then by ID, using only rows known at their `t`:
+`plato40 run` runs the pipeline, then the s03 lane through the arbiter (replacing the
+planner's S03), then the closed-loop follow-ups (`src/plato40/verify.py`). `plato40 arbiter`
+does the same for any lane files. Proposals are judged in time order, within one minute by
+priority, then lane (s02 safety, s01 turnaround, s03 comfort), using only rows known at `t`.
+A proposal is rejected, with the reason in its verdict, when:
 
-1. **Contract**: `bus.check_row`, and every cited signal and guest request known at `t`.
-2. **Policy**: a forbidden action is rejected; otherwise `policy.apply` sets `autonomy` and
-   both flags from the room states at `t`.
-3. **Ledger**: each claim's resource must be believed on shift at its `from` (roster as
-   known at `t`; on-call and rooms have no roster rows) and free then; an accepted claim
-   holds it for `min` minutes.
+1. it breaks the bus contract or known-at, or `needs` a proposal that was not accepted;
+2. its guest message breaks the LLM contract (numbers and IDs from its reason, banned words,
+   hedge, the guest's language);
+3. a claimed person is not on shift at the claim's start (roster as known at `t`), or a
+   claim overlaps time already granted (the pipeline's own cleanings, robot passes and
+   technician jobs are on the ledger first; an unclaimed `resource_id` holds implicitly);
+4. it sends the technician to an asset with a dispatch still open (no repair completed since);
+5. the policy forbids it, or the decision breaks the decision contract.
 
-An accepted proposal is copied unchanged into a decision with the next
-`<episode_id>-NN` event ID and the previous decision of its episode as dependency. A
-rejection is a verdict with `why` and no decision, for example `claims: TECH_1 is not on
-shift at 2026-01-15T07:00Z (roster known at …)` or `contract: autonomy is set by the policy,
-not by a proposal`.
+An accepted proposal is copied unchanged into a decision with `event_id` = proposal id; the
+policy then sets `autonomy` and both flags. Example rejection: `TECH_1 not on shift at
+2026-01-15T07:00Z (roster known at …)`.
 
-## Known gaps in the examples (current code at 97b00cc, not the target)
+## Known gaps in the examples (not the target)
 
 - S01 `notify_day_delay` is one English line for many rooms. The target is one proposal per
   guest, in the guest's language, before the request's `response_due_utc` (S03 does this).
 - The S02 example episode (R104 burst) has no guest message; R305 (from 20 Jan) shows `ask_entry_consent`.
-- `plato40 run` still plans S03 with `plan._heating`; only `plato40 bus --lane s03` uses the
-  lane and the arbiter. S01 and S02 still have no native lane.
+- S01 and S02 still have no native lane: their examples are exported from the planner.
 - S03 `flag_sensor_gap` is not emitted; a blank room gets `cause: sensor_gap` on its reply.

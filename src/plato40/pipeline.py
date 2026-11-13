@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from plato40 import contract, llm_guard, messages, plan, policy
+from plato40 import contract, llm_guard, messages, plan, policy, verify
 from plato40.contract import Decision
 from plato40.detect import data_quality, heating, logistics, turnaround, water
 from plato40.episodes import Episode, Signal, group
@@ -84,6 +84,16 @@ def run(ds: Dataset, settings: Settings) -> Run:
         result.rules[d["event_id"]] = policy.apply(d, ctx)
     if settings.s03_lane:
         _s03_lane(ds, settings, result)
+    if settings.follow_ups:
+        more = verify.follow_ups(ds, result.episodes, result.decisions, states, settings)
+        if settings.llm_cache is not None:
+            result.messages |= messages.localise(more, settings.llm_cache)
+        for d in more:
+            ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
+            result.rules[d["event_id"]] = policy.apply(d, ctx)
+        result.decisions = sorted(
+            result.decisions + more, key=lambda d: (d["timestamp_utc"], d["event_id"])
+        )
     result.violations = check(ds, states, result.decisions)
     if result.violations:
         raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(result.violations))

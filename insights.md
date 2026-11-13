@@ -8,15 +8,15 @@ action is simulated.
 
 ## The year at a glance
 
-Steward turned 1,078 detector signals into 144 incidents and 430 decisions. 392 decisions were
-autonomous. A person was asked to approve 38, on average every 9.6 days, and 4 of those also
+Steward turned 1,078 detector signals into 144 incidents and 451 decisions. 406 decisions were
+autonomous. A person was asked to approve 45, on average every 8.1 days, and 11 of those also
 need guest consent.
 
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|
-| Room turnaround | 70 | 266 | 244 | 22 | 0 | 19 of 24 waiting guests had a decision on their room earlier that day |
-| Water leaks | 5 | 21 | 9 | 8 | 4 | 5 of 5 followed by a repair work order |
-| Heat pump and comfort | 31 | 105 | 101 | 4 | 0 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
+| Room turnaround | 70 | 278 | 256 | 22 | 0 | 19 of 24 waiting guests had a decision on their room earlier that day |
+| Water leaks | 5 | 23 | 11 | 8 | 4 | 5 of 5 followed by a repair work order |
+| Heat pump and comfort | 31 | 112 | 101 | 4 | 7 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
 | Waste and vending | 22 | 22 | 22 | 0 | 0 | 21 of 22 orders came before a real shortage |
 | Data quality | 16 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
 
