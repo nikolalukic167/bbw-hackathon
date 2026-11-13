@@ -28,7 +28,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T6 | Episodes: one `episode_id` per incident, priority from impact and deadline | D/A | todo | Prioritisation 8 |
 | T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
 | T7 | Policy layer: target-aware levels (cost = fixed list, no euro amounts; vacant inspection autonomous) | A | done | Safe autonomy 10 |
-| T7 | Violation check over every decision (`plato40 validate`); unit tests pending | A | doing | Safe autonomy 10 |
+| T7 | Violation check over every decision (`plato40 validate`) | A | done | Safe autonomy 10 |
 | T8 | Planner: action chain per episode in the 14-verb vocabulary | A | todo | Coordination 8 |
 | T8 | Mock executor: effects labelled `simulated`, `expected_outcome`, `verification_plan` | A | todo | Limits and verification 5 |
 | T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002 | S | done | Reproducibility 10 |

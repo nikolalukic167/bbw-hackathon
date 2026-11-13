@@ -21,7 +21,6 @@ plato40 = "plato40.cli:main"
 dev = [
     "mypy>=1.13",
     "pandas-stubs>=2.2",
-    "pytest>=8.3",
     "ruff>=0.8",
 ]
 
@@ -38,7 +37,6 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "D", "PTH", "NPY"]
 ignore = ["D203", "D213"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
 
 [tool.mypy]
 strict = true
@@ -49,6 +47,4 @@ files = ["src"]
 module = ["matplotlib", "matplotlib.*"]
 ignore_missing_imports = true
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
 addopts = "-q"

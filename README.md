@@ -41,7 +41,7 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ```bash
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
-make check                    # ruff, mypy --strict, pytest
+make check                    # ruff, mypy --strict
 ```
 
 The data path is always an argument; nothing in the code assumes a location. `DATA` may
@@ -59,7 +59,6 @@ src/plato40/
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
 scripts/          fetch_data.sh
-tests/            pytest
 ```
 
 Decisions that shape the code are recorded as ADRs:
