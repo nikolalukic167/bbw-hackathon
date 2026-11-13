@@ -1,4 +1,4 @@
-.PHONY: help sync lint format typecheck run validate audit check
+.PHONY: help sync lint format typecheck run validate ui audit check
 
 DATA ?=
 AUDIT_OUT ?= reports/audit
@@ -11,6 +11,7 @@ help:
 	@echo "make typecheck            mypy --strict on src/"
 	@echo "make run DATA=<dir> [OUT=decisions.jsonl]  write decisions for one dataset"
 	@echo "make validate DATA=<dir> [OUT=...]  check decisions against contract and policy"
+	@echo "make ui [OUT=...]         write the operations console next to OUT (after make run)"
 	@echo "make audit DATA=<path>    regenerate reports/audit from a data root"
 	@echo "make check                lint + typecheck"
 
@@ -34,6 +35,9 @@ run:
 validate:
 	@test -n "$(DATA)" || (echo "usage: make validate DATA=<data_dir>" && exit 2)
 	uv run plato40 validate "$(OUT)" "$(DATA)"
+
+ui:
+	uv run plato40 ui "$(OUT)" "$(basename $(OUT)).trace.jsonl" --out "$(basename $(OUT)).html"
 
 audit:
 	@test -n "$(DATA)" || (echo "usage: make audit DATA=<data_root>" && exit 2)

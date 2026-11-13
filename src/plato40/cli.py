@@ -3,6 +3,7 @@
 ``plato40 run <data_dir> --out decisions.jsonl``   write decisions for one dataset
 ``plato40 validate <decisions.jsonl> <data_dir>``  check contract and autonomy policy
 ``plato40 explain <trace.jsonl> [episode]``        why the pipeline acted or did not
+``plato40 ui <decisions.jsonl> <trace.jsonl> --out console.html``  operations console page
 ``plato40 audit <data_root> --out <dir>``          write the data audit report
 """
 
@@ -13,7 +14,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from plato40 import contract, pipeline, trace
+from plato40 import contract, pipeline, trace, ui
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -34,6 +35,10 @@ def _parser() -> argparse.ArgumentParser:
     exp = sub.add_parser("explain", help="show why the pipeline acted or did not")
     exp.add_argument("trace", type=Path, help="trace written by run --trace")
     exp.add_argument("episode", nargs="?", help="episode ID or part of it; omit to list")
+    page = sub.add_parser("ui", help="write the operations console as one HTML page")
+    page.add_argument("decisions", type=Path, help="decisions.jsonl written by run")
+    page.add_argument("trace", type=Path, help="trace written by run --trace")
+    page.add_argument("--out", type=Path, required=True, help="HTML page to write")
     audit = sub.add_parser("audit", help="write the data audit report")
     audit.add_argument(
         "data_root",
@@ -90,4 +95,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "validate":
         return _validate(args.decisions, args.data_dir)
+    if args.command == "ui":
+        n = ui.render(args.decisions, args.trace, args.out)
+        print(f"wrote {args.out} with {n} episodes")
+        return 0
     return _audit(args.data_root, args.out)

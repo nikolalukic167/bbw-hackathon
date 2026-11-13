@@ -104,7 +104,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T11 | Floor-plan twin (4 x 10 rooms) with time scrubber, reading `decisions.jsonl` | F | todo | Demo 8 |
-| T11 | Decision feed with autonomy badge, evidence on click, approval queue | F | todo | Trail 7 |
+| T11 | Operations console (`plato40 ui`): one HTML page per run; scenario lanes over time, episode list, evidence, risk, decision chain with autonomy rule, verification, mock approve/reject | F | done | Trail 7 |
 | T11 | Run summary, `--trace` and `plato40 explain` (terminal trail; HTML timeline reads the trace) | D | done | Trail 7 |
 | T15 | 3-minute video, end to end | S/F | todo | Demo 8 |
 | T15 | Written submission text and form | S | todo | all |

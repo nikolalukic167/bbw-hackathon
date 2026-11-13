@@ -7,7 +7,7 @@ risks with evidence, and writes decisions under the challenge's decision contrac
 
 Current state: S01 room turnaround, S02 water leaks and S03 heat pump degradation are
 detected and acted on, with data-quality flags; both datasets validate with no
-violations. The user interface is not written yet; progress is in
+violations. `plato40 ui` writes the operations console as one HTML page; progress is in
 [docs/PROGRESS.md](docs/PROGRESS.md).
 
 PLATO-40 is a fictional reference property. PLATO and CLARA are names of Rhomberg
@@ -45,6 +45,7 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
 uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
+uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
@@ -69,6 +70,7 @@ src/plato40/
   contract.py     decision contract checks and JSONL I/O
   pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
   trace.py        run summary, trace file and explain
+  ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py
   cli.py          plato40 run | validate | explain | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
