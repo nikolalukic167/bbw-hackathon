@@ -52,6 +52,7 @@ uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --ve
 uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
 uv run plato40 bus <data_dir> --lane s03 --out out/  # S03 lane -> bus -> arbiter (docs/BUS.md)
+uv run plato40 snapshot <data_dir> --at 2026-05-09T11:00Z --assets R209 HP1  # supervisor context
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
@@ -71,6 +72,32 @@ PLATO40_LLM=on uv run plato40 run <data_dir> --out decisions.jsonl --llm-cache <
 uv run plato40 run <data_dir> --out again.jsonl --llm-cache <cache_dir>   # from cache only
 cmp decisions.jsonl again.jsonl                       # byte-identical
 ```
+
+### Models and LLM settings
+
+The rules decide every decision first. Two LLM uses sit on top, both optional, both
+checked, and both cached so that a rerun without the network is byte-identical
+([ADR-001](docs/adr/ADR-001-deterministic-core.md),
+[ADR-003](docs/adr/ADR-003-supervisor-llm.md)):
+
+| Use | Model (default) | Prompt | Env var to override | Code |
+|---|---|---|---|---|
+| Guest messages in the guest's language | `claude-haiku-5-5` | `guest_message/3`, tool forced | `PLATO40_LLM_MODEL` | `llm_guard.py`, `messages.py` |
+| Supervisor: reviews the rules' decisions daily and at cross-domain hotspots, adds at most 2 checked decisions per review | `claude-sonnet-5-5` | `supervisor/1`, tool `auto` + one retry | `PLATO40_SUPERVISOR_MODEL` | `supervise.py`, `context.py` |
+
+| Env var | Values | Effect |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | key | needed only with `PLATO40_LLM=on` |
+| `PLATO40_LLM` | `off` (default), `on` | `on`: a cache miss calls the model; `off`: cache only, a miss uses the template (messages) or adds nothing (supervisor) |
+| `PLATO40_LLM_MODEL` | model ID | guest-message model |
+| `PLATO40_SUPERVISOR_MODEL` | model ID | supervisor model |
+
+Both run only with `--llm-cache <dir>`; `--no-supervisor` skips the supervisor. Answers
+that pass every check are cached in `<dir>` (supervisor answers in `<dir>/supervisor/`);
+rejected answers go to `rejected/` and are never reused. `plato40 run` also writes
+`<out>.supervisor.jsonl`, one row per review: kind, time, asset, source (`cache`, `llm`,
+`none`), the model's assessment, and the decisions it added or why it added none. Every
+added decision's reason starts with `Supervisor review (<model>):`.
 
 ## Architecture
 
@@ -95,12 +122,14 @@ src/plato40/
   arbiter.py      judges lane proposals on one shared ledger and merges them with the
                   pipeline's decisions (contract, known-at, roster, policy, message guard)
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
+  context.py      known-at context snapshot of the building for the supervisor
+  supervise.py    supervisor LLM: reviews the rules' decisions, adds checked ones (ADR-003)
   verify.py       closed loop: checks each outcome when due and follows up on a miss
                   (repair held, room still cold, repeat complaint, ready time missed)
   trace.py        run summary, trace file and explain
   ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py
-  cli.py          plato40 run | arbiter | bus | validate | explain | ui | audit
+  cli.py          plato40 run | arbiter | bus | validate | explain | ui | snapshot | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
 scripts/          fetch_data.sh
@@ -112,6 +141,8 @@ Decisions that shape the code are recorded as ADRs:
   LLM only phrases language, and its outputs are cached.
 - [ADR-002](docs/adr/ADR-002-missing-and-known-at.md): blank means missing, never zero;
   decisions use only information known at that time.
+- [ADR-003](docs/adr/ADR-003-supervisor-llm.md): the rules decide first; a supervisor
+  LLM may add a few checked, grounded decisions, cached like guest messages.
 
 ## Assumptions
 
