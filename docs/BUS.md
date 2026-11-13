@@ -157,6 +157,18 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
    guest, with the language from `guest_requests.csv` for that booking (known at `t`).
 3. Never write `decisions.jsonl`, `autonomy` or the approval flags.
 4. Check: `python scripts/check_bus.py <data_dir> <your.bus.jsonl> <decisions.jsonl>` → 0 violations.
+5. Merge with the arbiter (`src/plato40/arbiter.py`):
+   ```bash
+   uv run plato40 arbiter <data_dir> s02.bus.jsonl s03.bus.jsonl --replace s02 s03 \
+       --out decisions.jsonl --verdicts verdicts.jsonl
+   ```
+   It runs the pipeline, then judges every proposal in time order (within a minute by
+   priority). A proposal is rejected, with the reason printed and in its verdict, when it
+   breaks a rule above, when a claim overlaps a resource already granted (the pipeline's own
+   cleanings, robot passes and technician jobs are on the ledger first), when the policy
+   forbids it, or when the decision breaks the contract. `--replace` drops the pipeline's own
+   decisions for those lanes; without it, accepted proposals are added next to them.
+   One file per lane, committed by its owner: nobody writes another lane's file.
 
 ## Known gaps in the examples (current code at 97b00cc, not the target)
 

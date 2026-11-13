@@ -1,6 +1,8 @@
 """Command-line entry point.
 
 ``plato40 run <data_dir> --out decisions.jsonl``   write decisions for one dataset
+``plato40 arbiter <data_dir> <bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl``
+                                                  merge lane proposals (docs/BUS.md)
 ``plato40 validate <decisions.jsonl> <data_dir>``  check contract and autonomy policy
 ``plato40 explain <trace.jsonl> [episode]``        why the pipeline acted or did not
 ``plato40 ui <decisions.jsonl> <trace.jsonl> --out console.html``  operations console page
@@ -15,7 +17,7 @@ from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
 
-from plato40 import contract, pipeline, trace, ui
+from plato40 import arbiter, bus, contract, pipeline, trace, ui
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -36,6 +38,19 @@ def _parser() -> argparse.ArgumentParser:
         help="phrase guest messages in the guest's language from this cache; "
         "PLATO40_LLM=on also calls the model on a cache miss",
     )
+    arb = sub.add_parser("arbiter", help="merge lane proposals from bus files into decisions")
+    arb.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
+    arb.add_argument("bus", type=Path, nargs="+", help="lane bus files (docs/BUS.md)")
+    arb.add_argument("--out", type=Path, required=True, help="decisions.jsonl to write")
+    arb.add_argument("--verdicts", type=Path, required=True, help="verdict rows to write")
+    arb.add_argument(
+        "--replace",
+        nargs="*",
+        default=[],
+        choices=sorted(bus.LANES),
+        help="lanes whose pipeline decisions the bus proposals replace",
+    )
+    arb.add_argument("--llm-cache", type=Path, help="as for run")
     val = sub.add_parser("validate", help="check a decisions file against contract and policy")
     val.add_argument("decisions", type=Path, help="decisions.jsonl to check")
     val.add_argument("data_dir", type=Path, help="the dataset the decisions were made on")
@@ -73,6 +88,31 @@ def _run(data_dir: Path, out: Path, trace_path: Path | None, llm_cache: Path | N
     return 0
 
 
+def _arbiter(
+    data_dir: Path,
+    paths: list[Path],
+    out: Path,
+    verdicts_path: Path,
+    replace: list[str],
+    llm_cache: Path | None,
+) -> int:
+    ds = load_dataset(data_dir)
+    settings = Settings(data_root=data_dir, out_dir=out.parent, llm_cache=llm_cache)
+    base = pipeline.run(ds, settings).decisions
+    rows = [r for p in paths for r in bus.read(p)]
+    decisions, verdicts = arbiter.arbitrate(ds, settings, base, rows, replace)
+    n = contract.write_decisions(decisions, out)
+    verdicts_path.write_text("", encoding="utf-8")
+    bus.append(verdicts_path, verdicts)
+    for v in verdicts:
+        if not v["accepted"]:
+            print(f"rejected {v['proposal_id']}: {v['why']}")
+    ok = sum(v["accepted"] for v in verdicts)
+    print(f"{ok} of {len(verdicts)} proposals accepted; replaced lanes: {replace or 'none'}")
+    print(f"wrote {n} decisions to {out} and {len(verdicts)} verdicts to {verdicts_path}")
+    return 0
+
+
 def _validate(path: Path, data_dir: Path) -> int:
     ds = load_dataset(data_dir)
     decisions = contract.read_decisions(path)
@@ -102,6 +142,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "run":
         return _run(args.data_dir, args.out, args.trace, args.llm_cache)
+    if args.command == "arbiter":
+        return _arbiter(
+            args.data_dir, args.bus, args.out, args.verdicts, args.replace, args.llm_cache
+        )
     if args.command == "explain":
         print(trace.explain(args.trace, args.episode))
         return 0

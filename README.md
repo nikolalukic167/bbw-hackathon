@@ -44,6 +44,8 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 ```bash
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
+uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl
+                                                        # merge lane proposals (docs/BUS.md)
 uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
@@ -82,12 +84,12 @@ src/plato40/
   policy.py       autonomy levels, approval and consent flags, forbidden actions
   contract.py     decision contract checks and JSONL I/O
   pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
-  bus.py          trigger bus contract (docs/BUS.md)
+  bus.py          trigger bus contract (docs/BUS.md); arbiter.py merges lane proposals
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
   trace.py        run summary, trace file and explain
   ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py
-  cli.py          plato40 run | validate | explain | audit
+  cli.py          plato40 run | arbiter | validate | explain | ui | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
 scripts/          fetch_data.sh
