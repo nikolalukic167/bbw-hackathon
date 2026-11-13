@@ -39,3 +39,14 @@ class Roster:
         if r.empty:
             return None
         return max(pd.Timestamp(r["start_utc"].min()), after)
+
+    def shifts(
+        self, role: str, start: pd.Timestamp, end: pd.Timestamp, known_at: pd.Timestamp
+    ) -> list[tuple[str, pd.Timestamp, pd.Timestamp]]:
+        """Return (resource, from, to) of ``role`` shifts clipped to ``[start, end)``."""
+        r = self._working(role, known_at)
+        r = r.loc[(r["start_utc"] < end) & (r["end_utc"] > start)].sort_values("resource_id")
+        return [
+            (str(rid), max(pd.Timestamp(a), start), min(pd.Timestamp(b), end))
+            for rid, a, b in zip(r["resource_id"], r["start_utc"], r["end_utc"], strict=True)
+        ]

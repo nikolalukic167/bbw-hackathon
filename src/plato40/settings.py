@@ -99,6 +99,18 @@ class DetectorSettings:
     oncall_travel_min: float = 45.0
     """Minutes until the on-call housekeeper is on site (building.json staff notes)."""
 
+    day_plan_hour: int = 7
+    """Local hour of the daily turnaround check, after most sick notes are known."""
+
+    day_clean_min: float = 45.0
+    """Minutes per room for a whole-day workload (audit median); promises use p90."""
+
+    day_load_high: float = 0.75
+    """Turnover minutes over cleaner minutes before check-in at which the day is at risk."""
+
+    day_load_help: float = 1.0
+    """Load above which extra cleaning help is requested (approval; never assumed)."""
+
     cop_ref_intercept: float = 2.78
     """Reference HP1 COP (-) at 0 degC: Theil-Sen fit on the dev year (audit section 8)."""
 

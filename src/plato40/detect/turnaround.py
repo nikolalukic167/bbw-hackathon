@@ -31,6 +31,7 @@ from plato40.state import RoomStates
 
 ISSUE = "room_turnaround"
 REQUESTS = ("early_checkin", "waiting_for_room")
+DAY_SPAN = pd.Timedelta(hours=16)
 CLOCK = re.compile(r"\b(\d{1,2})[:.h](\d{2})\b")
 
 
@@ -165,7 +166,7 @@ def _triggers(ds: Dataset) -> list[dict[str, Any]]:
 
 
 def signals(ds: Dataset, settings: Settings) -> list[Signal]:
-    """Return a signal per conflicting request, plus one at checkout if still occupied."""
+    """Return request and checkout signals, plus one day-plan signal per day at risk."""
     f = _Facts(ds, settings)
     arrival = dict(zip(f.bookings["booking_id"], f.bookings["arrival_utc"], strict=True))
     guest_count = dict(zip(f.bookings["booking_id"], f.bookings["guest_count"], strict=True))
@@ -229,4 +230,97 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         later,
                     )
                 )
+    return out + _day_plans(f, ds, settings)
+
+
+def _at_local(day: pd.Timestamp, hhmm: time, tz: str) -> pd.Timestamp:
+    return pd.Timestamp(datetime.combine(day.date(), hhmm)).tz_localize(tz).tz_convert("UTC")
+
+
+def _day_plans(f: _Facts, ds: Dataset, settings: Settings) -> list[Signal]:
+    """Return one ``day_plan`` signal per local day whose turnover load is at risk.
+
+    At ``day_plan_hour`` local: workload is the rooms dirty then plus the rooms whose
+    guest departs that day (bookings known then); capacity is cleaner minutes from then
+    to check-in, roster as known then. Load = workload x ``day_clean_min`` / capacity.
+    Predicted ready times assume arrival rooms are cleaned first, at ``clean_room_min``.
+    """
+    th = settings.detect
+    hh, mm = (int(x) for x in ds.building["operations"]["check_in_from_local"].split(":"))
+    days = pd.date_range(
+        pd.Timestamp(ds.manifest["start_utc"]).tz_convert(f.tz).normalize(),
+        pd.Timestamp(ds.manifest["end_utc"]).tz_convert(f.tz).normalize(),
+        freq="1D",
+        inclusive="left",
+    )
+    b = f.bookings
+    out: list[Signal] = []
+    for day in days:
+        t = _at_local(day, time(th.day_plan_hour), f.tz)
+        checkin = _at_local(day, time(hh, mm), f.tz)
+        known = b.loc[b["created_utc"] <= t]
+        on_day = known["departure_utc"].dt.tz_convert(f.tz).dt.date == day.date()
+        departing = {
+            str(r): pd.Timestamp(d)
+            for r, d in zip(
+                known.loc[on_day, "room_id"], known.loc[on_day, "departure_utc"], strict=True
+            )
+            if f.states.at(str(r), t) == "occupied"
+        }
+        dirty = sorted(f.states.rooms_in("dirty", t))
+        shifts = f.roster.shifts("cleaner", t, checkin, t)
+        minutes = sum((b2 - a).total_seconds() / 60 for _, a, b2 in shifts)
+        workload = len(dirty) + len(departing)
+        load = workload * th.day_clean_min / minutes if minutes > 0 else float(workload > 0)
+        if workload == 0 or load < th.day_load_high:
+            continue
+        arriving = known["arrival_utc"].dt.tz_convert(f.tz).dt.date == day.date()
+        arrival_rooms = sorted(
+            {str(r) for r in known.loc[arriving, "room_id"]} & (set(dirty) | set(departing))
+        )
+        jobs = sorted(
+            (r not in arrival_rooms, departing.get(r, t), r) for r in [*dirty, *departing]
+        )
+        free = {rid: a for rid, a, _ in shifts}
+        until = {rid: z for rid, _, z in f.roster.shifts("cleaner", t, t + DAY_SPAN, t)}
+        ready: dict[str, pd.Timestamp] = {}
+        for _, avail, room in jobs:
+            options = [
+                (max(free[c], avail), c) for c in free if max(free[c], avail) + f.clean <= until[c]
+            ]
+            if options:
+                begin, c = min(options)
+                free[c] = ready[room] = begin + f.clean
+        done = [ready[r] for r in arrival_rooms if r in ready]
+        latest = max(done) if done and len(done) == len(arrival_rooms) else None
+        cleaners = sorted({rid for rid, _, _ in shifts})
+        data: dict[str, Any] = {
+            "load": load,
+            "help": load >= th.day_load_help,
+            "cleaners": cleaners,
+            "robots": f.roster.on_shift("robot", t, t),
+            "arrival_rooms": arrival_rooms,
+            "latest": latest,
+            "checkin": checkin,
+        }
+        detail = (
+            f"{workload} rooms to turn, {len(cleaners)} cleaners with {minutes:.0f} min before "
+            f"{f.local(checkin)} local: load {load:.2f}; {len(arrival_rooms)} rooms with "
+            "arrivals today"
+        )
+        out.append(
+            Signal(
+                t,
+                ISSUE,
+                "day_plan",
+                ("BUILDING",),
+                (
+                    f"staff_roster.csv:cleaner shifts {day.date()} as known at {stamp(t)}",
+                    f"bookings.csv:departures and arrivals {day.date()} created by {stamp(t)}",
+                    f"events.jsonl:room states at {stamp(t)}",
+                ),
+                detail,
+                data,
+            )
+        )
     return out

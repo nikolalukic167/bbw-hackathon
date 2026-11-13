@@ -5,9 +5,10 @@ flags and inspects; at ``leak_technician_nights`` it requests a technician. A bu
 flags, inspects and requests a technician at once, all critical. Inspecting an occupied
 room first asks the guest for consent. Water is never shut off by the system.
 Water leak (main-minus-rooms gap): flag, then technician, on the same night counts.
-Turnaround: prioritise the cleaning (and a robot pass) once the room is vacant, call the
-on-call housekeeper only when no cleaner is on shift, offer a ready room (approval), and
-tell the guest a realistic time.
+Turnaround, day plan: on a day at risk, arrival rooms first, robots, one guest notice, and
+a request for extra help when over capacity. Per request: prioritise the cleaning (and a
+robot pass) once the room is vacant, call the on-call housekeeper only when no cleaner
+is on shift, offer a ready room (approval), and tell the guest a realistic time.
 Heating: flag, technician (or contractor if none within 24 h), a comfort-first energy plan,
 and at most one notice per 12 h to occupied rooms newly in comfort deficit.
 Data quality: one flag per outage episode.
@@ -150,11 +151,73 @@ def _local(t: pd.Timestamp | None, settings: Settings) -> str:
     return "not today" if t is None else f"{t.tz_convert(settings.local_tz):%H:%M} local"
 
 
+def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
+    d = s.data
+    prio = "high" if d["help"] else "medium"
+    rooms = ", ".join(d["arrival_rooms"]) or "none"
+    latest = _local(d["latest"], settings) if d["latest"] else "not before the shifts end"
+    checkin = _local(d["checkin"], settings)
+    verify = (
+        f"cleaning_completed in every arrival room before {checkin}; re-plan on a new sick note."
+    )
+    if d["cleaners"]:
+        chain.add(
+            s,
+            "schedule_cleaning",
+            prio,
+            f"Turnover at risk ({s.detail}). Clean arrival rooms first ({rooms}), then the rest.",
+            assets=d["cleaners"],
+            expected_outcome=f"Arrival rooms clean by {latest} (simulated).",
+            verification_plan=verify,
+            confidence=0.6,
+        )
+    if d["robots"]:
+        chain.add(
+            s,
+            "dispatch_robot",
+            prio,
+            "Robot floor passes in arrival rooms right after checkout; robots do not "
+            "certify or release a room.",
+            assets=d["robots"],
+            expected_outcome="Shorter human cleaning per room (simulated).",
+            verification_plan="robot_floor_cleaning_completed before each human clean.",
+            confidence=0.6,
+        )
+    if d["arrival_rooms"]:
+        chain.add(
+            s,
+            "notify_guest",
+            prio,
+            f"Tell guests arriving today ({rooms}): check-in from {checkin} as booked, early "
+            f"check-in is not possible today; all rooms expected ready by {latest} "
+            "(proposed message; delivery not confirmed).",
+            assets=d["arrival_rooms"],
+            expected_outcome="Guests do not arrive early and wait.",
+            verification_plan="No arrival_waiting_room event today; escalate on one.",
+            confidence=0.6,
+        )
+    if d["help"]:
+        chain.add(
+            s,
+            "request_human_approval",
+            "high",
+            f"Cleaning workload exceeds capacity before {checkin} (load {d['load']:.2f}); "
+            "approve extra cleaning help. None is assumed until approved.",
+            assets=["BUILDING"],
+            expected_outcome="A manager decides on extra help.",
+            verification_plan=verify,
+            confidence=0.6,
+        )
+
+
 def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
     chain = _Chain(ep)
     cleaning_planned = False
     offered: str | None = None
     for s in ep.signals:
+        if s.kind == "day_plan":
+            _day_plan(chain, s, settings)
+            continue
         d = s.data
         room = s.assets[0]
         lead = d["wanted"] - s.time
