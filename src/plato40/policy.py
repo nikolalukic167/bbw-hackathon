@@ -7,6 +7,8 @@ The required level depends on the action and its target, not on the verb alone:
 - Technician, room block, room move and contractor services need approval. Waste pickup
   and vending restock are named autonomous in section 7; calling the on-call housekeeper
   is "costly" in building.json and needs approval.
+- A room is released only when it is clean (vacant, human cleaning completed). No
+  inspection is ever required in the data and no room is blocked, so ``clean`` suffices.
 - Everything else is autonomous.
 
 No euro amounts are used: the data has no service costs, so "notable cost" is the fixed
@@ -52,6 +54,7 @@ class Context:
         logistics_ids: Waste bins, the container and the vending machine.
         on_call_ids: Resource IDs of the on-call housekeeper.
         occupied_rooms: Rooms with a guest stay in progress at the decision time.
+        clean_rooms: Vacant rooms whose human cleaning completed, at the decision time.
 
     """
 
@@ -59,10 +62,16 @@ class Context:
     logistics_ids: frozenset[str]
     on_call_ids: frozenset[str]
     occupied_rooms: frozenset[str]
+    clean_rooms: frozenset[str]
 
     @classmethod
-    def from_building(cls, building: Mapping[str, Any], occupied_rooms: frozenset[str]) -> Context:
-        """Build a context from building.json and the occupied rooms at decision time."""
+    def from_building(
+        cls,
+        building: Mapping[str, Any],
+        occupied_rooms: frozenset[str],
+        clean_rooms: frozenset[str],
+    ) -> Context:
+        """Build a context from building.json and the room states at decision time."""
         staff = building["staff"]["resources"]
         return cls(
             resource_ids=frozenset(str(r["resource_id"]) for r in staff),
@@ -73,6 +82,7 @@ class Context:
                 str(r["resource_id"]) for r in staff if r["role"] == "on_call_housekeeping"
             ),
             occupied_rooms=occupied_rooms,
+            clean_rooms=clean_rooms,
         )
 
 
@@ -85,6 +95,8 @@ def required_level(decision: Mapping[str, Any], ctx: Context) -> Level:
     occupied = assets & ctx.occupied_rooms
     level = Level.AUTONOMOUS
     if action == "dispatch_robot" and occupied:
+        return Level.FORBIDDEN
+    if action == "release_room" and not assets <= ctx.clean_rooms:
         return Level.FORBIDDEN
     if action in ENTERS_ROOM and occupied:
         level = max(level, Level.APPROVAL_AND_CONSENT)
@@ -101,7 +113,7 @@ def violations(decision: Mapping[str, Any], ctx: Context) -> list[str]:
     """Return policy violations: forbidden actions and flags weaker than required."""
     need = required_level(decision, ctx)
     if need is Level.FORBIDDEN:
-        return [f"{decision['action']} into occupied room is forbidden"]
+        return [f"{decision['action']} is forbidden on {sorted(decision['affected_assets'])}"]
     errors = []
     if need >= Level.HUMAN_APPROVAL and decision.get("requires_human_approval") is not True:
         errors.append(f"needs requires_human_approval=true ({CONTRACT_NAMES[need]})")
@@ -113,3 +125,13 @@ def violations(decision: Mapping[str, Any], ctx: Context) -> list[str]:
         if rank is not None and rank < need:
             errors.append(f"autonomy {declared} weaker than {CONTRACT_NAMES[need]}")
     return errors
+
+
+def apply(decision: dict[str, Any], ctx: Context) -> None:
+    """Set ``autonomy`` and both approval flags from the required level; refuse forbidden."""
+    need = required_level(decision, ctx)
+    if need is Level.FORBIDDEN:
+        raise ValueError(f"{decision['event_id']}: {decision['action']} is forbidden")
+    decision["requires_human_approval"] = need >= Level.HUMAN_APPROVAL
+    decision["requires_guest_consent"] = need >= Level.APPROVAL_AND_CONSENT
+    decision["autonomy"] = CONTRACT_NAMES[need]
