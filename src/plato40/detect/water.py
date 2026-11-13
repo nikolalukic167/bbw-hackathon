@@ -21,12 +21,33 @@ from __future__ import annotations
 import pandas as pd
 
 from plato40.detect.grid import grid, nights, stamp
-from plato40.episodes import Signal
+from plato40.episodes import Signal, group
 from plato40.load import derive
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 
 ISSUE = "water_leak"
+
+
+def out_of_order(
+    signals: list[Signal], ds: Dataset, settings: Settings
+) -> dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]]:
+    """Return per room the spans with a suspected leak, for room offers to avoid.
+
+    A span starts at the room's first leak signal and ends when the next repair work order
+    on the room completes (known at ``completed_utc``), or ``episode_quiet_h`` after the
+    last signal if none does.
+    """
+    quiet = settings.detect.episode_quiet_h
+    rooms = set(ds.room_ids())
+    wo = ds.table("work_orders.csv")
+    spans: dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]] = {}
+    for ep in group([s for s in signals if s.assets[0] in rooms], quiet):
+        room, start, last = ep.assets[0], ep.signals[0].time, ep.signals[-1].time
+        done = wo.loc[(wo["asset_id"] == room) & (wo["created_utc"] >= start), "completed_utc"]
+        end = done.min() if done.notna().any() else last + pd.Timedelta(hours=quiet)
+        spans.setdefault(room, []).append((start, pd.Timestamp(end)))
+    return spans
 
 
 def _volumes(wide: pd.DataFrame, ds: Dataset, settings: Settings) -> pd.DataFrame:

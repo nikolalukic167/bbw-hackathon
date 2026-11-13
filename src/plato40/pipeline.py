@@ -63,9 +63,10 @@ class Run:
 def run(ds: Dataset, settings: Settings) -> Run:
     """Run all detectors and planners on one dataset; raise on any violation."""
     states = RoomStates(ds)
+    leaks = water.signals(ds, settings)
     signals = (
-        water.signals(ds, settings)
-        + turnaround.signals(ds, settings)
+        leaks
+        + turnaround.signals(ds, settings, water.out_of_order(leaks, ds, settings))
         + heating.signals(ds, settings)
         + logistics.signals(ds, settings)
         + data_quality.signals(ds, settings)

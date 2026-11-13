@@ -157,6 +157,17 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                     verification_plan=VERIFY_LEAK,
                     confidence=0.8,
                 )
+            if in_room:
+                chain.add(
+                    s,
+                    "block_room",
+                    "critical",
+                    f"Take {s.assets[0]} out of sale until the burst is repaired: {s.detail}. "
+                    "Room offers skip it meanwhile.",
+                    expected_outcome="No guest is moved into or sold the room (simulated).",
+                    verification_plan="Room stays blocked until the repair work order completes.",
+                    confidence=0.8,
+                )
             asked = _inspect(chain, s, states, "critical", 0.8, asked)
             chain.add(
                 s,

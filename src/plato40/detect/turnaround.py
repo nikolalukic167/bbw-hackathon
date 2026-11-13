@@ -31,13 +31,15 @@ from plato40.state import RoomStates
 
 ISSUE = "room_turnaround"
 REQUESTS = ("early_checkin", "waiting_for_room")
+Spans = dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]]
 CLOCK = re.compile(r"\b(\d{1,2})[:.h](\d{2})\b")
 
 
 class _Facts:
     """Shared inputs for predicting when a room can be ready."""
 
-    def __init__(self, ds: Dataset, settings: Settings) -> None:
+    def __init__(self, ds: Dataset, settings: Settings, out_of_order: Spans) -> None:
+        self.out_of_order = out_of_order
         self.tz = settings.local_tz
         self.clean = pd.Timedelta(minutes=settings.detect.clean_room_min)
         self.states = RoomStates(ds)
@@ -122,7 +124,10 @@ class _Facts:
         free = sorted(
             r
             for r in self.states.rooms_in("clean", t)
-            if r != room and r not in booked and self.max_guests.get(r, 0) >= guests
+            if r != room
+            and r not in booked
+            and self.max_guests.get(r, 0) >= guests
+            and not any(a <= t < z for a, z in self.out_of_order.get(r, []))
         )
         return free[0] if free else None
 
@@ -178,9 +183,12 @@ def _triggers(ds: Dataset) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda x: (x["t"], x["ref"]))
 
 
-def signals(ds: Dataset, settings: Settings) -> list[Signal]:
-    """Return request and checkout signals, plus one day-plan signal per day at risk."""
-    f = _Facts(ds, settings)
+def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) -> list[Signal]:
+    """Return request and checkout signals, plus one day-plan signal per day at risk.
+
+    ``out_of_order`` holds per room the spans with a suspected leak; they are never offered.
+    """
+    f = _Facts(ds, settings, out_of_order or {})
     arrival = dict(zip(f.bookings["booking_id"], f.bookings["arrival_utc"], strict=True))
     departure = dict(zip(f.bookings["booking_id"], f.bookings["departure_utc"], strict=True))
     guest_count = dict(zip(f.bookings["booking_id"], f.bookings["guest_count"], strict=True))
