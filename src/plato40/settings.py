@@ -93,6 +93,12 @@ class DetectorSettings:
     episode_quiet_h: float = 48.0
     """Hours without a new signal after which an episode is closed."""
 
+    clean_room_min: float = 60.0
+    """Minutes one human room cleaning is planned to take (audit p90; median 45)."""
+
+    oncall_travel_min: float = 45.0
+    """Minutes until the on-call housekeeper is on site (building.json staff notes)."""
+
 
 @dataclass(frozen=True)
 class Settings:

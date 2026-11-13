@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 import pandas as pd
 
@@ -20,6 +21,7 @@ class Signal:
         assets: Affected IDs; with ``issue_type`` the key that groups signals.
         evidence: Contract evidence references, each ending at or before ``time``.
         detail: Measured values with units, for the decision reason.
+        data: Structured facts the planner needs, e.g. a predicted ready time.
 
     """
 
@@ -29,6 +31,7 @@ class Signal:
     assets: tuple[str, ...]
     evidence: tuple[str, ...]
     detail: str
+    data: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass

@@ -69,6 +69,16 @@ class RoomStates:
         i = int(times.searchsorted(t, side="right")) - 1
         return self._states[room][i] if i >= 0 else UNKNOWN
 
+    def next_entry(self, room: str, state: str, t: pd.Timestamp) -> pd.Timestamp | None:
+        """Return the first time after ``t`` that ``room`` enters ``state``, if any."""
+        times = self._times.get(room)
+        if times is None:
+            return None
+        for i in range(int(times.searchsorted(t, side="right")), len(times)):
+            if self._states[room][i] == state:
+                return pd.Timestamp(times[i])
+        return None
+
     def rooms_in(self, state: str, t: pd.Timestamp) -> frozenset[str]:
         """Return the rooms in ``state`` at ``t``."""
         return frozenset(r for r in self.rooms if self.at(r, t) == state)
