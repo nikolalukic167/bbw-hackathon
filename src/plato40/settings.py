@@ -174,6 +174,28 @@ class DetectorSettings:
     checkout_estimate_local: str = "09:45"
     """Planned checkout of a departing room until its checkout event (dev p75; p50 08:45)."""
 
+    snapshot_moved: tuple[tuple[str, float], ...] = (
+        ("cop_ratio", 0.05),
+        ("filter_dp_pa", 10.0),
+        ("airflow_m3h", 300.0),
+        ("main_flow_l", 10.0),
+        ("soc_kwh", 10.0),
+        ("pv_kw", 10.0),
+        ("load_kw", 8.0),
+        ("price_eur_kwh", 0.03),
+        ("outdoor_c", 3.0),
+        ("occupied", 2.0),
+        ("dirty", 2.0),
+        ("temperature_c", 1.0),
+        ("setpoint_c", 1.0),
+        ("night_water_l", 20.0),
+    )
+    """Change (in the metric's unit) beyond which a context snapshot lists a metric as moved
+    against 15 min ago, 1 h ago or 24 h ago; metrics not listed are never reported."""
+
+    snapshot_ahead_h: float = 6.0
+    """Hours ahead a context snapshot lists booked arrivals and departures."""
+
     cop_ref_intercept: float = 2.78
     """Reference HP1 COP (-) at 0 degC: Theil-Sen fit on the dev year (audit section 8)."""
 

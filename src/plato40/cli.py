@@ -7,12 +7,14 @@
 ``plato40 explain <trace.jsonl> [episode]``        why the pipeline acted or did not
 ``plato40 ui <decisions.jsonl> <trace.jsonl> --out console.html``  operations console page
 ``plato40 bus <data_dir> --lane <lane> --out <dir>``  one trigger lane through bus and arbiter
+``plato40 snapshot <data_dir> --at <utc> [--assets R105 HP1]``  supervisor context as JSON
 ``plato40 audit <data_root> --out <dir>``          write the data audit report
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from collections import Counter
@@ -22,7 +24,7 @@ from typing import Any
 
 import pandas as pd
 
-from plato40 import arbiter, bus, contract, lanes, llm_guard, pipeline, trace, ui
+from plato40 import arbiter, bus, context, contract, lanes, llm_guard, pipeline, trace, ui
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -92,6 +94,10 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("cache/llm"),
         help="checked LLM answers (llm_guard); a miss uses the template",
     )
+    snap = sub.add_parser("snapshot", help="print the supervisor context snapshot at a time")
+    snap.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
+    snap.add_argument("--at", required=True, help="UTC time, e.g. 2026-01-24T13:00Z")
+    snap.add_argument("--assets", nargs="*", default=[], help="asset IDs to detail")
     audit = sub.add_parser("audit", help="write the data audit report")
     audit.add_argument(
         "data_root",
@@ -213,6 +219,16 @@ def _bus(data_dir: Path, lane: str, out: Path, cache: Path) -> int:
     return 1 if errors else 0
 
 
+def _snapshot(data_dir: Path, at: str, assets: list[str]) -> int:
+    ds = load_dataset(data_dir)
+    settings = Settings(data_root=data_dir, out_dir=data_dir)
+    snap = context.Snapshots(ds, settings).at(pd.Timestamp(at).tz_convert("UTC"), assets)
+    text = json.dumps(snap, ensure_ascii=False, sort_keys=True)
+    print(json.dumps(snap, ensure_ascii=False, sort_keys=True, indent=1))
+    print(f"{len(text)} chars compact, about {len(text) // 4} tokens", file=sys.stderr)
+    return 0
+
+
 def _audit(data_root: Path, out: Path) -> int:
     paths = discover_datasets(data_root)
     if not paths:
@@ -254,4 +270,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "bus":
         return _bus(args.data_dir, args.lane, args.out, args.llm_cache)
+    if args.command == "snapshot":
+        return _snapshot(args.data_dir, args.at, args.assets)
     return _audit(args.data_root, args.out)
