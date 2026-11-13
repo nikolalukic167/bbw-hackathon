@@ -151,6 +151,27 @@ class DetectorSettings:
     cop_min_coverage: float = 0.8
     """Share of a 24 h window's intervals with heat and electricity needed for a verdict."""
 
+    cop_window_h: int = 24
+    """Hours of the rolling window over which the heat pump COP is judged."""
+
+    outdoor_min_h: int = 12
+    """Hours with an outdoor reading needed for the window's mean outdoor temperature."""
+
+    comfort_deficit_k: float = 1.5
+    """Shortfall below the active setpoint (K) for an occupied room to count as cold."""
+
+    technician_horizon_h: float = 24.0
+    """Hours ahead within which an on-shift technician is preferred over a contractor."""
+
+    contractor_after_h: float = 24.0
+    """Hours after the technician's start with the COP still low before a contractor is ordered."""
+
+    notice_gap_h: float = 12.0
+    """Minimum hours between two heating notices to guests in one episode."""
+
+    price_peaks: int = 3
+    """Number of dearest published price hours named in the energy plan."""
+
 
 @dataclass(frozen=True)
 class Settings:

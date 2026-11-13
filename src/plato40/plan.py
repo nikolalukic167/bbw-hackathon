@@ -28,7 +28,6 @@ from plato40.episodes import Episode, Signal
 from plato40.settings import Settings
 from plato40.state import RoomStates
 
-NOTICE_GAP = pd.Timedelta(hours=12)
 WHAT = {
     "night_flow": "continuous night flow",
     "burst": "burst volume in one night",
@@ -414,6 +413,7 @@ def _turnaround(episodes: list[Episode], settings: Settings) -> list[Decision]:
 
 
 def _heating(ep: Episode, settings: Settings) -> list[Decision]:
+    th = settings.detect
     chain = _Chain(ep)
     s = ep.signals[0]
     d = s.data
@@ -427,7 +427,8 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
         confidence=0.8,
     )
     when = d["technician_from"]
-    if when is not None and when - s.time <= pd.Timedelta(hours=24):
+    contractor = when is None or when - s.time > pd.Timedelta(hours=th.technician_horizon_h)
+    if not contractor:
         chain.add(
             s,
             "dispatch_technician",
@@ -436,18 +437,11 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
             f"{'now' if d['technician'] else 'from ' + _local(when, s.time, settings)}.",
             **({"resource_id": d["technician"]} if d["technician"] else {}),
             expected_outcome="Technician finds and fixes the fault (simulated).",
-            verification_plan="24 h COP ratio recovers; escalate to a contractor if not.",
+            verification_plan=(
+                f"COP ratio back above {th.cop_ratio_low:.2f} within {th.contractor_after_h:.0f} h "
+                "of the technician's start; a contractor is ordered if not."
+            ),
             confidence=0.8,
-        )
-    else:
-        chain.add(
-            s,
-            "order_service",
-            "high",
-            "Service HP1 by a contractor: no technician on shift within 24 h.",
-            expected_outcome="Contractor fixes the fault (simulated).",
-            verification_plan="24 h COP ratio recovers after the visit.",
-            confidence=0.7,
         )
     lo, hi = d["band"]
     cold = (
@@ -462,31 +456,54 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
         "high",
         f"Protect occupied rooms with reduced heat: hold vacant rooms at setback, pre-heat "
         f"occupied rooms within {lo}-{hi} degC before the {cold}; avoid price peaks "
-        f"({peaks} local) only where comfort holds. Comfort before cost.",
+        f"({peaks}) only where comfort holds. Comfort before cost.",
         assets=["HP1", "BUILDING"],
         expected_outcome="Occupied rooms stay in the comfort band (simulated).",
         verification_plan=f"Occupied rooms at or above {lo} degC; escalate rooms that fall below.",
         confidence=0.6,
     )
+    deadline = None if contractor else when + pd.Timedelta(hours=th.contractor_after_h)
     told: set[str] = set()
     last: pd.Timestamp | None = None
     for s in ep.signals:
-        new = [r for r in s.data["cold_rooms"] if r not in told]
-        if not new or (last is not None and s.time - last < NOTICE_GAP):
+        if contractor or (deadline is not None and s.time >= deadline):
+            why = (
+                f"no technician on shift within {th.technician_horizon_h:.0f} h"
+                if s is ep.signals[0]
+                else f"COP still {s.data['ratio']:.2f} of reference "
+                f"{th.contractor_after_h:.0f} h after the technician's start"
+            )
+            chain.add(
+                s,
+                "order_service",
+                "high",
+                f"Service HP1 by a contractor: {why}.",
+                expected_outcome="Contractor fixes the fault (simulated).",
+                verification_plan="24 h COP ratio recovers after the visit.",
+                confidence=0.7,
+            )
+            contractor, deadline = False, None
+        new = [
+            (r, b)
+            for r, b in zip(s.data["cold_rooms"], s.data["cold_stays"], strict=True)
+            if b not in told
+        ]
+        if not new or (last is not None and s.time - last < pd.Timedelta(hours=th.notice_gap_h)):
             continue
         last = s.time
+        rooms = [r for r, _ in new]
         chain.add(
             s,
             "notify_guest",
             "high",
-            f"Tell guests in {', '.join(new)} that heating is reduced and a repair is "
+            f"Tell guests in {', '.join(rooms)} that heating is reduced and a repair is "
             "requested (proposed message; delivery not confirmed).",
-            assets=new,
+            assets=rooms,
             expected_outcome="Guests know the cause and that help is coming.",
             verification_plan="No temperature_cold request from these rooms; escalate on one.",
             confidence=0.7,
         )
-        told.update(new)
+        told.update(b for _, b in new)
     return chain.out
 
 
