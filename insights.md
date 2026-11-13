@@ -8,7 +8,7 @@ action is simulated.
 
 ## The year at a glance
 
-Steward turned 1,031 detector signals into 115 incidents and 339 decisions. 301 decisions were
+Steward turned 1,078 detector signals into 144 incidents and 430 decisions. 392 decisions were
 autonomous. A person was asked to approve 38, on average every 9.6 days, and 4 of those also
 need guest consent.
 
@@ -16,7 +16,7 @@ need guest consent.
 |---|---|---|---|---|---|---|
 | Room turnaround | 70 | 266 | 244 | 22 | 0 | 19 of 24 waiting guests had a decision on their room earlier that day |
 | Water leaks | 5 | 21 | 9 | 8 | 4 | 5 of 5 followed by a repair work order |
-| Heat pump and comfort | 2 | 14 | 10 | 4 | 0 | 2 of 2 followed by repair of HP1 |
+| Heat pump and comfort | 31 | 105 | 101 | 4 | 0 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
 | Waste and vending | 22 | 22 | 22 | 0 | 0 | 21 of 22 orders came before a real shortage |
 | Data quality | 16 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
 
@@ -127,8 +127,8 @@ reveal a leak. *Recommendation:* submeters on the circulation loop and the commo
 
 ## Limits
 
-- The data is a single synthetic year. The leak and heat pump rules rest on 2 to 5 incidents per
-  class; the holdout and real operation must confirm them.
+- The data is a single synthetic year. The leak and heat pump rules rest on 5 to 31 incidents
+  per class; the holdout and real operation must confirm them.
 - The data is a replay: no action changes later readings, so outcomes are matched to work orders
   and events that people wrote after the fact.
 - The data has no costs, so the report claims no savings. Steward has no daily energy plan and

@@ -43,6 +43,7 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ```bash
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
+                              # S03 comes from the s03 bus lane; --no-s03-lane for the old planner
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
 uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl
                                                         # merge lane proposals (docs/BUS.md)

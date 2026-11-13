@@ -54,7 +54,8 @@ OUTCOMES = {
     "room_turnaround": "{anticipated} of {waits} waiting guests had a decision on their room "
     "earlier that day",
     "water_leak": "{leak_wo} of {leak_eps} followed by a repair work order",
-    "heating_comfort": "{hp_wo} of {hp_eps} followed by repair of {hp_asset}",
+    "heating_comfort": "{hp_wo} of {hp_eps} heat pump incidents followed by repair of "
+    "{hp_asset}; {cold_ok} of {cold_req} cold-room requests answered before their due time",
     "logistics": "{hits} of {orders} orders came before a real shortage",
     "data_quality": "{outages} floor outages, {top_n} of them on {top_gw}",
 }
@@ -513,8 +514,19 @@ def heating(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     """Return the COP reference fit, the normal and faulty ratios, and the repairs."""
     tz, th = settings.local_tz, settings.detect
     quiet = pd.Timedelta(hours=th.episode_quiet_h)
-    eps = _of(run, "heating_comfort")
+    rooms = _of(run, "heating_comfort")
+    eps = [e for e in rooms if any(s.kind == "cop_low" for s in e.signals)]
     asset = eps[0].assets[0] if eps else "HP1"
+    req = ds.table("guest_requests.csv")
+    cold = req.loc[req["request_type"] == "temperature_cold"]
+    due = dict(zip(cold["request_id"].astype(str), cold["response_due_utc"], strict=True))
+    answered = {
+        g
+        for d in run.decisions
+        if d["issue_type"] == "heating_comfort"
+        for g in d.get("guest_request_ids", [])
+        if g in due and pd.notna(due[g]) and pd.Timestamp(d["timestamp_utc"]) <= due[g]
+    }
     cop = derive.daily_cop(ds, tz).dropna(subset=["cop", "outdoor_c"])
     slope, intercept = float("nan"), float("nan")
     if len(cop) > 1:
@@ -530,10 +542,12 @@ def heating(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     found = [(ep, o) for ep, o in orders if o is not None]
     created = [pd.Timestamp(o["created_utc"]) for _, o in found]
     gaps = [(b - a).days for a, b in pairwise(created)]
-    ratios = [float(s.data["ratio"]) for ep in eps for s in ep.signals]
+    ratios = [float(s.data["ratio"]) for ep in eps for s in ep.signals if s.kind == "cop_low"]
     return {
         "hp_asset": asset,
         "hp_eps": _n(len(eps)),
+        "cold_req": _n(len(cold)),
+        "cold_ok": _n(len(answered)),
         "hp_wo": _n(len(found)),
         "fit_days": _n(len(cop)),
         "fit_icpt": _f(intercept, 2),

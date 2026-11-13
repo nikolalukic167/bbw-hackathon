@@ -228,6 +228,7 @@ class Settings:
     detect: DetectorSettings = field(default_factory=DetectorSettings)
     figure_dpi: int = 110
     llm_cache: Path | None = None
+    s03_lane: bool = True
 
     @property
     def figures_dir(self) -> Path:

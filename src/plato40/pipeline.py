@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 
 import pandas as pd
 
-from plato40 import contract, messages, plan, policy
+from plato40 import contract, llm_guard, messages, plan, policy
 from plato40.contract import Decision
 from plato40.detect import data_quality, heating, logistics, turnaround, water
 from plato40.episodes import Episode, Signal, group
-from plato40.llm_guard import Result
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -59,7 +59,7 @@ class Run:
     decisions: list[Decision]
     rules: dict[str, str] = field(default_factory=dict)
     violations: list[str] = field(default_factory=list)
-    messages: dict[str, Result] = field(default_factory=dict)
+    messages: dict[str, llm_guard.Result] = field(default_factory=dict)
 
 
 def run(ds: Dataset, settings: Settings) -> Run:
@@ -82,7 +82,57 @@ def run(ds: Dataset, settings: Settings) -> Run:
     for d in decisions:
         ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
         result.rules[d["event_id"]] = policy.apply(d, ctx)
-    result.violations = check(ds, states, decisions)
+    if settings.s03_lane:
+        _s03_lane(ds, settings, result)
+    result.violations = check(ds, states, result.decisions)
     if result.violations:
         raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(result.violations))
     return result
+
+
+def _s03_lane(ds: Dataset, settings: Settings, result: Run) -> None:
+    """Replace the planner's S03 decisions by the s03 bus lane, judged by the arbiter.
+
+    The lane's signals and episodes replace the heating ones in ``result`` too, so the
+    trace, explain and the console show what the decisions came from.
+    """
+    from plato40 import arbiter, lane_s03  # the arbiter imports this module
+
+    call = None
+    if settings.llm_cache is not None and os.environ.get("PLATO40_LLM") == "on":
+        model = os.environ.get("PLATO40_LLM_MODEL", llm_guard.DEFAULT_MODEL)
+        call = llm_guard.anthropic_call(model)
+    cache = settings.llm_cache or settings.out_dir / "llm_cache"
+    rows, _ = lane_s03.rows(ds, settings, cache, call)
+    decisions, verdicts = arbiter.arbitrate(ds, settings, result.decisions, rows, ["s03"])
+    rejected = [f"{v['proposal_id']}: {v['why']}" for v in verdicts if not v["accepted"]]
+    if rejected:
+        raise RuntimeError("s03 lane proposals rejected:\n" + "\n".join(rejected))
+    issue = heating.ISSUE
+    episodes: dict[str, Episode] = {}
+    for r in rows:
+        if r["row"] != "signal":
+            continue
+        eid = "EP-" + str(r["id"]).removeprefix("s03-").rsplit("-sig", 1)[0]
+        ep = episodes.setdefault(eid, Episode(eid, issue, tuple(r["assets"])))
+        ep.signals.append(
+            Signal(
+                pd.Timestamp(r["t_known"]),
+                issue,
+                r["kind"],
+                tuple(r["assets"]),
+                tuple(r["evidence"]),
+                r["detail"],
+                r["facts"],
+            )
+        )
+    result.signals = [s for s in result.signals if s.issue_type != issue] + [
+        s for ep in episodes.values() for s in ep.signals
+    ]
+    result.episodes = [e for e in result.episodes if e.issue_type != issue] + list(
+        episodes.values()
+    )
+    result.decisions = decisions
+    kept = {d["event_id"] for d in decisions}
+    result.rules = {k: v for k, v in result.rules.items() if k in kept}
+    result.rules |= {v["event_id"]: v["why"] for v in verdicts if v["accepted"]}
