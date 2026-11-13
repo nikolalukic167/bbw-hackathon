@@ -76,6 +76,26 @@ def _clock(hhmm: str) -> time:
     return time(int(hh), int(mm))
 
 
+# Day-delay notice for a late room with no slot in the plan: no time is promised (it needs
+# extra help, which is an approval), so the text has no number at all.
+UNTIMED: dict[str, str] = {
+    "en": "Dear guest, your room {room} may not be ready by check-in time today, as several "
+    "rooms are being prepared. We will message you as soon as it is ready.",
+    "de": "Liebe Gäste, Ihr Zimmer {room} ist heute möglicherweise zur Check-in-Zeit noch nicht "
+    "fertig, da mehrere Zimmer vorbereitet werden. Wir melden uns, sobald es bereit ist.",
+    "fr": "Chers hôtes, votre chambre {room} ne sera peut-être pas prête à l'heure d'arrivée "
+    "aujourd'hui, plusieurs chambres étant en préparation. Nous vous écrirons dès qu'elle sera "
+    "prête.",
+    "it": "Gentili ospiti, la vostra camera {room} potrebbe non essere pronta all'orario del "
+    "check-in di oggi, perché stiamo preparando diverse camere. Vi scriveremo appena sarà pronta.",
+    "nl": "Beste gasten, uw kamer {room} is vandaag mogelijk nog niet klaar bij het inchecken, "
+    "omdat meerdere kamers worden voorbereid. We sturen u een bericht zodra de kamer klaar is.",
+    "es": "Estimados huéspedes, es posible que su habitación {room} no esté lista a la hora del "
+    "check-in de hoy, ya que estamos preparando varias habitaciones. Le escribiremos en cuanto "
+    "esté lista.",
+}
+
+
 @dataclass
 class _Plan:
     """A day's greedy cleaning plan: predicted ready time per room, None if it does not fit."""
@@ -467,8 +487,7 @@ class _Lane:
             if self._s01_thread(booking, t):
                 continue
             ready = plan.ready[room]
-            last = max(z for _, _, z in shifts) if shifts else checkin
-            at = self._hhmm(ready if ready is not None else last)
+            at = self._hhmm(ready) if ready is not None else None
             language = self._language(booking, t)
             task = llm_guard.Task(
                 lane=LANE,
@@ -477,13 +496,19 @@ class _Lane:
                 language=language,
                 intent="notify_day_delay",
                 facts={"room": room, "booking": booking},
-                say={"room": room, "ready": at},
-                must_say=("room", "ready"),
-                template=TEMPLATES[language],
-                hedged=True,
+                say={"room": room, "ready": at} if at else {"room": room},
+                must_say=("room", "ready") if at else ("room",),
+                template=TEMPLATES[language] if at else UNTIMED[language],
+                hedged=at is not None,
             )
             said = llm_guard.phrase(task, self.cache, self.call)
             self.board.messages[said.source] += 1
+            what = (
+                f"{room} expected ready after {at} local today"
+                if at
+                else f"{room} may not be ready by check-in today; no time is promised until "
+                "extra help is approved"
+            )
             self.board.propose(
                 eid,
                 t,
@@ -492,15 +517,16 @@ class _Lane:
                 "notify_guest",
                 [room],
                 prio,
-                f"Tell the guest of {booking} in {room} ({language}): {room} expected ready after "
-                f"{at} local today; arrival rooms are cleaned first (proposed message; delivery "
-                "not confirmed).",
+                f"Tell the guest of {booking} in {room} ({language}): {what}; arrival rooms are "
+                "cleaned first (proposed message; delivery not confirmed).",
                 message={"language": language, "text": said.text},
                 needs=[order["id"]],
                 confidence=0.6,
                 expected_outcome="The guest does not arrive early and wait.",
                 verification_plan=(
-                    f"No arrival_waiting_room for {room} before {at} local; escalate on one."
+                    f"No arrival_waiting_room for {room} before "
+                    + (f"{at} local" if at else "check-in")
+                    + "; escalate on one."
                 ),
             )
 

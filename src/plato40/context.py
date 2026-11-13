@@ -252,6 +252,19 @@ class Snapshots:
         counts = _state_counts(self.states, self.rooms, t)
         out["rooms"] = {s: counts.get(s, 0) for s in STATES if counts.get(s, 0)}
         refs.append(f"events.jsonl:room states at {stamp(t)}")
+        temps = [float(hit[0]) for r in self.rooms if (hit := self.tel["temperature_c"][r].last(t))]
+        if temps:
+            # One room is judged against the whole building: a heat wave or a cold night shows
+            # in every room, a local fault in one.
+            out["room_temps_c"] = {
+                "rooms": len(temps),
+                "median": _round(float(np.median(temps))),
+                "min": _round(min(temps)),
+                "max": _round(max(temps)),
+                "below_20": sum(x < 20 for x in temps),
+                "above_26": sum(x > 26 for x in temps),
+            }
+            refs.append(f"room_telemetry.csv:all rooms temperature_c at or before {stamp(t)}")
         ahead = t + pd.Timedelta(hours=self.th.snapshot_ahead_h)
         b = self.bookings.loc[self.bookings["created_utc"] <= t]
         for key, col in (("arrivals", "arrival_utc"), ("departures", "departure_utc")):
