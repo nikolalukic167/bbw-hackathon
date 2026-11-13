@@ -218,7 +218,7 @@ class _Lane:
         for d, room, created in zip(dep_day, bk["room_id"], bk["created_utc"], strict=True):
             by.setdefault((d, int(str(room)[1])), []).append(pd.Timestamp(created))
         self.departures = {
-            k: np.array(sorted(v), dtype="datetime64[ns]").astype("datetime64[ns]")
+            k: pd.DatetimeIndex(sorted(v)).tz_convert("UTC").tz_localize(None).to_numpy()
             for k, v in by.items()
         }
 
