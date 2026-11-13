@@ -57,7 +57,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 |---|---|---|---|---|
 | T4 | Signals located: night floor, burst volume, main-minus-rooms night gap; 4/4 and 9/9 orders covered | D | done | Detection 10 |
 | T4 | Detector A: continuous night flow, two nights in a row (audit implication 1) | D | done | Detection 10 |
-| T4 | Detector B: burst volume, night window only (any-hour variant open) | D | done | Detection 10 |
+| T4 | Detector B: burst volume at night, plus sustained high flow at any hour (2 h at 10 L per 15 min) | D | done | Detection 10 |
 | T4 | Detector C: night gap above normal p95 (implication 3); never daily gap totals | D | done | Detection 10 |
 | T4 | Look-alikes: resets masked, incomplete nights give no verdict, outages one flag per episode | D | done | Robustness 7 |
 | T8 | Actions: graded chain, consent request before entering an occupied room, never shut off water | A | done | Safe autonomy 10 |
