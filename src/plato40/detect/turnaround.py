@@ -103,10 +103,10 @@ class _Facts:
             return None
         return max(pd.Timestamp(mine.sort_values("arrival_utc")["departure_utc"].iloc[-1]), t)
 
-    def alternative(
+    def alternatives(
         self, room: str, guests: int, t: pd.Timestamp, until: pd.Timestamp
-    ) -> str | None:
-        """Return a clean vacant room with enough beds and no other booking before ``until``.
+    ) -> list[str]:
+        """Return clean vacant rooms with enough beds and no other booking before ``until``.
 
         ``until`` is the requesting guest's departure, so the offered room is free for
         the whole stay and no later arrival loses its room.
@@ -129,7 +129,7 @@ class _Facts:
             and self.max_guests.get(r, 0) >= guests
             and not any(a <= t < z for a, z in self.out_of_order.get(r, []))
         )
-        return free[0] if free else None
+        return free
 
 
 def requested_time(text: str, arrival: pd.Timestamp, t: pd.Timestamp, tz: str) -> pd.Timestamp:
@@ -197,7 +197,27 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
     for r in _triggers(ds):
         t, room, bid, waiting = r["t"], r["room"], r["booking"], r["waiting"]
         state = f.states.at(room, t)
-        if state not in ("occupied", "dirty", "cleaning") or bid not in arrival:
+        if bid not in arrival:
+            continue
+        just = f.states.at(room, t - pd.Timedelta(seconds=1))
+        if waiting and state == "clean" and just in ("dirty", "cleaning"):
+            out.append(
+                Signal(
+                    t,
+                    ISSUE,
+                    "ready",
+                    (room,),
+                    (r["ref"], f"events.jsonl:{room} cleaning_completed at {stamp(t)}"),
+                    f"guest of {bid} is waiting; {room} became clean at {f.local(t, t)}",
+                    {
+                        "booking": bid,
+                        "request_id": r["request_id"],
+                        "language": r["language"],
+                    },
+                )
+            )
+            continue
+        if state not in ("occupied", "dirty", "cleaning"):
             continue
         wanted = t if waiting else requested_time(r["text"], arrival[bid], t, f.tz)
         if state == "occupied":
@@ -214,6 +234,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
             continue
         guest = {
             "booking": bid,
+            "departure": departure[bid],
             "request_id": r["request_id"],
             "language": r["language"],
             "wanted": wanted,
@@ -222,7 +243,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
         facts |= guest | {
             "vacant": state != "occupied",
             "in_progress": state == "cleaning",
-            "alternative": f.alternative(room, int(guest_count[bid]), t, departure[bid]),
+            "alternatives": f.alternatives(room, int(guest_count[bid]), t, departure[bid]),
         }
         detail = (
             f"guest of {bid} wants the room at {f.local(wanted, t)}; room is {state}; "
@@ -238,7 +259,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
             actual = f.states.next_entry(room, "dirty", t)
             if actual is not None and actual - t < follow:
                 later = f.plan_at(room, actual, actual) | guest
-                later |= {"vacant": True, "in_progress": False, "alternative": None}
+                later |= {"vacant": True, "in_progress": False, "alternatives": []}
                 out.append(
                     Signal(
                         actual,

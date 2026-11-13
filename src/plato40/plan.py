@@ -216,7 +216,23 @@ def _local(t: pd.Timestamp | None, ref: pd.Timestamp, settings: Settings) -> str
     return local_time(t, ref, settings.local_tz)
 
 
-def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
+def _ready(chain: _Chain, s: Signal) -> None:
+    d = s.data
+    chain.add(
+        s,
+        "notify_guest",
+        "critical",
+        f"Tell the waiting guest ({d['language']}): {s.assets[0]} is ready now; self check-in "
+        "works (proposed message; delivery not confirmed).",
+        **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
+        expected_outcome="Guest checks in now.",
+        verification_plan=f"A check-in to {s.assets[0]} follows; escalate if the guest waits on.",
+        confidence=0.9,
+    )
+
+
+def _day_plan(chain: _Chain, s: Signal, settings: Settings, told: set[str]) -> None:
+    """Plan a day at risk; guests already given a ready time (``told``) get no blanket notice."""
     d = s.data
     prio = "high" if d["help"] else "medium"
     rooms = ", ".join(d["arrival_rooms"]) or "none"
@@ -254,20 +270,21 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             verification_plan="robot_floor_cleaning_completed before each human clean.",
             confidence=0.6,
         )
-    if d["arrival_rooms"]:
+    notify = [r for r in d["arrival_rooms"] if r not in told]
+    if notify:
         chain.add(
             s,
             "notify_guest",
             prio,
-            f"Tell guests arriving today ({rooms}): check-in from {checkin} as booked, early "
-            "check-in is not possible today"
+            f"Tell guests arriving today ({', '.join(notify)}): check-in from {checkin} as "
+            "booked, early check-in is not possible today"
             + (
                 f"; all rooms expected ready by {latest}"
                 if d["latest"]
                 else "; some rooms may be ready only after check-in time"
             )
             + " (proposed message; delivery not confirmed).",
-            assets=d["arrival_rooms"],
+            assets=notify,
             expected_outcome="Guests do not arrive early and wait.",
             verification_plan="No arrival_waiting_room event today; escalate on one.",
             confidence=0.6,
@@ -307,6 +324,8 @@ class _Ledger:
         self.travel = pd.Timedelta(minutes=settings.detect.oncall_travel_min)
         self.robot_pass = pd.Timedelta(minutes=settings.detect.robot_pass_min)
         self.free: dict[str, pd.Timestamp] = {}
+        self.offered: dict[str, pd.Timestamp] = {}
+        self.answered: dict[str, pd.Timestamp] = {}
 
     def cleaner(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
         """Return the earliest start and the cleaner on shift who is free first."""
@@ -418,8 +437,11 @@ def _turnaround_step(
             )
             ledger.book(begin, who, ledger.robot_pass)
         guest.planned = True
-    offer = guest.offered or d["alternative"]
+    ledger.answered[room] = s.time
+    free = [r for r in d["alternatives"] if ledger.offered.get(r, s.time) <= s.time]
+    offer = guest.offered or (free[0] if free else None)
     if offer and not guest.offered:
+        ledger.offered[offer] = d["departure"]
         chain.add(
             s,
             "reassign_room",
@@ -457,7 +479,12 @@ def _turnaround(episodes: list[Episode], settings: Settings) -> list[Decision]:
     )
     for _, eid, _, s in steps:
         if s.kind == "day_plan":
-            _day_plan(chains[eid], s, settings)
+            since = s.time - pd.Timedelta(hours=settings.detect.checkout_follow_h)
+            told = {r for r, t in ledger.answered.items() if t >= since}
+            _day_plan(chains[eid], s, settings, told)
+            continue
+        if s.kind == "ready":
+            _ready(chains[eid], s)
             continue
         guest = guests.setdefault((eid, s.data["booking"]), _Guest())
         _turnaround_step(chains[eid], guest, s, ledger, settings)
