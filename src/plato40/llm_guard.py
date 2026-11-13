@@ -96,11 +96,20 @@ def preconditions(task: Task) -> list[str]:
         json.dumps(task.facts, sort_keys=True)
     except TypeError as exc:
         errors.append(f"facts not JSON: {exc}")
-    if not ISO.match(task.known_by) or pd.Timestamp(task.known_by) > pd.Timestamp(task.t):
+    if not ISO.match(task.t):
+        errors.append(f"t {task.t!r} is not ISO 8601 UTC ending in Z")
+    elif not ISO.match(task.known_by) or pd.Timestamp(task.known_by) > pd.Timestamp(task.t):
         errors.append(f"facts known by {task.known_by}, after the decision time {task.t}")
+    unsaid = [k for k in task.must_say if k not in task.say]
+    if unsaid:
+        errors.append(f"must_say {unsaid} not in say")
     missing = [k for k in task.must_say if "{" + k + "}" not in task.template]
     if missing:
         errors.append(f"template lacks {missing}")
+    try:
+        task.template.format(**task.say)
+    except (KeyError, IndexError, ValueError) as exc:
+        errors.append(f"template does not format with say: {exc!r}")
     return errors
 
 
@@ -119,7 +128,8 @@ def postconditions(task: Task, raw: str) -> list[str]:
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_CHARS:
         return [*errors, f"text empty or over {MAX_CHARS} chars"]
     allowed_ids = set(task.say.values())
-    allowed_numbers = {_norm(n) for v in task.say.values() for n in NUMBER.findall(v)}
+    # Digits inside an ID (BK12, R108) do not license that number on its own ("12 Euro").
+    allowed_numbers = {_norm(n) for v in task.say.values() for n in NUMBER.findall(ID.sub(" ", v))}
     ids = ID.findall(text)
     numbers = NUMBER.findall(ID.sub(" ", text))
     errors += [f"invented number {n!r}" for n in numbers if _norm(n) not in allowed_numbers]

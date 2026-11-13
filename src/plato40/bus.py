@@ -169,8 +169,15 @@ def _ts(value: str) -> pd.Timestamp | None:
     return pd.Timestamp(value)
 
 
-def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
-    """Return contract violations of one bus row; empty if it conforms."""
+def _utc(value: Any) -> pd.Timestamp:
+    ts = pd.Timestamp(value)
+    return ts.tz_localize("UTC") if ts.tzinfo is None else ts
+
+
+def _shape(row: Any) -> list[str]:
+    """Return the field and type violations that make a row unsafe to read further."""
+    if not isinstance(row, Mapping):
+        return ["row is not a JSON object"]
     kind = row.get("row")
     if kind not in ROWS:
         return [f"row {kind!r} not in {ROWS}"]
@@ -179,10 +186,23 @@ def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
     errors += [f"unknown field {k}" for k in row if k not in need and k not in extra]
     errors += [f"{k} is set by the policy, not by a proposal" for k in POLICY_OWNED if k in row]
     for key, expected in (need | extra).items():
-        if key in row and not contract._type_ok(row[key], expected):
+        if key not in row:
+            continue
+        if not contract._type_ok(row[key], expected):
             errors.append(f"{key} is not {expected.__name__}")
+        elif expected is list and key != "claims" and not all(isinstance(x, str) for x in row[key]):
+            errors.append(f"{key} is not a list of strings")
+    if "v" in row and type(row["v"]) is not int:
+        errors.append("v is not int")
+    return errors
+
+
+def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
+    """Return contract violations of one bus row; empty if it conforms."""
+    errors = _shape(row)
     if errors:
         return errors
+    kind = row["row"]
     if row["v"] != VERSION:
         errors.append(f"v {row['v']} is not {VERSION}")
     lane = LANES.get(row["lane"])
@@ -219,10 +239,13 @@ def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
         errors.append("signal_ids is empty: a proposal answers at least one signal")
     if "resource_id" in row and row["resource_id"] not in asset_ids:
         errors.append(f"unknown resource_id {row['resource_id']!r}")
+    if "confidence" in row and not 0 <= row["confidence"] <= 1:
+        errors.append(f"confidence {row['confidence']!r} is not in [0, 1]")
     msg = row.get("message")
     if msg is not None:
-        if set(msg) != {"language", "text"} or msg["language"] not in LANGUAGES:
-            errors.append(f"message must be {{language in {LANGUAGES}, text}}")
+        text = msg.get("text") if set(msg) == {"language", "text"} else None
+        if msg.get("language") not in LANGUAGES or not isinstance(text, str) or not text.strip():
+            errors.append(f"message must be {{language in {LANGUAGES}, non-empty text}}")
         if row["action"] != "notify_guest":
             errors.append("message is only for notify_guest")
     elif row["action"] == "notify_guest":
@@ -230,23 +253,28 @@ def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
     for c in row.get("claims", []):
         if not isinstance(c, dict) or c.get("res") not in RESOURCES:
             errors.append(f"claim {c!r}: res not in {RESOURCES}")
-        elif _ts(c.get("from", "")) is None or not isinstance(c.get("min"), int):
-            errors.append(f"claim {c!r}: needs from (UTC Z) and min (int)")
+        elif _ts(c.get("from", "")) is None or type(c.get("min")) is not int or c["min"] <= 0:
+            errors.append(f"claim {c!r}: needs from (UTC Z) and min (positive int)")
     return errors
 
 
 def check_known_at(
     rows: list[Mapping[str, Any]], requests: Mapping[str, pd.Timestamp]
 ) -> list[str]:
-    """Return proposals citing a signal or guest request that was not known at their time."""
-    known = {r["id"]: _ts(r["t_known"]) for r in rows if r["row"] == "signal"}
+    """Return proposals citing a signal or guest request that was not known at their time.
+
+    Rows with a broken shape are skipped here; ``check_file`` reports them.
+    """
+    ok = [(n, r) for n, r in enumerate(rows, start=1) if not _shape(r)]
+    known = {r["id"]: _ts(r["t_known"]) for _, r in ok if r["row"] == "signal"}
+    asked = {g: _utc(t) for g, t in requests.items()}
     errors = []
-    for n, r in enumerate(rows, start=1):
+    for n, r in ok:
         t = _ts(r.get("t", ""))
         if r["row"] != "proposal" or t is None:  # a bad time is reported by check_row
             continue
         late = [s for s in r["signal_ids"] if (k := known.get(s)) is None or k > t]
-        late += [g for g in r.get("guest_request_ids", []) if g not in requests or requests[g] > t]
+        late += [g for g in r.get("guest_request_ids", []) if g not in asked or asked[g] > t]
         if late:
             errors.append(f"line {n}: {r['id']} cites {late} unknown or from after {r['t']}")
     return errors
@@ -257,9 +285,12 @@ def check_file(rows: list[Mapping[str, Any]], asset_ids: frozenset[str]) -> list
     errors, seen = [], set()
     for n, r in enumerate(rows, start=1):
         errors += [f"line {n}: {e}" for e in check_row(r, asset_ids)]
-        if r.get("id") in seen:
-            errors.append(f"line {n}: duplicate id {r['id']}")
-        seen.add(r.get("id"))
+        rid = r.get("id") if isinstance(r, Mapping) else None
+        if not isinstance(rid, str):
+            continue
+        if rid in seen:
+            errors.append(f"line {n}: duplicate id {rid}")
+        seen.add(rid)
     return errors
 
 
@@ -268,11 +299,11 @@ def read(path: Path, until: pd.Timestamp | None = None) -> list[dict[str, Any]]:
     rows = [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
     if until is None:
         return rows
-    out = []
+    out, until = [], _utc(until)
     for n, r in enumerate(rows, start=1):
-        t = _ts(r.get("t_known") or r.get("t", ""))
+        t = _ts(r.get("t_known") or r.get("t", "")) if isinstance(r, dict) else None
         if t is None:
-            raise ValueError(f"{path}:{n}: no valid t_known or t")
+            raise ValueError(f"{path}:{n}: not an object with a valid t_known or t")
         if t <= until:
             out.append(r)
     return out
