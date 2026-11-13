@@ -223,8 +223,14 @@ def phrase(task: Task, cache_dir: Path, call: Call | None = None, model: str = "
     return Result(json.loads(raw)["text"], source)
 
 
-def anthropic_call(model: str) -> Call:
-    """Return a ``Call`` on the Anthropic API, with the output forced through TOOL."""
+def anthropic_call(
+    model: str, tool: Any = TOOL, max_tokens: int = 400, forced: bool = True
+) -> Call:
+    """Return a ``Call`` on the Anthropic API, answering through ``tool``.
+
+    Some models refuse a forced tool choice; with ``forced=False`` the tool is offered and an
+    answer without it raises, so the caller falls back.
+    """
     import anthropic  # type: ignore[import-not-found,unused-ignore]  # optional; only with PLATO40_LLM=on
 
     client = anthropic.Anthropic()
@@ -232,10 +238,10 @@ def anthropic_call(model: str) -> Call:
     def call(system: str, user: str) -> str:
         msg = client.messages.create(
             model=model,
-            max_tokens=400,
+            max_tokens=max_tokens,
             system=system,
-            tools=[TOOL],
-            tool_choice={"type": "tool", "name": "message"},
+            tools=[tool],
+            tool_choice={"type": "tool", "name": tool["name"]} if forced else {"type": "auto"},
             messages=[{"role": "user", "content": user}],
         )
         block = next(b for b in msg.content if b.type == "tool_use")

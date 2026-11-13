@@ -59,6 +59,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip the closed-loop follow-up decisions (verify.py)",
     )
+    run.add_argument(
+        "--no-supervisor",
+        action="store_true",
+        help="skip the supervisor LLM review (supervise.py; needs --llm-cache)",
+    )
     arb = sub.add_parser("arbiter", help="merge lane proposals from bus files into decisions")
     arb.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     arb.add_argument("bus", type=Path, nargs="+", help="lane bus files (docs/BUS.md)")
@@ -115,6 +120,7 @@ def _run(
     llm_cache: Path | None,
     run_lanes: tuple[str, ...],
     follow_ups: bool,
+    supervisor: bool,
 ) -> int:
     ds = load_dataset(data_dir)
     settings = Settings(
@@ -123,6 +129,7 @@ def _run(
         llm_cache=llm_cache,
         lanes=run_lanes,
         follow_ups=follow_ups,
+        supervisor=supervisor,
     )
     result = pipeline.run(ds, settings)
     n = contract.write_decisions(result.decisions, out)
@@ -139,6 +146,22 @@ def _run(
         used = Counter(r.source for r in result.messages.values())
         why = Counter(e.split(" '")[0] for r in result.messages.values() for e in r.errors)
         print(f"guest messages: {dict(used)}; template because: {dict(why)}")
+    if result.reviews:
+        src = Counter(r["source"] for r in result.reviews)
+        added = sum(len(r.get("added", [])) for r in result.reviews)
+        bad = sum(1 for r in result.reviews if r["source"] != "none" and "why" in r)
+        print(
+            f"supervisor {len(result.reviews)} reviews {dict(src)}: {added} decisions added, "
+            f"{bad} answers rejected"
+        )
+        log = out.with_suffix(".supervisor.jsonl")
+        log.write_text(
+            "".join(
+                json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in result.reviews
+            ),
+            "utf-8",
+        )
+        print(f"wrote supervisor log to {log}")
     print(f"wrote {n} decisions to {out}")
     if trace_path is not None:
         trace.write(result, trace_path)
@@ -254,6 +277,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.llm_cache,
             tuple(lanes.registry()) if args.lanes is None else tuple(args.lanes),
             not args.no_follow_ups,
+            not args.no_supervisor,
         )
     if args.command == "arbiter":
         return _arbiter(

@@ -412,6 +412,7 @@ class Settings:
     llm_cache: Path | None = None
     lanes: tuple[str, ...] = ("s03",)
     follow_ups: bool = True
+    supervisor: bool = True
 
     @property
     def figures_dir(self) -> Path:

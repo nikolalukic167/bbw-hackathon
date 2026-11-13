@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from plato40 import contract, llm_guard, messages, plan, policy, verify
+from plato40 import contract, llm_guard, messages, plan, policy, supervise, verify
 from plato40.contract import Decision
 from plato40.detect import data_quality, heating, logistics, turnaround, water
 from plato40.episodes import Episode, Signal, group
@@ -62,6 +62,7 @@ class Run:
     violations: list[str] = field(default_factory=list)
     messages: dict[str, llm_guard.Result] = field(default_factory=dict)
     verdicts: list[dict[str, Any]] = field(default_factory=list)
+    reviews: list[dict[str, Any]] = field(default_factory=list)
 
 
 def run(ds: Dataset, settings: Settings) -> Run:
@@ -98,6 +99,8 @@ def run(ds: Dataset, settings: Settings) -> Run:
         result.decisions = sorted(
             result.decisions + more, key=lambda d: (d["timestamp_utc"], d["event_id"])
         )
+    if settings.supervisor and settings.llm_cache is not None:
+        _supervise(ds, settings, result)
     result.violations = check(ds, states, result.decisions)
     if result.violations:
         raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(result.violations))
@@ -153,3 +156,21 @@ def _lanes(ds: Dataset, settings: Settings, result: Run) -> None:
     kept = {d["event_id"] for d in decisions}
     result.rules = {k: v for k, v in result.rules.items() if k in kept}
     result.rules |= {v["event_id"]: v["why"] for v in verdicts if v["accepted"]}
+
+
+def _supervise(ds: Dataset, settings: Settings, result: Run) -> None:
+    """Add the supervisor's checked decisions (supervise.py) to ``result``."""
+    assert settings.llm_cache is not None
+    call = None
+    if os.environ.get("PLATO40_LLM") == "on":
+        model = os.environ.get("PLATO40_SUPERVISOR_MODEL", supervise.DEFAULT_MODEL)
+        call = llm_guard.anthropic_call(model, supervise.TOOL, max_tokens=1500, forced=False)
+    from plato40.context import Snapshots
+
+    more, rules, result.reviews = supervise.review(
+        ds, settings, result.decisions, settings.llm_cache, call, Snapshots(ds, settings).at
+    )
+    result.rules |= rules
+    result.decisions = sorted(
+        result.decisions + more, key=lambda d: (d["timestamp_utc"], d["event_id"])
+    )
