@@ -72,6 +72,29 @@ class AuditThresholds:
 
 
 @dataclass(frozen=True)
+class DetectorSettings:
+    """Detector thresholds. Starting values come from the audit (sections 5, 6, 8)."""
+
+    leak_floor_l_per_15min: float = 0.5
+    """A night whose every 15-min room volume (L) is at least this has continuous flow."""
+
+    leak_persist_nights: int = 2
+    """Consecutive continuous-flow nights (count) before a slow leak is acted on."""
+
+    leak_technician_nights: int = 3
+    """Consecutive continuous-flow nights (count) before a technician is requested."""
+
+    burst_night_volume_l: float = 300.0
+    """Night-window volume (L) in one room that is a burst."""
+
+    gap_night_l_per_h: float = 10.0
+    """Median night gap main minus rooms (L/h) above which a pipe leak is suspected."""
+
+    episode_quiet_h: float = 48.0
+    """Hours without a new signal after which an episode is closed."""
+
+
+@dataclass(frozen=True)
 class Settings:
     """Run configuration. Construct it from the CLI; there are no path defaults."""
 
@@ -81,6 +104,7 @@ class Settings:
     interval_minutes: int = 15
     night: NightWindow = field(default_factory=NightWindow)
     thresholds: AuditThresholds = field(default_factory=AuditThresholds)
+    detect: DetectorSettings = field(default_factory=DetectorSettings)
     figure_dpi: int = 110
 
     @property
