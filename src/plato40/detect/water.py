@@ -26,18 +26,25 @@ from plato40.settings import Settings
 ISSUE = "water_leak"
 
 
+def _volumes(wide: pd.DataFrame, ds: Dataset, settings: Settings) -> pd.DataFrame:
+    """Return litres per interval on the full grid from cumulative readings (L).
+
+    Readings go on the grid before differencing, so an absent row is missing rather than
+    folded into the next interval. A meter reset is missing.
+    """
+    on_grid = wide.reindex(grid(ds, settings))
+    return derive.meter_deltas(on_grid, settings.detect.meter_reset_drop_l).deltas
+
+
 def room_volumes(ds: Dataset, settings: Settings) -> pd.DataFrame:
     """Return room water volumes (L per interval) on the full grid; resets are missing."""
-    wide = derive.room_water_wide(ds)
-    deltas = derive.meter_deltas(wide, settings.detect.meter_reset_drop_l).deltas
-    return deltas.reindex(grid(ds, settings))
+    return _volumes(derive.room_water_wide(ds), ds, settings)
 
 
 def _gap(ds: Dataset, settings: Settings, rooms: pd.DataFrame) -> pd.Series:
     """Return main meter volume minus all room volumes; missing if any meter is missing."""
-    main = derive.main_water_series(ds).to_frame("WM_MAIN")
-    deltas = derive.meter_deltas(main, settings.detect.meter_reset_drop_l).deltas["WM_MAIN"]
-    return deltas.reindex(rooms.index) - rooms.sum(axis=1, min_count=rooms.shape[1])
+    main = _volumes(derive.main_water_series(ds).to_frame("WM_MAIN"), ds, settings)
+    return main["WM_MAIN"] - rooms.sum(axis=1, min_count=rooms.shape[1])
 
 
 def _continuous(series: pd.Series, settings: Settings) -> tuple[bool, str]:
