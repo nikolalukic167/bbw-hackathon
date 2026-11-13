@@ -67,11 +67,11 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T5 | Signals located: COP vs outdoor (dev Theil-Sen curve), comfort deficit, lockouts | D | done | Detection 10 |
-| T5 | Detector: COP against a fixed reference curve, never refit on the judged window (implication 4) | D | todo | Detection 10 |
-| T5 | Comfort deficit: occupied, window closed, >= 1.5 K below setpoint (implication 5) | D | todo | Robustness 7 |
-| T5 | Forecast cold snap and price peaks joined by `issued_utc` / `published_utc` | D | todo | Trade-offs 6 |
-| T8 | Actions: pre-heat within band, vacant setback, `dispatch_technician` HP1 (approval), `notify_guest` | A | todo | Trade-offs 6 |
-| T7 | Rule: comfort band never breached for an energy metric | A | todo | Safe autonomy 10 |
+| T5 | Detector: hourly 24 h COP vs fixed dev reference, ratio < 0.88; 46-52 h before each HP1 work order | D | done | Detection 10 |
+| T5 | Comfort deficit as second signal inside HP1 episodes only (May/Aug/Sep deficits raise nothing, Q6) | D | done | Robustness 7 |
+| T5 | Forecast cold snap and price peaks joined by `issued_utc` / `published_utc` | D | done | Trade-offs 6 |
+| T8 | Actions: flag, technician or contractor (approval), comfort-first energy plan, guest notices <= 1 per 12 h | A | done | Trade-offs 6 |
+| T7 | Rule: comfort band never breached for an energy metric (needs the daily energy plan) | A | todo | Safe autonomy 10 |
 
 ## Level 2: act autonomously (advanced)
 
@@ -105,6 +105,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 |---|---|---|---|---|
 | T11 | Floor-plan twin (4 x 10 rooms) with time scrubber, reading `decisions.jsonl` | F | todo | Demo 8 |
 | T11 | Decision feed with autonomy badge, evidence on click, approval queue | F | todo | Trail 7 |
+| T11 | Run summary, `--trace` and `plato40 explain` (terminal trail; HTML timeline reads the trace) | D | done | Trail 7 |
 | T15 | 3-minute video, end to end | S/F | todo | Demo 8 |
 | T15 | Written submission text and form | S | todo | all |
 | T15 | Repo moved to the Proximata organisation and made public (needs the go) | S | todo | all |

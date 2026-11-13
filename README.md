@@ -40,6 +40,9 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 ## Run
 
 ```bash
+uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
+uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
+uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
