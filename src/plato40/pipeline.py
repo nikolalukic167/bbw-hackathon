@@ -6,10 +6,11 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from plato40 import contract, plan, policy
+from plato40 import contract, messages, plan, policy
 from plato40.contract import Decision
 from plato40.detect import data_quality, heating, logistics, turnaround, water
 from plato40.episodes import Episode, Signal, group
+from plato40.llm_guard import Result
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -58,6 +59,7 @@ class Run:
     decisions: list[Decision]
     rules: dict[str, str] = field(default_factory=dict)
     violations: list[str] = field(default_factory=list)
+    messages: dict[str, Result] = field(default_factory=dict)
 
 
 def run(ds: Dataset, settings: Settings) -> Run:
@@ -75,6 +77,8 @@ def run(ds: Dataset, settings: Settings) -> Run:
     decisions = plan.decisions(episodes, states, settings)
     decisions.sort(key=lambda d: (d["timestamp_utc"], d["event_id"]))
     result = Run(signals, episodes, decisions)
+    if settings.llm_cache is not None:
+        result.messages = messages.localise(decisions, settings.llm_cache)
     for d in decisions:
         ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
         result.rules[d["event_id"]] = policy.apply(d, ctx)

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -29,6 +30,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     run.add_argument("--out", type=Path, required=True, help="decisions.jsonl to write")
     run.add_argument("--trace", type=Path, help="also write the run trace (for explain)")
+    run.add_argument(
+        "--llm-cache",
+        type=Path,
+        help="phrase guest messages in the guest's language from this cache; "
+        "PLATO40_LLM=on also calls the model on a cache miss",
+    )
     val = sub.add_parser("validate", help="check a decisions file against contract and policy")
     val.add_argument("decisions", type=Path, help="decisions.jsonl to check")
     val.add_argument("data_dir", type=Path, help="the dataset the decisions were made on")
@@ -49,11 +56,16 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _run(data_dir: Path, out: Path, trace_path: Path | None) -> int:
+def _run(data_dir: Path, out: Path, trace_path: Path | None, llm_cache: Path | None) -> int:
     ds = load_dataset(data_dir)
-    result = pipeline.run(ds, Settings(data_root=data_dir, out_dir=out.parent))
+    settings = Settings(data_root=data_dir, out_dir=out.parent, llm_cache=llm_cache)
+    result = pipeline.run(ds, settings)
     n = contract.write_decisions(result.decisions, out)
     print(trace.summary(ds, result))
+    if llm_cache is not None:
+        used = Counter(r.source for r in result.messages.values())
+        why = Counter(e.split(" '")[0] for r in result.messages.values() for e in r.errors)
+        print(f"guest messages: {dict(used)}; template because: {dict(why)}")
     print(f"wrote {n} decisions to {out}")
     if trace_path is not None:
         trace.write(result, trace_path)
@@ -89,7 +101,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI and return a process exit code."""
     args = _parser().parse_args(argv)
     if args.command == "run":
-        return _run(args.data_dir, args.out, args.trace)
+        return _run(args.data_dir, args.out, args.trace, args.llm_cache)
     if args.command == "explain":
         print(trace.explain(args.trace, args.episode))
         return 0

@@ -123,8 +123,8 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
   - every `must_say` value appears;
   - at most 400 characters;
   - no banned claims (`guarantee`, `confirmed`, `kostenlos`, …).
-- **Call:** temperature 0, with output forced through one tool, so the reply is JSON.
-  Temperature 0 does **not** make two calls identical, so determinism comes from the **cache**:
+- **Call:** output forced through one tool, so the reply is JSON. The API takes no
+  temperature for these models and two calls can differ, so determinism comes from the **cache**:
   - only an answer that passes is cached, keyed by sha256(model + prompt version + full task);
   - a rejected answer goes to `rejected/` for the trace and is never reused;
   - the default is `PLATO40_LLM=off`: nothing is called, and a cache miss uses the template.

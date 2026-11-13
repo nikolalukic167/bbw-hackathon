@@ -12,7 +12,7 @@ chooses the words around them.
 - On any postcondition failure the template text is used and the failure is returned for
   the trace. A failed precondition raises: it is a bug in the caller, not in the LLM.
 
-Determinism: temperature 0 lowers variance but does not guarantee identical text, so every
+Determinism: the API takes no temperature for these models and two calls can differ, so every
 checked output is cached under a hash of model, prompt version and the full input. A run
 reads the cache first. With ``PLATO40_LLM=off`` (the default) nothing is called and a cache
 miss falls back to the template, so a run never needs the network.
@@ -33,7 +33,8 @@ import pandas as pd
 
 from plato40.bus import LANGUAGES
 
-PROMPT_VERSION = "guest_message/1"
+PROMPT_VERSION = "guest_message/2"
+DEFAULT_MODEL = "claude-haiku-5-5"
 MAX_CHARS = 400
 NUMBER = re.compile(r"\d+(?:[:.,]\d+)*")
 ID = re.compile(r"\b(?:R\d{3}|BK\d+|GR\d+|WO\d+|EP-\S+|[A-Z]+_\d+)\b")
@@ -42,10 +43,11 @@ BANNED = ("guarantee", "garantiert", "confirmed", "bestätigt", "free of charge"
 SYSTEM = (
     "You write one short message to a hotel guest in the language given. Use only the facts "
     "given. Copy every time, date, room number and ID exactly as it appears in SAY; write no "
-    "other number, time, price, ID or promise. An offer pending approval is not confirmed. "
+    "other number, time, price, ID or promise. Never use the words guarantee or confirmed, "
+    "in any language: an offer pending approval is only offered. "
     "Answer with the message tool."
 )
-TOOL = {
+TOOL: Any = {
     "name": "message",
     "description": "The guest message.",
     "input_schema": {
@@ -164,7 +166,7 @@ def phrase(task: Task, cache_dir: Path, call: Call | None = None, model: str = "
     if errors:
         raise ValueError(f"LLM task precondition: {errors}")
     fallback = task.template.format(**task.say)
-    model = model or os.environ.get("PLATO40_LLM_MODEL", "claude-haiku-4-5-20251001")
+    model = model or os.environ.get("PLATO40_LLM_MODEL", DEFAULT_MODEL)
     path = cache_dir / f"{cache_key(task, model)}.json"
     if path.exists():
         raw, source = json.loads(path.read_text("utf-8"))["answer"], "cache"
@@ -196,8 +198,8 @@ def phrase(task: Task, cache_dir: Path, call: Call | None = None, model: str = "
 
 
 def anthropic_call(model: str) -> Call:
-    """Return a ``Call`` on the Anthropic API: temperature 0, output forced through TOOL."""
-    import anthropic  # type: ignore[import-not-found]  # optional; only with PLATO40_LLM=on
+    """Return a ``Call`` on the Anthropic API, with the output forced through TOOL."""
+    import anthropic  # type: ignore[import-not-found,unused-ignore]  # optional; only with PLATO40_LLM=on
 
     client = anthropic.Anthropic()
 
@@ -205,7 +207,6 @@ def anthropic_call(model: str) -> Call:
         msg = client.messages.create(
             model=model,
             max_tokens=400,
-            temperature=0,
             system=system,
             tools=[TOOL],
             tool_choice={"type": "tool", "name": "message"},

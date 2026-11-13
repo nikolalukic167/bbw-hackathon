@@ -17,6 +17,11 @@ dependencies = [
 [project.scripts]
 plato40 = "plato40.cli:main"
 
+[project.optional-dependencies]
+llm = [
+    "anthropic>=2.8.0",
+]
+
 [dependency-groups]
 dev = [
     "mypy>=1.13",

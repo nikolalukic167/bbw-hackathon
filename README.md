@@ -53,6 +53,19 @@ make check                    # ruff, mypy --strict
 The data path is always an argument; nothing in the code assumes a location. `DATA` may
 be one dataset directory or a directory that contains several.
 
+Guest messages in the guest's language (optional; without `--llm-cache` the run never
+touches an LLM). The model only rewords and translates; every room, time and ID stays as
+the rules wrote it, and any answer that breaks that keeps the rules' text
+(`src/plato40/llm_guard.py`, `docs/BUS.md`):
+
+```bash
+uv sync --extra llm                                   # installs anthropic
+export ANTHROPIC_API_KEY=...                          # or keep it in .env (gitignored)
+PLATO40_LLM=on uv run plato40 run <data_dir> --out decisions.jsonl --llm-cache <cache_dir>
+uv run plato40 run <data_dir> --out again.jsonl --llm-cache <cache_dir>   # from cache only
+cmp decisions.jsonl again.jsonl                       # byte-identical
+```
+
 ## Architecture
 
 ```
@@ -69,6 +82,8 @@ src/plato40/
   policy.py       autonomy levels, approval and consent flags, forbidden actions
   contract.py     decision contract checks and JSONL I/O
   pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
+  bus.py          trigger bus contract (docs/BUS.md)
+  llm_guard.py    contract around every LLM call; messages.py phrases guest messages
   trace.py        run summary, trace file and explain
   ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py
