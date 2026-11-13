@@ -1,0 +1,89 @@
+"""One typed settings object for the whole package.
+
+Every tunable number used by the audit lives here, with its unit. Paths are never
+defaults: the data directory and the output directory always come from the CLI.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class NightWindow:
+    """Local-time window used for minimum-night-flow analysis.
+
+    Hours are Europe/Vienna wall-clock hours, start inclusive, end exclusive.
+    """
+
+    start_hour: int = 1
+    end_hour: int = 5
+
+
+@dataclass(frozen=True)
+class AuditThresholds:
+    """Thresholds that turn raw signals into audit candidates.
+
+    These are exploratory screening values, not detector thresholds.
+    """
+
+    night_floor_l_per_15min: float = 0.5
+    """Minimum 15-minute room meter delta (L) in every night interval to call a night "floored"."""
+
+    night_floor_min_nights: int = 2
+    """Consecutive floored nights (count) before a room becomes a persistent-flow candidate."""
+
+    burst_night_volume_l: float = 300.0
+    """Night-window volume (L) in one room in one night that marks a loud-leak candidate."""
+
+    gap_night_l_per_h: float = 10.0
+    """Median night gap main minus rooms (L/h) that marks a gap-leak candidate night."""
+
+    meter_reset_drop_l: float = 1000.0
+    """A cumulative meter drop larger than this (L) is a reset, smaller drops are jitter."""
+
+    cop_drop_fraction: float = 0.15
+    """Daily heat pump COP below (1 - this) times the outdoor-temperature fit marks a candidate."""
+
+    occupied_cold_room_hours: float = 10.0
+    """Occupied room-hours (h) below the comfort band in one local day that mark a candidate."""
+
+    filter_dp_alarm_pa: float = 250.0
+    """AHU1 filter differential pressure (Pa) treated as high; below the lowest raised BMS value."""
+
+    comfort_low_c: float = 20.0
+    """Lower bound of the occupied comfort band (degC), from building.json constraints."""
+
+    overheat_c: float = 26.0
+    """Occupied room temperature (degC) above which a room-hour counts as overheated."""
+
+    comfort_deficit_k: float = 1.5
+    """Shortfall below the active setpoint (K) required for an occupied comfort deficit."""
+
+    waste_full_pct: float = 100.0
+    """Fill level (%) at which the logged value is capped, so the container may overflow."""
+
+    occupancy_surge_fraction: float = 0.9
+    """Share of rooms occupied (fraction) that marks a high-occupancy night."""
+
+    alarm_match_window_h: float = 24.0
+    """Window (h) before a BMS alarm in which a matching telemetry change is searched."""
+
+
+@dataclass(frozen=True)
+class Settings:
+    """Run configuration. Construct it from the CLI; there are no path defaults."""
+
+    data_root: Path
+    out_dir: Path
+    local_tz: str = "Europe/Vienna"
+    interval_minutes: int = 15
+    night: NightWindow = field(default_factory=NightWindow)
+    thresholds: AuditThresholds = field(default_factory=AuditThresholds)
+    figure_dpi: int = 110
+
+    @property
+    def figures_dir(self) -> Path:
+        """Directory for generated figures, inside the output directory."""
+        return self.out_dir / "figures"
