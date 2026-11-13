@@ -99,6 +99,18 @@ class DetectorSettings:
     oncall_travel_min: float = 45.0
     """Minutes until the on-call housekeeper is on site (building.json staff notes)."""
 
+    cop_ref_intercept: float = 2.78
+    """Reference HP1 COP (-) at 0 degC: Theil-Sen fit on the dev year (audit section 8)."""
+
+    cop_ref_slope: float = 0.068
+    """Reference HP1 COP gain per degC outdoor (1/K), same fit."""
+
+    cop_ratio_low: float = 0.88
+    """24 h COP over reference below this is degradation; normal hours stay above 0.95."""
+
+    cop_min_coverage: float = 0.8
+    """Share of a 24 h window's intervals with heat and electricity needed for a verdict."""
+
 
 @dataclass(frozen=True)
 class Settings:

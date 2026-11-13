@@ -8,6 +8,8 @@ Water leak (main-minus-rooms gap): flag, then technician, on the same night coun
 Turnaround: prioritise the cleaning (and a robot pass) once the room is vacant, call the
 on-call housekeeper only when no cleaner is on shift, offer a ready room (approval), and
 tell the guest a realistic time.
+Heating: flag, technician (or contractor if none within 24 h), a comfort-first energy plan,
+and at most one notice per 12 h to occupied rooms newly in comfort deficit.
 Data quality: one flag per outage episode.
 """
 
@@ -24,6 +26,7 @@ from plato40.settings import Settings
 from plato40.state import RoomStates
 
 NEXT_NIGHT = pd.Timedelta(hours=26)
+NOTICE_GAP = pd.Timedelta(hours=12)
 WHAT = {
     "night_flow": "continuous night flow",
     "burst": "burst volume in one night",
@@ -228,6 +231,83 @@ def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
     return chain.out
 
 
+def _heating(ep: Episode, settings: Settings) -> list[Decision]:
+    chain = _Chain(ep)
+    s = ep.signals[0]
+    d = s.data
+    chain.add(
+        s,
+        "flag_anomaly",
+        "high",
+        f"Heat pump degradation: {s.detail}.",
+        expected_outcome="Operations see the degraded heat pump; no physical effect.",
+        verification_plan="24 h COP back above the reference ratio after service.",
+        confidence=0.8,
+    )
+    when = d["technician_from"]
+    if when is not None and when - s.time <= pd.Timedelta(hours=24):
+        chain.add(
+            s,
+            "dispatch_technician",
+            "high",
+            f"Service HP1 (COP {d['ratio']:.2f} of reference); technician on shift "
+            f"{'now' if d['technician'] else 'from ' + _local(when, settings)}.",
+            **({"resource_id": d["technician"]} if d["technician"] else {}),
+            expected_outcome="Technician finds and fixes the fault (simulated).",
+            verification_plan="24 h COP ratio recovers; escalate to a contractor if not.",
+            confidence=0.8,
+        )
+    else:
+        chain.add(
+            s,
+            "order_service",
+            "high",
+            "Service HP1 by a contractor: no technician on shift within 24 h.",
+            expected_outcome="Contractor fixes the fault (simulated).",
+            verification_plan="24 h COP ratio recovers after the visit.",
+            confidence=0.7,
+        )
+    lo, hi = d["band"]
+    cold = (
+        f"coldest forecast hour {d['cold'][0]:.1f} degC at {_local(d['cold'][1], settings)}"
+        if d["cold"]
+        else "no forecast known"
+    )
+    peaks = ", ".join(d["peaks"]) or "unknown"
+    chain.add(
+        s,
+        "optimize_energy",
+        "high",
+        f"Protect occupied rooms with reduced heat: hold vacant rooms at setback, pre-heat "
+        f"occupied rooms within {lo}-{hi} degC before the {cold}; avoid price peaks "
+        f"({peaks} local) only where comfort holds. Comfort before cost.",
+        assets=["HP1", "BUILDING"],
+        expected_outcome="Occupied rooms stay in the comfort band (simulated).",
+        verification_plan=f"Occupied rooms at or above {lo} degC; escalate rooms that fall below.",
+        confidence=0.6,
+    )
+    told: set[str] = set()
+    last: pd.Timestamp | None = None
+    for s in ep.signals:
+        new = [r for r in s.data["cold_rooms"] if r not in told]
+        if not new or (last is not None and s.time - last < NOTICE_GAP):
+            continue
+        last = s.time
+        chain.add(
+            s,
+            "notify_guest",
+            "high",
+            f"Tell guests in {', '.join(new)} that heating is reduced and a repair is "
+            "requested (proposed message; delivery not confirmed).",
+            assets=new,
+            expected_outcome="Guests know the cause and that help is coming.",
+            verification_plan="No temperature_cold request from these rooms; escalate on one.",
+            confidence=0.7,
+        )
+        told.update(new)
+    return chain.out
+
+
 def _data_quality(ep: Episode) -> list[Decision]:
     chain = _Chain(ep)
     chain.add(
@@ -248,6 +328,8 @@ def decisions(ep: Episode, states: RoomStates, settings: Settings) -> list[Decis
         return _water(ep, states, settings)
     if ep.issue_type == "room_turnaround":
         return _turnaround(ep, settings)
+    if ep.issue_type == "heating_comfort":
+        return _heating(ep, settings)
     if ep.issue_type == "data_quality":
         return _data_quality(ep)
     raise ValueError(f"no plan for issue_type {ep.issue_type!r}")
