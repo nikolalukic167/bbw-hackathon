@@ -98,13 +98,11 @@ class DetectorSettings:
 
     burst_flow_l_per_15min: float = 10.0
     """Room volume (L per 15 min) that, held over ``burst_flow_intervals``, is a burst at any
-    hour; the highest 2 h sustained room flow without a leak is 2.8 L (dev)."""
+    hour; the highest sustained room flow without a leak is 2.8 L per 15 min (dev)."""
 
-    burst_flow_intervals: int = 8
-    """Consecutive intervals (count) at ``burst_flow_l_per_15min`` or more for a burst."""
-
-    next_night_h: float = 26.0
-    """Hours between two night verdicts still counted as consecutive nights (DST nights)."""
+    burst_flow_intervals: int = 12
+    """Consecutive intervals (count) at ``burst_flow_l_per_15min`` or more for a burst; heavy
+    guest use held at most 6 (dev), bursts run 20 h or more, so 3 h costs ~1 h of lead."""
 
     meter_reset_drop_l: float = 1000.0
     """A meter drop larger than this (L) is a reset or exchange; the interval is missing."""

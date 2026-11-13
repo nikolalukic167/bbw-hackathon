@@ -131,11 +131,8 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     th = settings.detect
     chain = _Chain(ep)
     in_room = ep.assets[0] in states.rooms
-    flagged = technician = False
+    flagged = technician = burst = False
     asked: Stay = None
-    nights = 0
-    prev: pd.Timestamp | None = None
-    next_night = pd.Timedelta(hours=th.next_night_h)
     verify = (
         VERIFY_LEAK
         if in_room
@@ -143,16 +140,19 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
         "repair (the main meter also feeds common areas); escalate if it stays above another night."
     )
     for s in ep.signals:
+        if s.kind == "night_blank":
+            continue
         what = WHAT[s.kind]
         if s.kind in ("burst", "burst_flow"):
-            if technician:
+            if burst:
                 continue
-            if not flagged:
+            if not flagged or technician:
+                escalate = " (escalated: a technician is already on the slow leak)" * technician
                 chain.add(
                     s,
                     "flag_anomaly",
                     "critical",
-                    f"{what}: {s.detail}.",
+                    f"{what}{escalate}: {s.detail}.",
                     expected_outcome="Operations see the suspected burst; no physical effect.",
                     verification_plan=VERIFY_LEAK,
                     confidence=0.8,
@@ -178,10 +178,9 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 verification_plan=VERIFY_LEAK,
                 confidence=0.8,
             )
-            flagged = technician = True
+            flagged = technician = burst = True
             continue
-        nights = nights + 1 if prev is not None and s.time - prev <= next_night else 1
-        prev = s.time
+        nights = int(s.data["streak"])
         conf = 0.7 if in_room else 0.6
         if nights >= th.leak_persist_nights and not flagged:
             chain.add(

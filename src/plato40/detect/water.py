@@ -12,6 +12,10 @@
   from the interval where the running total crosses it, so it fires during the night.
 - ``burst_flow``: a room draws at least ``burst_flow_l_per_15min`` in each of
   ``burst_flow_intervals`` consecutive intervals, at any hour.
+- Night runs: each ``night_flow`` and ``night_gap`` signal carries ``streak``, the run of
+  leak nights so far. A night without a verdict (blank intervals, low gap coverage) neither
+  counts nor breaks the run; while a run is open it emits ``night_blank`` so the episode
+  stays one incident.
 - ``night_gap``: median of main meter minus room meters reaches ``gap_night_l_per_h``;
   points at pipes outside the rooms. Needs the gap on ``gap_min_coverage`` of the night.
 """
@@ -97,13 +101,40 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     inside = night.notna().to_numpy()
     per_hour = 60 / settings.interval_minutes
     out: list[Signal] = []
+    streak: dict[str, int] = {}
+
+    def verdict(asset: str, blank: bool, leaking: bool) -> int | None:
+        """Update the asset's run of leak nights; a night without a verdict keeps it."""
+        if blank:
+            return None
+        streak[asset] = streak.get(asset, 0) + 1 if leaking else 0
+        return streak[asset]
+
+    def held(asset: str, t: pd.Timestamp, ref: tuple[str, ...], why: str) -> None:
+        if streak.get(asset, 0):
+            out.append(
+                Signal(
+                    t,
+                    ISSUE,
+                    "night_blank",
+                    (asset,),
+                    ref,
+                    f"no verdict ({why}); run of {streak[asset]} leak nights kept",
+                    {"streak": streak[asset]},
+                )
+            )
+
     for _, block in rooms.loc[inside].groupby(night[inside].to_numpy(), sort=True):
         first, last = block.index[0], block.index[-1]
         for room in block.columns:
             series = block[room]
             ref = (f"room_water.csv:{room}:{stamp(first)}..{stamp(last)}",)
+            blank = bool(series.isna().any())
             flowing, how = _continuous(series, settings)
-            if flowing:
+            n = verdict(room, blank, flowing)
+            if blank:
+                held(room, last, ref, f"{int(series.isna().sum())} blank intervals")
+            elif flowing:
                 out.append(
                     Signal(
                         last,
@@ -112,6 +143,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         (room,),
                         ref,
                         f"flow in all {len(series)} night intervals, {how}",
+                        {"streak": n},
                     )
                 )
             running = series.cumsum()
@@ -130,22 +162,26 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                     )
                 )
         g = gap.loc[block.index]
-        if (
-            g.notna().mean() >= th.gap_min_coverage
-            and g.median() * per_hour >= th.gap_night_l_per_h
-        ):
+        refs = (
+            f"water_main.csv:WM_MAIN:{stamp(first)}..{stamp(last)}",
+            f"room_water.csv:all rooms:{stamp(first)}..{stamp(last)}",
+        )
+        blank = bool(g.notna().mean() < th.gap_min_coverage)
+        high = bool(g.median() * per_hour >= th.gap_night_l_per_h)
+        n = verdict("WM_MAIN", blank, high)
+        if blank:
+            held("WM_MAIN", last, refs, f"gap on {int(g.notna().sum())} of {len(g)} intervals")
+        elif high:
             out.append(
                 Signal(
                     last,
                     ISSUE,
                     "night_gap",
                     ("WM_MAIN",),
-                    (
-                        f"water_main.csv:WM_MAIN:{stamp(first)}..{stamp(last)}",
-                        f"room_water.csv:all rooms:{stamp(first)}..{stamp(last)}",
-                    ),
+                    refs,
                     f"median night gap main minus rooms {g.median() * per_hour:.1f} L/h over "
                     f"{int(g.notna().sum())} of {len(g)} intervals",
+                    {"streak": n},
                 )
             )
     return out + _burst_flow(rooms, settings)
