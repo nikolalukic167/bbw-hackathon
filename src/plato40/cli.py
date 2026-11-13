@@ -12,13 +12,11 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-import pandas as pd
-
-from plato40 import contract, policy, state
+from plato40 import contract, pipeline
 from plato40.audit import report
-from plato40.audit.derive import stays
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
+from plato40.state import RoomStates
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -43,8 +41,9 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _run(data_dir: Path, out: Path) -> int:
-    load_dataset(data_dir)
-    n = contract.write_decisions([], out)
+    ds = load_dataset(data_dir)
+    decisions = pipeline.run(ds, Settings(data_root=data_dir, out_dir=out.parent))
+    n = contract.write_decisions(decisions, out)
     print(f"wrote {n} decisions to {out}")
     return 0
 
@@ -52,13 +51,7 @@ def _run(data_dir: Path, out: Path) -> int:
 def _validate(path: Path, data_dir: Path) -> int:
     ds = load_dataset(data_dir)
     decisions = contract.read_decisions(path)
-    errors = contract.check_file(decisions, contract.known_asset_ids(ds.building))
-    if not errors:
-        st = stays(ds)
-        for n, d in enumerate(decisions, start=1):
-            t = pd.Timestamp(d["timestamp_utc"])
-            ctx = policy.Context.from_building(ds.building, state.occupied_rooms(st, t))
-            errors += [f"line {n}: {e}" for e in policy.violations(d, ctx)]
+    errors = pipeline.check(ds, RoomStates(ds), decisions)
     for e in errors:
         print(e, file=sys.stderr)
     print(f"{len(decisions)} decisions, {len(errors)} violations")
