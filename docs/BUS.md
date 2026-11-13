@@ -38,11 +38,19 @@ LLM advisor ─┘  proposal (source=llm)         │ ledger grants claims (clea
 | row | written by | required | optional |
 |---|---|---|---|
 | `signal` | trigger | `v lane id row t_known issue_type kind assets evidence detail facts` | `cause` |
-| `proposal` | trigger or LLM | `v lane id row t source episode_id signal_ids intent action assets priority evidence reason` | `resource_id guest_request_ids message claims cause confidence expected_outcome verification_plan` |
+| `proposal` | trigger or LLM | `v lane id row t source episode_id signal_ids intent action assets priority evidence reason` | `resource_id guest_request_ids message claims needs cause confidence expected_outcome verification_plan` |
 | `verdict` | arbiter only | `v lane id row t proposal_id accepted why` | `event_id` (when accepted) |
 
 `source` is `rules` or `llm`. `claims` is a list of `{res, id, from, min}` with `res` in
 `cleaner robot technician on_call room`: what the proposal needs from the shared ledger.
+A claim may not start before the proposal's `t`. A staffed action (`schedule_cleaning`,
+`dispatch_robot`, `dispatch_technician`) with a `resource_id` but no claim on it still holds
+that resource from `t` for the settings' duration. `needs` lists proposal IDs this one depends
+on (a promised ready time needs its cleaning): if any of them was not accepted before it, it
+is rejected too. A `message` is checked like an LLM answer against the proposal's own
+`reason`: every number, date and ID in it must appear in the reason, no banned claim, an
+"expected" in the reason keeps a hedge word, and the language must match every guest
+request in `guest_request_ids`.
 The arbiter grants claims in this order: safety, then a waiting guest, then a deadline, then
 comfort, then logistics. A claim that does not fit is a rejected verdict, with `why`.
 

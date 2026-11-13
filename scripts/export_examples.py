@@ -103,7 +103,8 @@ def message(d: dict[str, Any], lang_default: str) -> dict[str, str]:
     )
     if m:
         return {"language": m[1], "text": m[2]}
-    return {"language": lang_default, "text": d["reason"]}
+    text = d["reason"].removesuffix(" (proposed message; delivery not confirmed).")
+    return {"language": lang_default, "text": text.removesuffix(".") + "."}
 
 
 def main(data: Path, out: Path) -> None:

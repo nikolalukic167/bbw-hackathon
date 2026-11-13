@@ -7,19 +7,22 @@ built from it breaks the decision contract. An accepted proposal is copied uncha
 decision (``event_id`` = proposal id); the policy then sets autonomy and the approval flags.
 
 The shared ledger starts with the pipeline's own staffed decisions, each held for its
-setting's duration from its timestamp. For a lane listed in ``replace``, the pipeline's
+setting's duration from its timestamp. For a lane listed in ``lanes``, the pipeline's
 decisions of that issue type are dropped, so the lane's proposals stand in for them.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from dataclasses import replace
+from json import dumps
 from typing import Any
 
 import pandas as pd
 
-from plato40 import bus, contract, pipeline, policy
+from plato40 import bus, contract, llm_guard, messages, pipeline, policy
 from plato40.contract import Decision
+from plato40.detect.grid import stamp
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -63,6 +66,56 @@ def _held_for(d: Mapping[str, Any], settings: Settings) -> pd.Timedelta | None:
     return pd.Timedelta(minutes=minutes)
 
 
+def _claims(
+    p: Mapping[str, Any], settings: Settings
+) -> list[tuple[str, pd.Timestamp, pd.Timestamp]]:
+    """Return what a proposal holds: its claims, plus its own staffed resource if unclaimed.
+
+    A staffed action naming ``resource_id`` without a claim on it still holds that resource
+    for the setting's duration from ``t``, so leaving out the claim cannot double-book.
+    """
+    out = [
+        (c["id"], pd.Timestamp(c["from"]), pd.Timestamp(c["from"]) + pd.Timedelta(minutes=c["min"]))
+        for c in p.get("claims", [])
+    ]
+    span = _held_for(p, settings)
+    if span is not None and all(rid != p["resource_id"] for rid, _, _ in out):
+        t = pd.Timestamp(p["t"])
+        out.append((p["resource_id"], t, t + span))
+    return out
+
+
+def _message_problems(p: Mapping[str, Any], req: pd.DataFrame) -> list[str]:
+    """Return why a proposal's guest message breaks the LLM contract (docs/BUS.md).
+
+    The message is checked like an LLM answer against the proposal's own reason: every
+    number, date and ID in it must appear in the reason, no banned claim, the estimate's
+    hedge kept, and the language of every guest request the proposal answers.
+    """
+    if "message" not in p:
+        return []
+    msg = p["message"]
+    task = messages.task_for(
+        {
+            "action": "notify_guest",
+            "timestamp_utc": p["t"],
+            "reason": f"Tell the guest ({msg['language']}): {p['reason']} "
+            "(proposed message; delivery not confirmed).",
+        }
+    )
+    if task is None:
+        return ["message: reason cannot be read as a guest message"]
+    broken = llm_guard.postconditions(replace(task, must_say=()), dumps(msg))
+    why = [f"message: {e}" for e in broken]
+    cited = req.loc[req["request_id"].isin(p.get("guest_request_ids", [])), "language"]
+    why += [
+        f"message: language {msg['language']} but the guest wrote {lang}"
+        for lang in sorted(set(cited.astype(str)))
+        if lang != msg["language"]
+    ]
+    return why
+
+
 def _decision(p: Mapping[str, Any]) -> Decision:
     """Return the decision an accepted proposal becomes, before the policy sets its flags."""
     reason = p["reason"]
@@ -89,7 +142,7 @@ def arbitrate(
     settings: Settings,
     base: list[Decision],
     rows: Iterable[Mapping[str, Any]],
-    replace: Iterable[str] = (),
+    lanes: Iterable[str] = (),
 ) -> tuple[list[Decision], list[dict[str, Any]]]:
     """Return the merged decisions and one verdict row per proposal."""
     rows = list(rows)
@@ -100,7 +153,7 @@ def arbitrate(
     for e in bus.check_file(rows, ids) + bus.check_known_at(rows, asked):
         line, _, problem = e.partition(": ")
         broken.setdefault(int(line.removeprefix("line ")), []).append(problem)
-    dropped = {bus.LANES[lane]["issue_type"] for lane in replace}
+    dropped = {bus.LANES[lane]["issue_type"] for lane in lanes}
     decisions = [d for d in base if d["issue_type"] not in dropped]
     ledger = Ledger()
     for own in decisions:
@@ -116,14 +169,21 @@ def arbitrate(
     ]
     proposals.sort(key=lambda x: (str(x[1].get("t")), RANK.get(str(x[1].get("priority")), 9), x[0]))
     verdicts = []
+    accepted: set[str] = set()
     for n, p in proposals:
         why = broken.get(n, [])
+        claims = [] if why else _claims(p, settings)
         if not why:
-            for c in p.get("claims", []):
-                start = pd.Timestamp(c["from"])
-                holder = ledger.clash(c["id"], start, start + pd.Timedelta(minutes=c["min"]))
+            why += [
+                f"needs {x}, which was not accepted before it"
+                for x in p.get("needs", [])
+                if x not in accepted
+            ]
+            why += _message_problems(p, req)
+            for rid, start, end in claims:
+                holder = ledger.clash(rid, start, end)
                 if holder is not None:
-                    why.append(f"claim on {c['id']} from {c['from']} overlaps {holder}")
+                    why.append(f"claim on {rid} from {stamp(start)} overlaps {holder}")
         d: Decision | None = _decision(p) if not why else None
         rule = ""
         if d is not None:
@@ -144,9 +204,9 @@ def arbitrate(
             "why": "; ".join(why) if why else rule,
         }
         if d is not None and not why:
-            for c in p.get("claims", []):
-                start = pd.Timestamp(c["from"])
-                ledger.grant(c["id"], start, start + pd.Timedelta(minutes=c["min"]), p["id"])
+            for rid, start, end in claims:
+                ledger.grant(rid, start, end, p["id"])
+            accepted.add(p["id"])
             decisions.append(d)
             verdict["event_id"] = d["event_id"]
         verdicts.append(verdict)

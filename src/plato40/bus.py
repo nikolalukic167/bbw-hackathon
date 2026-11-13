@@ -152,6 +152,7 @@ OPTIONAL: dict[str, dict[str, type]] = {
         "confidence": float,
         "expected_outcome": str,
         "verification_plan": str,
+        "needs": list,
     },
     "verdict": {"event_id": str},
 }
@@ -255,6 +256,8 @@ def check_row(row: Mapping[str, Any], asset_ids: frozenset[str]) -> list[str]:
             errors.append(f"claim {c!r}: res not in {RESOURCES}")
         elif _ts(c.get("from", "")) is None or type(c.get("min")) is not int or c["min"] <= 0:
             errors.append(f"claim {c!r}: needs from (UTC Z) and min (positive int)")
+        elif (start := _ts(c["from"])) is not None and (t := _ts(row["t"])) and start < t:
+            errors.append(f"claim {c!r}: from is before the proposal time {row['t']}")
     return errors
 
 
