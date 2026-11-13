@@ -185,6 +185,34 @@ LANES: dict[str, dict[str, Any]] = {
             "unknown",
         ),
     },
+    "s07": {
+        "issue_type": "logistics",
+        "kinds": (
+            "drinks_low",
+            "snacks_low",
+            "container_overflow_risk",
+            "event_weekend_window",
+            "sensor_gap",
+            "sensor_jump",
+        ),
+        "intents": (
+            "order_restock",
+            "order_pickup",
+            "hold_floor_dump",
+            "robot_bin_run",
+            "flag_logistics_data",
+        ),
+        "actions": ("order_service", "dispatch_robot", "defer_action", "flag_anomaly"),
+        "causes": (
+            "demand_peak",
+            "post_stockout",
+            "turnover_peak",
+            "event_weekend",
+            "sensor_gap",
+            "sensor_jump",
+            "unknown",
+        ),
+    },
 }
 LANGUAGES = ("de", "en", "fr", "it", "nl", "es")
 RESOURCES = ("cleaner", "robot", "technician", "on_call", "room")

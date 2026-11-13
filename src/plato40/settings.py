@@ -234,6 +234,66 @@ class DetectorSettings:
     """Hours beyond the order lead time within which an extra pickup or restock is ordered.
     On dev 96 h and 12 h give 21 of 23 shortages ordered 20 h ahead or more, 1 false order."""
 
+    logistics_event_buffer_h: float = 18.0
+    """Hours beyond the order lead time within which an extra restock is ordered when the
+    weekend is an event weekend (S05); longer than ``logistics_buffer_h`` since a surge
+    empties the machine faster than the trailing rate."""
+
+    logistics_event_nights: int = 36
+    """Rooms booked on a Friday or Saturday night, known at Thursday 13:00 local, at or above
+    which the weekend counts as an event weekend. Both dev surge weekends had 40 of 40."""
+
+    logistics_dump_pct: float = 35.0
+    """Floor bin fill (%) at or above which housekeeping empties it at the daily dump; the
+    split is exact in dev (emptied at most 34.2 to 35.0, not emptied at least 35.0)."""
+
+    logistics_dump_local_h: float = 14.5
+    """Local hour of the floor bin dump; the 15:00 row is the first to show it."""
+
+    logistics_dump_ratio: float = 0.314
+    """Container percent added per percent of floor bin emptied into it (240 L bin into the
+    1100 L container, 1.43 times the nominal ratio; dev p10 to p90 1.40 to 1.49)."""
+
+    logistics_pp_per_cleaning: float = 4.5
+    """Floor bin percent added by one room cleaning (about 10.8 L; dev 4.5, quickstart 4.1)."""
+
+    logistics_background_pp_per_h: float = 0.094
+    """Container percent per hour that arrives without a floor bin dump (24.8 L a day)."""
+
+    logistics_clean_first_h: int = 8
+    """First local hour row in which room cleanings add waste; all of it arrives 07 to 16."""
+
+    logistics_clean_hours: int = 8
+    """Number of local hour rows over which a day's departures are cleaned."""
+
+    logistics_cap_pct: float = 100.0
+    """Container fill (%) that counts as overflowing."""
+
+    logistics_hold_local_h: float = 13.5
+    """Local hour on the overflow day at which the dump is held, one hour before the dump."""
+
+    logistics_held_max_pct: float = 90.0
+    """Fill (%) a held floor bin may reach before the pickup; above it the hold is unsafe and
+    an extra pickup is ordered instead."""
+
+    logistics_robot_start_local_h: float = 7.25
+    """Local hour on the pickup day from which a robot carries held bins to the container."""
+
+    logistics_robot_end_local_h: float = 11.0
+    """Local hour by which the bin-runs end."""
+
+    logistics_bin_run_min: int = 20
+    """Minutes a robot needs to carry one floor bin (building.json: about 20 min)."""
+
+    logistics_gap_h: int = 3
+    """Consecutive blank hours of a logistics series before it is flagged."""
+
+    logistics_jump_pp: float = 2.0
+    """Hourly change (percent or units) with no event to explain it that counts as a jump."""
+
+    logistics_stuck_h: int = 48
+    """Hours a vending or container reading may stay exactly flat; the longest dev run is 32."""
+
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
