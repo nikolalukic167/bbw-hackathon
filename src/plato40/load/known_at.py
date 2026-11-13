@@ -21,11 +21,6 @@ def known_at(frame: pd.DataFrame, schema: FileSchema) -> pd.Series:
     return frame[column]
 
 
-def as_of(frame: pd.DataFrame, schema: FileSchema, t: pd.Timestamp) -> pd.DataFrame:
-    """Return only the rows known at or before ``t`` (UTC)."""
-    return frame.loc[known_at(frame, schema) <= t]
-
-
 def lead_time_hours(frame: pd.DataFrame, schema: FileSchema) -> pd.Series:
     """Return effective time minus known time, in hours, per row.
 

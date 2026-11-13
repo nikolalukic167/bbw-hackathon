@@ -14,7 +14,6 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from plato40 import contract, pipeline, trace
-from plato40.audit import report
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -74,6 +73,8 @@ def _audit(data_root: Path, out: Path) -> int:
         return 2
     settings = Settings(data_root=data_root, out_dir=out)
     datasets = [load_dataset(p) for p in paths]
+    from plato40.audit import report  # matplotlib is loaded only for the audit
+
     report.write(datasets, settings)
     print(f"wrote {settings.out_dir / report.REPORT_NAME} for {len(datasets)} dataset(s)")
     return 0

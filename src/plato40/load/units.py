@@ -67,8 +67,3 @@ MAIN_WATER_DELTA = Bound("L/15min", 0.0, 3000.0, "40 rooms plus common areas")
 
 HP1_STATUS_DOCUMENTED = ("running", "standby", "defrost")
 HOUSEKEEPING_STATES = ("clean", "dirty", "in_progress", "inspection_required")
-
-
-def bound_for(file_name: str, column: str) -> Bound | None:
-    """Return the plausibility bound for a series, or None if it has none."""
-    return BOUNDS.get((file_name, column))

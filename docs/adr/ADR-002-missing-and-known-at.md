@@ -18,8 +18,10 @@ row published after the decision time is not a realistic decision.
   `published_utc`, forecast `issued_utc`, roster `status_known_utc`, bookings and work
   orders `created_utc`. Measured series are known at their own timestamp.
 - A decision at time `t` may read a row only if its availability time is at or before
-  `t`. The primitive is `plato40.load.known_at.as_of`; later stages call it rather than
-  filtering by effective time.
+  `t`. Each detector filters on that column directly (roster in `plato40.staff`, bookings,
+  forecast and tariff in the detectors), never by effective time alone. `plato40 validate`
+  also rejects a decision citing a guest request or another decision from after its own
+  timestamp.
 - A detector that needs a missing value lowers its confidence or defers; it does not
   issue a verdict on absent data.
 

@@ -3,10 +3,12 @@
 Steward is a deterministic operations pipeline for PLATO-40, the fictional 40-room
 self-check-in hotel of the proximata Hackathon '26 Rhomberg track ("PLATO · CLARA
 Future: The Autonomous Building"). It reads one dataset directory, detects operational
-risks with evidence, and will write decisions under the challenge's decision contract.
+risks with evidence, and writes decisions under the challenge's decision contract.
 
-Current state: repository setup and data audit only. Detection, policy, planning and
-the user interface are not written yet.
+Current state: S01 room turnaround, S02 water leaks and S03 heat pump degradation are
+detected and acted on, with data-quality flags; both datasets validate with no
+violations. The user interface is not written yet; progress is in
+[docs/PROGRESS.md](docs/PROGRESS.md).
 
 PLATO-40 is a fictional reference property. PLATO and CLARA are names of Rhomberg
 products and are used here only to refer to the challenge. Steward is not a Rhomberg
@@ -56,9 +58,19 @@ be one dataset directory or a directory that contains several.
 src/plato40/
   settings.py     one typed settings object: every threshold, with its unit
   load/           schema (declared columns, keys, availability column), units and
-                  plausibility bounds, known_at (time-of-availability rules), reader
+                  plausibility bounds, known_at, reader, derive (derived series)
+  state.py        room state over time from lifecycle events
+  staff.py        roster as known at a given time
+  detect/         one module per scenario (turnaround, water, heating, data_quality);
+                  each returns signals timed when their evidence existed
+  episodes.py     signals grouped into one episode per incident
+  plan.py         action chains per episode; S01 shares one cleaner ledger
+  policy.py       autonomy levels, approval and consent flags, forbidden actions
+  contract.py     decision contract checks and JSONL I/O
+  pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
+  trace.py        run summary, trace file and explain
   audit/          one module per audit section, assembled by audit/report.py
-  cli.py          plato40 audit <data_root> --out <dir>
+  cli.py          plato40 run | validate | explain | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
 scripts/          fetch_data.sh

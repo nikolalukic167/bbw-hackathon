@@ -25,7 +25,8 @@ class NightWindow:
 class AuditThresholds:
     """Thresholds that turn raw signals into audit candidates.
 
-    These are exploratory screening values, not detector thresholds.
+    These are exploratory screening values for the audit report. Detectors never read
+    them; their thresholds are in ``DetectorSettings``.
     """
 
     night_floor_l_per_15min: float = 0.5
