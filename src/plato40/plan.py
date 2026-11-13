@@ -80,11 +80,23 @@ class _Chain:
         return event_id
 
 
-def _consent(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float) -> bool:
-    """Ask the guest for consent to enter if the room is occupied; return whether asked."""
+Stay = pd.Timestamp | None
+
+
+def _consent(
+    chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float, asked: Stay
+) -> Stay:
+    """Ask the guest for consent to enter unless the room is vacant or this stay was asked.
+
+    Returns the stay (its start) whose guest has been asked. A guest who checked in after
+    an earlier request has not been asked, so a new stay gets its own request.
+    """
     room = s.assets[0]
     if states.at(room, s.time) != "occupied":
-        return False
+        return asked
+    stay = states.since(room, s.time)
+    if stay == asked:
+        return asked
     chain.add(
         s,
         "notify_guest",
@@ -95,11 +107,13 @@ def _consent(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: 
         verification_plan="Entry waits for a recorded consent; escalate if none.",
         confidence=conf,
     )
-    return True
+    return stay
 
 
-def _inspect(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float) -> bool:
-    asked = _consent(chain, s, states, priority, conf)
+def _inspect(
+    chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float, asked: Stay
+) -> Stay:
+    asked = _consent(chain, s, states, priority, conf, asked)
     room = s.assets[0]
     chain.add(
         s,
@@ -117,7 +131,8 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     th = settings.detect
     chain = _Chain(ep)
     in_room = ep.assets[0] in states.rooms
-    flagged = technician = asked = False
+    flagged = technician = False
+    asked: Stay = None
     nights = 0
     prev: pd.Timestamp | None = None
     next_night = pd.Timedelta(hours=th.next_night_h)
@@ -128,7 +143,7 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 continue
             if not flagged:
                 chain.add(s, "flag_anomaly", "critical", f"{what}: {s.detail}.", confidence=0.8)
-            _inspect(chain, s, states, "critical", 0.8)
+            asked = _inspect(chain, s, states, "critical", 0.8, asked)
             chain.add(
                 s,
                 "dispatch_technician",
@@ -154,11 +169,11 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 confidence=conf,
             )
             if in_room:
-                asked = _inspect(chain, s, states, "medium", conf)
+                asked = _inspect(chain, s, states, "medium", conf, asked)
             flagged = True
         if nights >= th.leak_technician_nights and not technician:
-            if in_room and not asked:
-                asked = _consent(chain, s, states, "high", conf)
+            if in_room:
+                asked = _consent(chain, s, states, "high", conf, asked)
             chain.add(
                 s,
                 "dispatch_technician",

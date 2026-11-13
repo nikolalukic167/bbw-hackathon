@@ -69,6 +69,18 @@ class RoomStates:
         i = int(times.searchsorted(t, side="right")) - 1
         return self._states[room][i] if i >= 0 else UNKNOWN
 
+    def since(self, room: str, t: pd.Timestamp) -> pd.Timestamp | None:
+        """Return when the event that set the state of ``room`` at ``t`` happened, if any.
+
+        For an occupied room this identifies the guest's stay: a new check-in or move-in
+        gives a new time.
+        """
+        times = self._times.get(room)
+        if times is None:
+            return None
+        i = int(times.searchsorted(t, side="right")) - 1
+        return pd.Timestamp(times[i]) if i >= 0 else None
+
     def next_entry(self, room: str, state: str, t: pd.Timestamp) -> pd.Timestamp | None:
         """Return the first time after ``t`` that ``room`` enters ``state``, if any."""
         times = self._times.get(room)
