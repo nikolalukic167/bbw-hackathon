@@ -29,7 +29,7 @@ typecheck:
 
 run:
 	@test -n "$(DATA)" || (echo "usage: make run DATA=<data_dir>" && exit 2)
-	uv run plato40 run "$(DATA)" --out "$(OUT)"
+	uv run plato40 run "$(DATA)" --out "$(OUT)" --trace "$(basename $(OUT)).trace.jsonl"
 
 validate:
 	@test -n "$(DATA)" || (echo "usage: make validate DATA=<data_dir>" && exit 2)

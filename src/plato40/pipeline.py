@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 import pandas as pd
 
 from plato40 import contract, plan, policy
 from plato40.contract import Decision
-from plato40.detect import data_quality, turnaround, water
-from plato40.episodes import group
+from plato40.detect import data_quality, heating, turnaround, water
+from plato40.episodes import Episode, Signal, group
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -31,20 +33,33 @@ def check(ds: Dataset, states: RoomStates, decisions: list[Decision]) -> list[st
     return errors
 
 
-def run(ds: Dataset, settings: Settings) -> list[Decision]:
-    """Return all decisions for one dataset, sorted by time; raise on any violation."""
+@dataclass
+class Run:
+    """Everything one run produced: all signals and episodes, the decisions, their rules."""
+
+    signals: list[Signal]
+    episodes: list[Episode]
+    decisions: list[Decision]
+    rules: dict[str, str] = field(default_factory=dict)
+
+
+def run(ds: Dataset, settings: Settings) -> Run:
+    """Run all detectors and planners on one dataset; raise on any violation."""
     states = RoomStates(ds)
     signals = (
         water.signals(ds, settings)
         + turnaround.signals(ds, settings)
+        + heating.signals(ds, settings)
         + data_quality.signals(ds, settings)
     )
     episodes = group(signals, settings.detect.episode_quiet_h)
     decisions = [d for ep in episodes for d in plan.decisions(ep, states, settings)]
     decisions.sort(key=lambda d: (d["timestamp_utc"], d["event_id"]))
+    result = Run(signals, episodes, decisions)
     for d in decisions:
-        policy.apply(d, context_at(ds, states, pd.Timestamp(d["timestamp_utc"])))
+        ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
+        result.rules[d["event_id"]] = policy.apply(d, ctx)
     errors = check(ds, states, decisions)
     if errors:
         raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(errors))
-    return decisions
+    return result
