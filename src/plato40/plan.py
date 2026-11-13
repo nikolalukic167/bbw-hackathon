@@ -155,7 +155,6 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
     d = s.data
     prio = "high" if d["help"] else "medium"
     rooms = ", ".join(d["arrival_rooms"]) or "none"
-    latest = _local(d["latest"], settings) if d["latest"] else "not before the shifts end"
     checkin = _local(d["checkin"], settings)
     verify = (
         f"cleaning_completed in every arrival room before {checkin}; re-plan on a new sick note."
@@ -167,7 +166,11 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             prio,
             f"Turnover at risk ({s.detail}). Clean arrival rooms first ({rooms}), then the rest.",
             assets=d["cleaners"],
-            expected_outcome=f"Arrival rooms clean by {latest} (simulated).",
+            expected_outcome=(
+                f"Arrival rooms clean by {_local(d['latest'], settings)} (simulated)."
+                if d["latest"]
+                else "Not every arrival room can be clean before the shifts end (simulated)."
+            ),
             verification_plan=verify,
             confidence=0.6,
         )
@@ -189,8 +192,13 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             "notify_guest",
             prio,
             f"Tell guests arriving today ({rooms}): check-in from {checkin} as booked, early "
-            f"check-in is not possible today; all rooms expected ready by {latest} "
-            "(proposed message; delivery not confirmed).",
+            "check-in is not possible today"
+            + (
+                f"; all rooms expected ready by {_local(d['latest'], settings)}"
+                if d["latest"]
+                else "; some rooms may be ready only after check-in time"
+            )
+            + " (proposed message; delivery not confirmed).",
             assets=d["arrival_rooms"],
             expected_outcome="Guests do not arrive early and wait.",
             verification_plan="No arrival_waiting_room event today; escalate on one.",
@@ -213,6 +221,7 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
 def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
     chain = _Chain(ep)
     cleaning_planned = False
+    committed: pd.Timestamp | None = None
     offered: str | None = None
     for s in ep.signals:
         if s.kind == "day_plan":
@@ -223,6 +232,9 @@ def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
         lead = d["wanted"] - s.time
         prio = "critical" if d["waiting"] else "high" if lead <= pd.Timedelta(hours=3) else "medium"
         promise = d["ready_prio"]
+        if committed is not None:
+            slipped = s.time + pd.Timedelta(minutes=settings.detect.clean_room_min)
+            promise = committed if committed > s.time else slipped
         verify = (
             f"{room} shows cleaning_completed by {_local(promise, settings)}; "
             "if not, update the guest and escalate."
@@ -240,6 +252,7 @@ def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
                     confidence=0.7,
                 )
                 cleaning_planned = True
+                committed = promise
             if d["robot"]:
                 chain.add(
                     s,
@@ -265,6 +278,7 @@ def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
                     confidence=0.6,
                 )
                 cleaning_planned = True
+                committed = promise
         offer = offered or d["alternative"]
         if offer and not offered:
             chain.add(

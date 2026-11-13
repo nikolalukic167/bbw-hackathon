@@ -98,11 +98,15 @@ class _Facts:
     def alternative(
         self, room: str, guests: int, t: pd.Timestamp, until: pd.Timestamp
     ) -> str | None:
-        """Return a clean vacant room with enough beds and no arrival booked up to ``until``."""
+        """Return a clean vacant room with enough beds and no other booking before ``until``.
+
+        ``until`` is the requesting guest's departure, so the offered room is free for
+        the whole stay and no later arrival loses its room.
+        """
         b = self.bookings
         booked = set(
             b.loc[
-                (b["created_utc"] <= t) & (b["arrival_utc"] <= until) & (b["departure_utc"] > t),
+                (b["created_utc"] <= t) & (b["arrival_utc"] < until) & (b["departure_utc"] > t),
                 "room_id",
             ].astype(str)
         )
@@ -169,6 +173,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     """Return request and checkout signals, plus one day-plan signal per day at risk."""
     f = _Facts(ds, settings)
     arrival = dict(zip(f.bookings["booking_id"], f.bookings["arrival_utc"], strict=True))
+    departure = dict(zip(f.bookings["booking_id"], f.bookings["departure_utc"], strict=True))
     guest_count = dict(zip(f.bookings["booking_id"], f.bookings["guest_count"], strict=True))
     out: list[Signal] = []
     for r in _triggers(ds):
@@ -196,7 +201,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
             "wanted": wanted,
             "waiting": waiting,
             "vacant": state != "occupied",
-            "alternative": f.alternative(room, guests, t, wanted),
+            "alternative": f.alternative(room, guests, t, departure[bid]),
         }
         promise = facts["ready_prio"]
         detail = (
