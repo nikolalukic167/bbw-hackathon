@@ -22,7 +22,7 @@ from typing import Any
 
 import pandas as pd
 
-from plato40.detect.grid import stamp
+from plato40.detect.grid import local_time, stamp
 from plato40.episodes import Signal
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
@@ -31,7 +31,6 @@ from plato40.state import RoomStates
 
 ISSUE = "room_turnaround"
 REQUESTS = ("early_checkin", "waiting_for_room")
-DAY_SPAN = pd.Timedelta(hours=16)
 CLOCK = re.compile(r"\b(\d{1,2})[:.h](\d{2})\b")
 
 
@@ -39,10 +38,8 @@ class _Facts:
     """Shared inputs for predicting when a room can be ready."""
 
     def __init__(self, ds: Dataset, settings: Settings) -> None:
-        self.ds = ds
         self.tz = settings.local_tz
         self.clean = pd.Timedelta(minutes=settings.detect.clean_room_min)
-        self.travel = pd.Timedelta(minutes=settings.detect.oncall_travel_min)
         self.states = RoomStates(ds)
         self.roster = Roster(ds)
         self.bookings = ds.table("bookings.csv")
@@ -56,29 +53,38 @@ class _Facts:
         m = re.search(r"(\d\d):(\d\d)-(\d\d):(\d\d)", staff["notes"]["on_call_housekeeping"])
         self.oncall = (time(int(m[1]), int(m[2])), time(int(m[3]), int(m[4]))) if m else None
 
-    def local(self, t: pd.Timestamp) -> str:
-        return f"{t.tz_convert(self.tz):%H:%M}"
+    def local(self, t: pd.Timestamp | None, ref: pd.Timestamp) -> str:
+        return local_time(t, ref, self.tz)
 
     def plan_at(self, room: str, start: pd.Timestamp, known: pd.Timestamp) -> dict[str, Any]:
-        """Predict cleaning of a vacant ``room`` from ``start`` with what is known at ``known``."""
-        cleaners = self.roster.on_shift("cleaner", start, known)
-        begin = start if cleaners else self.roster.next_start("cleaner", start, known)
-        facts: dict[str, Any] = {"cleaner": cleaners[0] if cleaners else None}
+        """Predict cleaning of a vacant ``room`` from ``start`` with what is known at ``known``.
+
+        ``cleaners`` are those on shift at ``begin``, the first moment a cleaner is on shift
+        from ``start``; the planner picks the one free first. The on-call housekeeper is an
+        option only while no cleaner is on shift and inside the on-call window.
+        """
+        now = self.roster.on_shift("cleaner", start, known)
+        begin = start if now else self.roster.next_start("cleaner", start, known)
+        facts: dict[str, Any] = {
+            "start": start,
+            "begin": begin,
+            "cleaner_now": bool(now),
+            "cleaners": [] if begin is None else self.roster.on_shift("cleaner", begin, known),
+        }
         robots = self.roster.on_shift("robot", start, known)
         facts["robot"] = robots[0] if robots else None
         if begin is None:
             facts["ready_prio"] = facts["ready_now"] = None
         else:
             queue = len(self.states.rooms_in("dirty", known) - {room})
-            n = max(len(self.roster.on_shift("cleaner", begin, known)), 1)
+            n = max(len(facts["cleaners"]), 1)
             facts["ready_prio"] = begin + self.clean
             facts["ready_now"] = begin + self.clean * (1 + queue // n)
         facts["oncall"] = None
-        if not cleaners and self.oncall and self.oncall_ids:
+        if not now and self.oncall and self.oncall_ids:
             wall = start.tz_convert(self.tz).time()
             if self.oncall[0] <= wall < self.oncall[1]:
                 facts["oncall"] = self.oncall_ids[0]
-                facts["ready_oncall"] = start + self.travel + self.clean
         return facts
 
     def occupant_departure(
@@ -88,6 +94,7 @@ class _Facts:
         mine = b.loc[
             (b["room_id"] == room)
             & (b["booking_id"] != booking_id)
+            & (b["status"] != "cancelled")
             & (b["created_utc"] <= t)
             & (b["arrival_utc"] <= t)
         ]
@@ -106,7 +113,10 @@ class _Facts:
         b = self.bookings
         booked = set(
             b.loc[
-                (b["created_utc"] <= t) & (b["arrival_utc"] < until) & (b["departure_utc"] > t),
+                (b["created_utc"] <= t)
+                & (b["arrival_utc"] < until)
+                & (b["departure_utc"] > t)
+                & ~((b["status"] == "cancelled") & (b["arrival_utc"] <= t)),
                 "room_id",
             ].astype(str)
         )
@@ -175,6 +185,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     arrival = dict(zip(f.bookings["booking_id"], f.bookings["arrival_utc"], strict=True))
     departure = dict(zip(f.bookings["booking_id"], f.bookings["departure_utc"], strict=True))
     guest_count = dict(zip(f.bookings["booking_id"], f.bookings["guest_count"], strict=True))
+    follow = pd.Timedelta(hours=settings.detect.checkout_follow_h)
     out: list[Signal] = []
     for r in _triggers(ds):
         t, room, bid, waiting = r["t"], r["room"], r["booking"], r["waiting"]
@@ -194,20 +205,21 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
         ready = facts["ready_now"]
         if ready is not None and ready <= wanted:
             continue
-        guests = int(guest_count[bid])
-        facts |= {
+        guest = {
+            "booking": bid,
             "request_id": r["request_id"],
             "language": r["language"],
             "wanted": wanted,
             "waiting": waiting,
-            "vacant": state != "occupied",
-            "alternative": f.alternative(room, guests, t, departure[bid]),
         }
-        promise = facts["ready_prio"]
+        facts |= guest | {
+            "vacant": state != "occupied",
+            "in_progress": state == "cleaning",
+            "alternative": f.alternative(room, int(guest_count[bid]), t, departure[bid]),
+        }
         detail = (
-            f"guest of {bid} wants the room at {f.local(wanted)} local; room is {state}; "
-            f"predicted ready {f.local(ready) if ready is not None else 'not today'} without "
-            f"action, {f.local(promise) if promise is not None else 'not today'} if prioritised"
+            f"guest of {bid} wants the room at {f.local(wanted, t)}; room is {state}; "
+            f"predicted ready {f.local(ready, t)} without action"
         )
         evidence = (
             r["ref"],
@@ -217,12 +229,9 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
         out.append(Signal(t, ISSUE, "request", (room,), evidence, detail, facts))
         if state == "occupied":
             actual = f.states.next_entry(room, "dirty", t)
-            if actual is not None and actual - t < pd.Timedelta(hours=24):
-                later = f.plan_at(room, actual, actual) | {
-                    k: facts[k] for k in ("request_id", "language", "wanted", "waiting")
-                }
-                later["vacant"] = True
-                later["alternative"] = None
+            if actual is not None and actual - t < follow:
+                later = f.plan_at(room, actual, actual) | guest
+                later |= {"vacant": True, "in_progress": False, "alternative": None}
                 out.append(
                     Signal(
                         actual,
@@ -230,8 +239,8 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         "checkout",
                         (room,),
                         (f"events.jsonl:{room} checkout at {stamp(actual)}",),
-                        f"{room} checked out at {f.local(actual)} local; guest of {bid} "
-                        f"wants it at {f.local(wanted)} local",
+                        f"{room} checked out at {f.local(actual, actual)}; guest of {bid} "
+                        f"wants it at {f.local(wanted, actual)}",
                         later,
                     )
                 )
@@ -287,7 +296,8 @@ def _day_plans(f: _Facts, ds: Dataset, settings: Settings) -> list[Signal]:
             (r not in arrival_rooms, departing.get(r, t), r) for r in [*dirty, *departing]
         )
         free = {rid: a for rid, a, _ in shifts}
-        until = {rid: z for rid, _, z in f.roster.shifts("cleaner", t, t + DAY_SPAN, t)}
+        span = t + pd.Timedelta(hours=th.day_plan_span_h)
+        until = {rid: z for rid, _, z in f.roster.shifts("cleaner", t, span, t)}
         ready: dict[str, pd.Timestamp] = {}
         for _, avail, room in jobs:
             options = [
@@ -305,12 +315,13 @@ def _day_plans(f: _Facts, ds: Dataset, settings: Settings) -> list[Signal]:
             "cleaners": cleaners,
             "robots": f.roster.on_shift("robot", t, t),
             "arrival_rooms": arrival_rooms,
+            "vacant_arrival": sorted(set(arrival_rooms) & set(dirty)),
             "latest": latest,
             "checkin": checkin,
         }
         detail = (
             f"{workload} rooms to turn, {len(cleaners)} cleaners with {minutes:.0f} min before "
-            f"{f.local(checkin)} local: load {load:.2f}; {len(arrival_rooms)} rooms with "
+            f"{f.local(checkin, t)}: load {load:.2f}; {len(arrival_rooms)} rooms with "
             "arrivals today"
         )
         out.append(

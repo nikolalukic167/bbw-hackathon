@@ -33,3 +33,12 @@ def nights(index: pd.DatetimeIndex, settings: Settings) -> pd.Series:
 def stamp(t: pd.Timestamp) -> str:
     """Format a UTC time the way the contract writes it, e.g. ``2026-04-09T02:00Z``."""
     return f"{t.tz_convert('UTC'):%Y-%m-%dT%H:%M}Z"
+
+
+def local_time(t: pd.Timestamp | None, ref: pd.Timestamp, tz: str) -> str:
+    """Format ``t`` as local wall time, with the date if it is not on ``ref``'s local day."""
+    if t is None:
+        return "unknown"
+    lt = t.tz_convert(tz)
+    same_day = lt.date() == ref.tz_convert(tz).date()
+    return f"{lt:%H:%M} local" if same_day else f"{lt:%a %d %b %H:%M} local"

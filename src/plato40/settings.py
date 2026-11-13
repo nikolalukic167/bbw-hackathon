@@ -99,6 +99,15 @@ class DetectorSettings:
     oncall_travel_min: float = 45.0
     """Minutes until the on-call housekeeper is on site (building.json staff notes)."""
 
+    urgent_lead_h: float = 3.0
+    """Hours before the wanted time under which a turnaround request is high priority."""
+
+    checkout_follow_h: float = 24.0
+    """Hours after a request within which the room's actual checkout is still followed up."""
+
+    day_plan_span_h: float = 16.0
+    """Hours after the day plan whose cleaner shifts can still clean a room that day."""
+
     day_plan_hour: int = 7
     """Local hour of the daily turnaround check, after most sick notes are known."""
 

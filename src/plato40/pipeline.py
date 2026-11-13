@@ -70,7 +70,7 @@ def run(ds: Dataset, settings: Settings) -> Run:
         + data_quality.signals(ds, settings)
     )
     episodes = group(signals, settings.detect.episode_quiet_h)
-    decisions = [d for ep in episodes for d in plan.decisions(ep, states, settings)]
+    decisions = plan.decisions(episodes, states, settings)
     decisions.sort(key=lambda d: (d["timestamp_utc"], d["event_id"]))
     result = Run(signals, episodes, decisions)
     for d in decisions:

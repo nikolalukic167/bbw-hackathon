@@ -16,12 +16,14 @@ Data quality: one flag per outage episode.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any
 
 import pandas as pd
 
 from plato40.contract import Decision
-from plato40.detect.grid import stamp
+from plato40.detect.grid import local_time, stamp
 from plato40.episodes import Episode, Signal
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -147,15 +149,17 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     return chain.out
 
 
-def _local(t: pd.Timestamp | None, settings: Settings) -> str:
-    return "not today" if t is None else f"{t.tz_convert(settings.local_tz):%H:%M} local"
+def _local(t: pd.Timestamp | None, ref: pd.Timestamp, settings: Settings) -> str:
+    return local_time(t, ref, settings.local_tz)
 
 
 def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
     d = s.data
     prio = "high" if d["help"] else "medium"
     rooms = ", ".join(d["arrival_rooms"]) or "none"
-    checkin = _local(d["checkin"], settings)
+    checkin = _local(d["checkin"], s.time, settings)
+    latest = _local(d["latest"], s.time, settings)
+    vacant = d["vacant_arrival"]
     verify = (
         f"cleaning_completed in every arrival room before {checkin}; re-plan on a new sick note."
     )
@@ -164,10 +168,11 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             s,
             "schedule_cleaning",
             prio,
-            f"Turnover at risk ({s.detail}). Clean arrival rooms first ({rooms}), then the rest.",
-            assets=d["cleaners"],
+            f"Turnover at risk ({s.detail}). Clean arrival rooms first ({rooms}): vacant ones "
+            "now, occupied ones right after checkout; then the rest.",
+            assets=[*d["cleaners"], *vacant],
             expected_outcome=(
-                f"Arrival rooms clean by {_local(d['latest'], settings)} (simulated)."
+                f"Arrival rooms clean by {latest} (simulated)."
                 if d["latest"]
                 else "Not every arrival room can be clean before the shifts end (simulated)."
             ),
@@ -179,9 +184,9 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             s,
             "dispatch_robot",
             prio,
-            "Robot floor passes in arrival rooms right after checkout; robots do not "
-            "certify or release a room.",
-            assets=d["robots"],
+            "Robot floor passes in arrival rooms: vacant ones now, occupied ones only after "
+            "checkout; robots do not certify or release a room.",
+            assets=[*d["robots"], *vacant],
             expected_outcome="Shorter human cleaning per room (simulated).",
             verification_plan="robot_floor_cleaning_completed before each human clean.",
             confidence=0.6,
@@ -194,7 +199,7 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
             f"Tell guests arriving today ({rooms}): check-in from {checkin} as booked, early "
             "check-in is not possible today"
             + (
-                f"; all rooms expected ready by {_local(d['latest'], settings)}"
+                f"; all rooms expected ready by {latest}"
                 if d["latest"]
                 else "; some rooms may be ready only after check-in time"
             )
@@ -218,94 +223,170 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings) -> None:
         )
 
 
-def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
-    chain = _Chain(ep)
-    cleaning_planned = False
+@dataclass
+class _Guest:
+    """What was already done for one guest's stay within a room episode."""
+
+    planned: bool = False
     committed: pd.Timestamp | None = None
     offered: str | None = None
-    for s in ep.signals:
-        if s.kind == "day_plan":
-            _day_plan(chain, s, settings)
-            continue
-        d = s.data
-        room = s.assets[0]
-        lead = d["wanted"] - s.time
-        prio = "critical" if d["waiting"] else "high" if lead <= pd.Timedelta(hours=3) else "medium"
-        promise = d["ready_prio"]
-        if committed is not None:
-            slipped = s.time + pd.Timedelta(minutes=settings.detect.clean_room_min)
-            promise = committed if committed > s.time else slipped
-        verify = (
-            f"{room} shows cleaning_completed by {_local(promise, settings)}; "
-            "if not, update the guest and escalate."
+
+
+class _Ledger:
+    """When each cleaner and the on-call housekeeper is next free, from jobs given so far.
+
+    Requests are planned in time order across rooms, so a promise never assumes a person
+    who is already cleaning another room at that time.
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        self.clean = pd.Timedelta(minutes=settings.detect.clean_room_min)
+        self.travel = pd.Timedelta(minutes=settings.detect.oncall_travel_min)
+        self.free: dict[str, pd.Timestamp] = {}
+
+    def cleaner(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
+        """Return the earliest start and the cleaner on shift who is free first."""
+        if d["begin"] is None or not d["cleaners"]:
+            return None
+        return min((max(d["begin"], self.free.get(c, d["begin"])), c) for c in d["cleaners"])
+
+    def oncall(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
+        """Return when the on-call housekeeper can start, travelling only if not on site."""
+        who = d["oncall"]
+        if who is None:
+            return None
+        busy = self.free.get(who)
+        return (busy if busy is not None and busy > d["start"] else d["start"] + self.travel, who)
+
+    def book(self, begin: pd.Timestamp, who: str) -> pd.Timestamp:
+        self.free[who] = begin + self.clean
+        return self.free[who]
+
+
+def _turnaround_step(
+    chain: _Chain, guest: _Guest, s: Signal, ledger: _Ledger, settings: Settings
+) -> None:
+    d = s.data
+    room = s.assets[0]
+    th = settings.detect
+    lead = d["wanted"] - s.time
+    urgent = lead <= pd.Timedelta(hours=th.urgent_lead_h)
+    prio = "critical" if d["waiting"] else "high" if urgent else "medium"
+    cleaner = ledger.cleaner(d)
+    oncall = ledger.oncall(d) if d["waiting"] else None
+    if oncall is not None and cleaner is not None and cleaner[0] <= oncall[0]:
+        oncall = None
+    if guest.committed is not None:
+        promise: pd.Timestamp | None = (
+            guest.committed if guest.committed > s.time else s.time + ledger.clean
         )
-        if d["vacant"] and not cleaning_planned:
-            if d["cleaner"]:
-                chain.add(
-                    s,
-                    "schedule_cleaning",
-                    prio,
-                    f"Clean {room} first: {s.detail}.",
-                    resource_id=d["cleaner"],
-                    expected_outcome=f"{room} clean by {_local(promise, settings)} (simulated).",
-                    verification_plan=verify,
-                    confidence=0.7,
-                )
-                cleaning_planned = True
-                committed = promise
-            if d["robot"]:
-                chain.add(
-                    s,
-                    "dispatch_robot",
-                    prio,
-                    f"Robot floor pass in {room} before the human clean; robots do not "
-                    "certify or release a room.",
-                    resource_id=d["robot"],
-                    expected_outcome="Shorter human cleaning (simulated).",
-                    verification_plan=f"robot_floor_cleaning_completed in {room}.",
-                    confidence=0.7,
-                )
-            if d["oncall"] and not cleaning_planned:
-                promise = d["ready_oncall"]
-                chain.add(
-                    s,
-                    "schedule_cleaning",
-                    prio,
-                    f"No cleaner on shift; call the on-call housekeeper for {room}: {s.detail}.",
-                    resource_id=d["oncall"],
-                    expected_outcome=f"{room} clean by {_local(promise, settings)} (simulated).",
-                    verification_plan=verify,
-                    confidence=0.6,
-                )
-                cleaning_planned = True
-                committed = promise
-        offer = offered or d["alternative"]
-        if offer and not offered:
+    elif d["in_progress"]:
+        promise = d["ready_prio"]
+    elif oncall is not None:
+        promise = oncall[0] + ledger.clean
+    else:
+        promise = None if cleaner is None else cleaner[0] + ledger.clean
+    ready = _local(promise, s.time, settings)
+    verify = f"{room} shows cleaning_completed by {ready}; if not, update the guest and escalate."
+    if d["in_progress"] and not guest.planned:
+        guest.planned, guest.committed = True, promise
+    if d["vacant"] and not guest.planned:
+        if oncall is not None:
+            begin, who = oncall
             chain.add(
                 s,
-                "reassign_room",
+                "schedule_cleaning",
                 prio,
-                f"{offer} is clean, vacant and not booked before the guest arrives; offer it "
-                f"instead of {room}.",
-                assets=[room, offer],
-                expected_outcome="Guest checks in on time in another room (simulated).",
-                verification_plan=f"Guest checks in to {offer}; {room} keeps its cleaning.",
+                f"No cleaner on shift and the guest is waiting; call the on-call housekeeper "
+                f"for {room}: {s.detail}.",
+                resource_id=who,
+                expected_outcome=f"{room} clean by {ready} (simulated).",
+                verification_plan=verify,
+                confidence=0.6,
+            )
+            guest.committed = ledger.book(begin, who)
+        elif cleaner is not None:
+            begin, who = cleaner
+            when = "now" if begin <= s.time else f"from {_local(begin, s.time, settings)}"
+            chain.add(
+                s,
+                "schedule_cleaning",
+                prio,
+                f"Clean {room} first, {when}: {s.detail}.",
+                resource_id=who,
+                expected_outcome=f"{room} clean by {ready} (simulated).",
+                verification_plan=verify,
                 confidence=0.7,
             )
-            offered = offer
-        message = f"{offer} is offered pending approval; otherwise {room}" if offer else f"{room}"
+            guest.committed = ledger.book(begin, who)
+        else:
+            chain.add(
+                s,
+                "request_human_approval",
+                prio,
+                f"No cleaner or on-call housekeeper is known for {room}; arrange a cleaning: "
+                f"{s.detail}.",
+                expected_outcome="A manager arranges the cleaning.",
+                verification_plan=f"{room} shows cleaning_started; escalate if not.",
+                confidence=0.6,
+            )
+        if d["robot"]:
+            chain.add(
+                s,
+                "dispatch_robot",
+                prio,
+                f"Robot floor pass in {room} before the human clean; robots do not "
+                "certify or release a room.",
+                resource_id=d["robot"],
+                expected_outcome="Shorter human cleaning (simulated).",
+                verification_plan=f"robot_floor_cleaning_completed in {room}.",
+                confidence=0.7,
+            )
+        guest.planned = True
+    offer = guest.offered or d["alternative"]
+    if offer and not guest.offered:
         chain.add(
             s,
-            "notify_guest",
+            "reassign_room",
             prio,
-            f"Tell the guest ({d['language']}): {message} expected ready at "
-            f"{_local(promise, settings)} (proposed message; delivery not confirmed).",
-            **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
-            expected_outcome="Guest knows a realistic ready time.",
-            verification_plan="No waiting_for_room request from the guest; escalate on one.",
+            f"{offer} is clean, vacant and not booked during the guest's stay; offer it "
+            f"instead of {room}.",
+            assets=[room, offer],
+            expected_outcome="Guest checks in on time in another room (simulated).",
+            verification_plan=f"Guest checks in to {offer}; {room} keeps its cleaning.",
             confidence=0.7,
         )
-    return chain.out
+        guest.offered = offer
+    message = f"{offer} is offered pending approval; otherwise {room}" if offer else f"{room}"
+    chain.add(
+        s,
+        "notify_guest",
+        prio,
+        f"Tell the guest ({d['language']}): {message} expected ready at {ready} "
+        "(proposed message; delivery not confirmed).",
+        **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
+        expected_outcome="Guest knows a realistic ready time.",
+        verification_plan="No waiting_for_room request from the guest; escalate on one.",
+        confidence=0.7,
+    )
+
+
+def _turnaround(episodes: list[Episode], settings: Settings) -> list[Decision]:
+    """Plan all turnaround episodes together, in signal time order, sharing one ledger."""
+    chains = {ep.episode_id: _Chain(ep) for ep in episodes}
+    guests: dict[tuple[str, str], _Guest] = {}
+    ledger = _Ledger(settings)
+    steps = sorted(
+        ((s.time, ep.episode_id, i, s) for ep in episodes for i, s in enumerate(ep.signals)),
+        key=lambda x: x[:3],
+    )
+    for _, eid, _, s in steps:
+        if s.kind == "day_plan":
+            _day_plan(chains[eid], s, settings)
+            continue
+        guest = guests.setdefault((eid, s.data["booking"]), _Guest())
+        _turnaround_step(chains[eid], guest, s, ledger, settings)
+    return [d for c in chains.values() for d in c.out]
 
 
 def _heating(ep: Episode, settings: Settings) -> list[Decision]:
@@ -328,7 +409,7 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
             "dispatch_technician",
             "high",
             f"Service HP1 (COP {d['ratio']:.2f} of reference); technician on shift "
-            f"{'now' if d['technician'] else 'from ' + _local(when, settings)}.",
+            f"{'now' if d['technician'] else 'from ' + _local(when, s.time, settings)}.",
             **({"resource_id": d["technician"]} if d["technician"] else {}),
             expected_outcome="Technician finds and fixes the fault (simulated).",
             verification_plan="24 h COP ratio recovers; escalate to a contractor if not.",
@@ -346,7 +427,7 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
         )
     lo, hi = d["band"]
     cold = (
-        f"coldest forecast hour {d['cold'][0]:.1f} degC at {_local(d['cold'][1], settings)}"
+        f"coldest forecast hour {d['cold'][0]:.1f} degC at {_local(d['cold'][1], s.time, settings)}"
         if d["cold"]
         else "no forecast known"
     )
@@ -399,14 +480,16 @@ def _data_quality(ep: Episode) -> list[Decision]:
     return chain.out
 
 
-def decisions(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision]:
-    """Return the decisions of one episode, without approval flags."""
-    if ep.issue_type == "water_leak":
-        return _water(ep, states, settings)
-    if ep.issue_type == "room_turnaround":
-        return _turnaround(ep, settings)
-    if ep.issue_type == "heating_comfort":
-        return _heating(ep, settings)
-    if ep.issue_type == "data_quality":
-        return _data_quality(ep)
-    raise ValueError(f"no plan for issue_type {ep.issue_type!r}")
+def decisions(episodes: list[Episode], states: RoomStates, settings: Settings) -> list[Decision]:
+    """Return the decisions of all episodes, without approval flags."""
+    out = _turnaround([ep for ep in episodes if ep.issue_type == "room_turnaround"], settings)
+    for ep in episodes:
+        if ep.issue_type == "water_leak":
+            out += _water(ep, states, settings)
+        elif ep.issue_type == "heating_comfort":
+            out += _heating(ep, settings)
+        elif ep.issue_type == "data_quality":
+            out += _data_quality(ep)
+        elif ep.issue_type != "room_turnaround":
+            raise ValueError(f"no plan for issue_type {ep.issue_type!r}")
+    return out
