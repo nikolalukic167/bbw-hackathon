@@ -7,7 +7,7 @@ Three row types, one object per line:
 - ``verdict``: the arbiter accepted or rejected a proposal; only the arbiter writes these.
 
 Only the arbiter writes ``decisions.jsonl``. A proposal never carries ``autonomy`` or the
-approval flags: the policy sets those. Each lane (s01, s02, s03) has its own enums.
+approval flags: the policy sets those. Each lane (s01 to s04) has its own enums.
 Every check here is a contract: a row that fails it is rejected, never repaired.
 """
 
@@ -142,6 +142,48 @@ LANES: dict[str, dict[str, Any]] = {
             "request_human_approval",
         ),
         "causes": ("event_weekend", "sick_cleaner", "turnover_peak"),
+    },
+    "s04": {
+        "issue_type": "ventilation_maintenance",
+        "kinds": (
+            "dp_due",
+            "dp_fast_rise",
+            "airflow_loss",
+            "sensor_gap",
+            "sensor_fault",
+            "work_order_missed",
+            "bms_unmatched",
+        ),
+        "intents": (
+            "plan_filter_change",
+            "change_filter",
+            "flag_filter_clogging",
+            "service_filter",
+            "escalate_contractor",
+            "flag_airflow_loss",
+            "flag_sensor_gap",
+            "inspect_dp_sensor",
+            "flag_sensor_fault",
+            "flag_missed_work_order",
+            "defer_to_work_order",
+            "flag_unconfirmed_alarm",
+        ),
+        "actions": (
+            "flag_anomaly",
+            "request_inspection",
+            "dispatch_technician",
+            "order_service",
+            "defer_action",
+        ),
+        "causes": (
+            "filter_loading",
+            "filter_clogging",
+            "sensor_gap",
+            "sensor_fault",
+            "work_order_postponed",
+            "bms_unconfirmed",
+            "unknown",
+        ),
     },
 }
 LANGUAGES = ("de", "en", "fr", "it", "nl", "es")

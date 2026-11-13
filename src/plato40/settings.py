@@ -272,6 +272,108 @@ class DetectorSettings:
     pre-heat plan (bus lane s03). A design value, not fitted: every quickstart HP1 episode
     hour had a 24 h mean outdoor below it."""
 
+    ahu_fan_dp_slope_pa_per_kw: float = 119.2
+    """Slope (Pa per kW) of the AHU1 fan-implied filter dp, a least-squares fit on the dev year in
+    day mode with the fan below 4.6 kW and airflow at least 4000 m3/h (R2 0.984, residual sd
+    4.7 Pa). Frozen: never refit on the window judged (bus lane s04)."""
+
+    ahu_fan_dp_offset_pa: float = -295.9
+    """Offset (Pa) of the same fit: dp = slope * fan_kw + offset."""
+
+    ahu_fan_ceiling_kw: float = 5.3
+    """Fan power (kW) from which the AHU1 fan is at its ceiling (5.4 kW): the fan-implied dp no
+    longer holds and a drop in airflow shows the loss instead."""
+
+    ahu_day_start_hour: int = 6
+    """First local hour (Europe/Vienna) of AHU1 day mode; dp and airflow switch at local 06."""
+
+    ahu_day_end_hour: int = 22
+    """Last local hour of AHU1 day mode, inclusive; they switch back at local 23. Night and
+    summer flush modes are excluded by the clock, never by fan power."""
+
+    ahu_window_h: int = 24
+    """Hours of each of the two consecutive windows whose day medians give the loading rate."""
+
+    ahu_min_day_readings: int = 8
+    """Day-mode readings (count) needed in each rate window; fewer is no verdict."""
+
+    ahu_rate_fast_pa_per_day: float = 10.0
+    """Loading rate (Pa per 24 h) from which the AHU1 filter is clogging: about three times the
+    normal maximum (3.6 on dp, 4.8 on the fan) and a third of the clog rate (28-33)."""
+
+    ahu_due_dp_pa: float = 190.0
+    """24 h median day dp (Pa) at which a preventive filter change is planned; humans ordered at
+    180 and 215 Pa and the airflow knee is 245 Pa."""
+
+    ahu_due_lead_d: float = 7.0
+    """Days from the plan to the due date of a preventive filter change; all preventive work
+    orders are scheduled exactly 168 h after their creation."""
+
+    ahu_reset_dp_pa: float = 120.0
+    """Day median dp (Pa) below which, with the fan at most ``ahu_reset_fan_kw``, a filter change
+    is observed; resets reach 88-92 Pa. A blank dp is never a reset."""
+
+    ahu_reset_fan_kw: float = 3.4
+    """Day median fan power (kW) at or below which a reset is observed."""
+
+    ahu_reset_window_h: float = 3.0
+    """Hours (h) over which the reset is observed; completed work orders reset dp exactly at
+    their scheduled time."""
+
+    ahu_reset_min_readings: int = 4
+    """Day-mode dp readings (count) needed in the reset window."""
+
+    ahu_wo_grace_h: float = 3.0
+    """Hours (h) after a work order's scheduled time at which a missing reset means the order was
+    postponed; completed orders finish 1.5-3.5 h after it."""
+
+    ahu_wo_wait_h: float = 24.0
+    """Hours (h) after the grace period a postponement check waits for enough day readings."""
+
+    ahu_tech_job_min: int = 240
+    """Minutes (min) the filter job holds TECH_1; the two in-house filter jobs took 3.5 h and
+    3.75 h."""
+
+    ahu_tech_horizon_h: float = 24.0
+    """Hours ahead within which TECH_1's believed shift is used for a clog; else a contractor."""
+
+    ahu_tech_search_d: float = 14.0
+    """Days after the due date within which a believed TECH_1 shift is searched for a preventive
+    change; with none, a contractor is ordered."""
+
+    ahu_s03_guard_h: float = 48.0
+    """Hours (h) after an s03 ``cop_low`` check during which s04 claims no technician."""
+
+    ahu_escalate_after_h: float = 24.0
+    """Hours (h) after TECH_1's start with no reset before the contractor is ordered."""
+
+    ahu_airflow_low_m3h: float = 3900.0
+    """Day airflow (m3/h) below which, with the fan at its ceiling for a full hour, airflow is
+    lost; the normal day minimum is 4099."""
+
+    ahu_gap_h: float = 4.0
+    """Hours (h) a dp, airflow or HP1 reading is blank before it is a gap; every dev blank run is
+    at least 2 h."""
+
+    ahu_gap_inspect_h: float = 24.0
+    """Hours (h) of a gap that is neither degradation nor recovery before the sensor is
+    inspected."""
+
+    ahu_fault_residual_pa: float = 25.0
+    """Gap (Pa) between dp and the fan-implied dp that, held for ``ahu_fault_h``, is an implausible
+    dp; the dev maximum is 20.6 Pa."""
+
+    ahu_fault_h: float = 2.0
+    """Hours (h) the residual is held before an implausible dp is flagged."""
+
+    ahu_stuck_intervals: int = 8
+    """Identical dp readings (count) in a row, while the fan changes, that are a stuck dp; the
+    longest run in dev is 2."""
+
+    ahu_alarm_quiet_h: float = 24.0
+    """Hours (h) before a raised AHU1 BMS alarm within which an s04 episode must have opened,
+    else the alarm is unmatched."""
+
 
 @dataclass(frozen=True)
 class Settings:
