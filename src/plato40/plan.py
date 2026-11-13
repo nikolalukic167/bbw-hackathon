@@ -127,11 +127,56 @@ def _inspect(
     return asked
 
 
+def _repair(
+    chain: _Chain,
+    s: Signal,
+    priority: str,
+    reason: str,
+    verify: str,
+    conf: float,
+    settings: Settings,
+) -> bool:
+    """Send the repair to the in-house technician or an external plumber; True if technician.
+
+    A burst waits for nobody: the technician only if he is on shift now. A slow leak may
+    wait for his next shift within ``technician_horizon_h``. Availability is the roster as
+    known at the signal (``detect.water``).
+    """
+    tech, when = s.data.get("technician"), s.data.get("technician_from")
+    hours = 0.0 if priority == "critical" else settings.detect.technician_horizon_h
+    if when is not None and when - s.time <= pd.Timedelta(hours=hours):
+        chain.add(
+            s,
+            "dispatch_technician",
+            priority,
+            f"{reason}; technician on shift "
+            f"{'now' if tech else 'from ' + _local(when, s.time, settings)}.",
+            **({"resource_id": tech} if tech else {}),
+            expected_outcome="Technician finds and repairs the leak (simulated).",
+            verification_plan=verify,
+            confidence=conf,
+        )
+        return True
+    away = "not on shift now" if hours == 0 else f"not on shift within {hours:.0f} h"
+    nxt = "" if when is None else f" (next shift {_local(when, s.time, settings)})"
+    chain.add(
+        s,
+        "order_service",
+        priority,
+        f"{reason}; in-house technician {away}{nxt}, so order an external plumber.",
+        expected_outcome="External plumber finds and repairs the leak (simulated).",
+        verification_plan=verify,
+        confidence=conf,
+    )
+    return False
+
+
 def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision]:
     th = settings.detect
     chain = _Chain(ep)
     in_room = ep.assets[0] in states.rooms
-    flagged = technician = burst = False
+    flagged = technician = burst = escalated = False
+    sent_night = 0
     asked: Stay = None
     verify = (
         VERIFY_LEAK
@@ -169,16 +214,16 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                     confidence=0.8,
                 )
             asked = _inspect(chain, s, states, "critical", 0.8, asked)
-            chain.add(
+            _repair(
+                chain,
                 s,
-                "dispatch_technician",
                 "critical",
-                f"Repair the suspected burst: {s.detail}.",
-                expected_outcome="Technician finds and repairs the leak (simulated).",
-                verification_plan=VERIFY_LEAK,
-                confidence=0.8,
+                f"Repair the suspected burst: {s.detail}",
+                VERIFY_LEAK,
+                0.8,
+                settings,
             )
-            flagged = technician = burst = True
+            flagged = technician = burst = escalated = True
             continue
         nights = int(s.data["streak"])
         conf = 0.7 if in_room else 0.6
@@ -198,16 +243,21 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
         if nights >= th.leak_technician_nights and not technician:
             if in_room:
                 asked = _consent(chain, s, states, "high", conf, asked)
+            reason = f"{what} persists, night {nights} in a row: {s.detail}"
+            escalated = not _repair(chain, s, "high", reason, verify, conf + 0.1, settings)
+            technician, sent_night = True, nights
+        elif technician and not escalated and nights >= sent_night + th.leak_contractor_nights:
             chain.add(
                 s,
-                "dispatch_technician",
+                "order_service",
                 "high",
-                f"{what} persists, night {nights} in a row: {s.detail}.",
-                expected_outcome="Technician finds and repairs the leak (simulated).",
+                f"{what} still flows {nights - sent_night} nights after the technician was "
+                f"requested (night {nights} in a row): {s.detail}; order an external plumber.",
+                expected_outcome="External plumber finds and repairs the leak (simulated).",
                 verification_plan=verify,
                 confidence=conf + 0.1,
             )
-            technician = True
+            escalated = True
     return chain.out
 
 
