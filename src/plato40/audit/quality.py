@@ -457,8 +457,8 @@ def render_dataset(ds: Dataset, settings: Settings, number: str) -> str:
         parts += [
             "Out-of-bounds room temperatures (first rows). Distinct out-of-bounds values: "
             + ", ".join(fmt(v, 1) for v in out_of_bounds_values(ds))
-            + ". Exact round values repeated across rooms look like sensor error codes, "
-            "not physics:",
+            + ". Exact round values far outside the physical range look like sensor "
+            "error codes rather than measurements:",
             "",
             table(["time (UTC)", "room", "temperature_c", "setpoint_c"], examples),
             "",
