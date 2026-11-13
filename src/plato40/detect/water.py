@@ -4,11 +4,12 @@
   Normal rooms reach zero at least once on 100 % of nights (audit section 6). Needs the
   whole night present; a lone blank reading is bridged (one bridged reading can hide at
   most one of the 10 or more dry intervals every normal dev night has), a longer blank
-  gives no verdict. On a night where
-  the meter jitters (a negative step), hourly volumes are judged instead, since the
-  jitter cancels within an hour.
-- ``burst``: a room's night volume reaches ``burst_night_volume_l``. Known from the
-  interval where the running total crosses it, so it fires during the night.
+  gives no verdict. On a night where the meter jitters (a negative step), hourly volumes
+  are judged instead, since the jitter cancels within an hour.
+- ``burst``: a room's night volume reaches ``burst_night_volume_l`` with flow in every
+  night interval so far. A bath fills in one interval (up to 250 L in dev bathtub
+  rooms) between dry ones, so it cannot trip it; a burst flows in all of them. Known
+  from the interval where the running total crosses it, so it fires during the night.
 - ``burst_flow``: a room draws at least ``burst_flow_l_per_15min`` in each of
   ``burst_flow_intervals`` consecutive intervals, at any hour.
 - ``night_gap``: median of main meter minus room meters reaches ``gap_night_l_per_h``;
@@ -92,8 +93,9 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         f"flow in all {len(series)} night intervals, {how}",
                     )
                 )
-            running = series.fillna(0.0).cumsum()
-            crossed = running.index[(running >= th.burst_night_volume_l).to_numpy()]
+            running = series.cumsum()
+            wet = (series >= th.leak_floor_l_per_15min).cumprod().astype(bool)
+            crossed = running.index[((running >= th.burst_night_volume_l) & wet).to_numpy()]
             if len(crossed):
                 t = crossed[0]
                 out.append(
@@ -103,7 +105,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         "burst",
                         (room,),
                         (f"room_water.csv:{room}:{stamp(first)}..{stamp(t)}",),
-                        f"{running[t]:.0f} L since {stamp(first)}",
+                        f"{running[t]:.0f} L since {stamp(first)}, flow in every interval",
                     )
                 )
         g = gap.loc[block.index]
