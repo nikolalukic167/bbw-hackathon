@@ -86,27 +86,32 @@ class Context:
         )
 
 
-def required_level(decision: Mapping[str, Any], ctx: Context) -> Level:
-    """Return the most restrictive level any rule assigns to ``decision``."""
+def rules(decision: Mapping[str, Any], ctx: Context) -> list[tuple[Level, str]]:
+    """Return every rule that applies to ``decision``, with the level it requires."""
     action = decision["action"]
     named = {str(a) for a in decision["affected_assets"]}
     resources = (named & ctx.resource_ids) | {str(decision.get("resource_id", ""))}
     assets = named - ctx.resource_ids
     occupied = assets & ctx.occupied_rooms
-    level = Level.AUTONOMOUS
+    hits: list[tuple[Level, str]] = []
     if action == "dispatch_robot" and occupied:
-        return Level.FORBIDDEN
+        hits.append((Level.FORBIDDEN, "robot into an occupied room"))
     if action == "release_room" and not assets <= ctx.clean_rooms:
-        return Level.FORBIDDEN
+        hits.append((Level.FORBIDDEN, "release of a room that is not clean"))
     if action in ENTERS_ROOM and occupied:
-        level = max(level, Level.APPROVAL_AND_CONSENT)
+        hits.append((Level.APPROVAL_AND_CONSENT, f"enters occupied {', '.join(sorted(occupied))}"))
     if action in ALWAYS_APPROVAL:
-        level = max(level, Level.HUMAN_APPROVAL)
+        hits.append((Level.HUMAN_APPROVAL, f"{action} always needs approval"))
     if action == "order_service" and not assets <= ctx.logistics_ids:
-        level = max(level, Level.HUMAN_APPROVAL)
+        hits.append((Level.HUMAN_APPROVAL, "contractor service"))
     if action == "schedule_cleaning" and resources & ctx.on_call_ids:
-        level = max(level, Level.HUMAN_APPROVAL)
-    return level
+        hits.append((Level.HUMAN_APPROVAL, "on-call housekeeper is costly"))
+    return hits
+
+
+def required_level(decision: Mapping[str, Any], ctx: Context) -> Level:
+    """Return the most restrictive level any rule assigns to ``decision``."""
+    return max((level for level, _ in rules(decision, ctx)), default=Level.AUTONOMOUS)
 
 
 def violations(decision: Mapping[str, Any], ctx: Context) -> list[str]:
@@ -127,11 +132,13 @@ def violations(decision: Mapping[str, Any], ctx: Context) -> list[str]:
     return errors
 
 
-def apply(decision: dict[str, Any], ctx: Context) -> None:
-    """Set ``autonomy`` and both approval flags from the required level; refuse forbidden."""
-    need = required_level(decision, ctx)
+def apply(decision: dict[str, Any], ctx: Context) -> str:
+    """Set ``autonomy`` and both approval flags; refuse forbidden; return the rule text."""
+    hits = rules(decision, ctx)
+    need = max((level for level, _ in hits), default=Level.AUTONOMOUS)
     if need is Level.FORBIDDEN:
         raise ValueError(f"{decision['event_id']}: {decision['action']} is forbidden")
     decision["requires_human_approval"] = need >= Level.HUMAN_APPROVAL
     decision["requires_guest_consent"] = need >= Level.APPROVAL_AND_CONSENT
     decision["autonomy"] = CONTRACT_NAMES[need]
+    return "; ".join(why for _, why in hits) or "autonomous by default"
