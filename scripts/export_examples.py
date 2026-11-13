@@ -1,7 +1,9 @@
-"""Write the golden bus examples from a real run: S01 in full, one S02 and one S03 shape.
+"""Write the golden bus examples from a real run: S01 in full and one S02 shape.
 
 usage: python scripts/export_examples.py <quickstart_dir> <out_dir>
 Every row is taken from the pipeline's own signals and decisions; nothing is typed by hand.
+S03 has its own trigger lane and arbiter; its example is written by
+``plato40 bus <quickstart_dir> --lane s03 --out <out_dir>``.
 """
 
 from __future__ import annotations
@@ -88,18 +90,7 @@ def cause_s02(assets: list[str]) -> str:
     return "pipe_leak" if assets == ["WM_MAIN"] else "room_leak"
 
 
-def intent_s03(d: dict[str, Any]) -> str:
-    """Return the S03 intent of a planner decision."""
-    return {
-        "flag_anomaly": "flag_hp_degradation",
-        "dispatch_technician": "service_heat_pump",
-        "order_service": "escalate_contractor",
-        "optimize_energy": "protect_occupied_rooms",
-        "notify_guest": "notify_guest_comfort",
-    }.get(d["action"], "flag_sensor_gap")
-
-
-INTENT = {"s01": intent, "s02": intent_s02, "s03": intent_s03}
+INTENT = {"s01": intent, "s02": intent_s02}
 
 
 def message(d: dict[str, Any], lang_default: str) -> dict[str, str]:
@@ -124,7 +115,7 @@ def main(data: Path, out: Path) -> None:
     staff = {str(r["resource_id"]) for r in ds.building["staff"]["resources"]}
     by_ep = {e.episode_id: e for e in run.episodes}
     picks = list(S01_EPISODES)
-    for issue in ("water_leak", "heating_comfort"):
+    for issue in ("water_leak",):
         picks.append(
             next(
                 e.episode_id
@@ -134,7 +125,7 @@ def main(data: Path, out: Path) -> None:
             )
         )
     out.mkdir(parents=True, exist_ok=True)
-    for lane in ("s01", "s02", "s03"):
+    for lane in ("s01", "s02"):
         rows, decisions, sig_ids = [], [], {}
         for eid in (p for p in picks if LANE_OF[by_ep[p].issue_type] == lane):
             for n, s in enumerate(by_ep[eid].signals, start=1):

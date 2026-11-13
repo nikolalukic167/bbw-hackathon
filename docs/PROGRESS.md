@@ -72,6 +72,10 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T5 | Forecast cold snap and price peaks joined by `issued_utc` / `published_utc` | D | done | Trade-offs 6 |
 | T8 | Actions: flag, technician or contractor (approval), comfort-first energy plan, guest notices <= 1 per 12 h | A | done | Trade-offs 6 |
 | T7 | Rule: comfort band never breached for an energy metric (needs the daily energy plan) | A | todo | Safe autonomy 10 |
+| T8 | Bus lane s03 (`plato40 bus --lane s03`): kinds `cop_low comfort_deficit cold_forecast price_peak` with causes; pre-heat and off-peak plans only while HP1 is degraded | A | done | Trade-offs 6 |
+| T10 | S03 guest messages: one per guest, guest's language, at the request time (before `response_due_utc`); window-open replies ask to close it; `llm_guard` with 6-language templates | A | done | Guest comms 6 |
+| T8 | Arbiter: contract and known-at per proposal, policy flags, TECH_1 ledger with roster as known; S03 quickstart 72 of 72 accepted, 0 violations | A | done | Safe autonomy 10 |
+| T8 | Wire the bus into `plato40 run` (S03 still planned by `plan._heating` there) and tune S03 lane volume on dev | A | todo | Detection 10 |
 
 ## Level 2: act autonomously (advanced)
 

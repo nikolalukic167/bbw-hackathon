@@ -48,6 +48,7 @@ uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --ve
                                                         # merge lane proposals (docs/BUS.md)
 uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
+uv run plato40 bus <data_dir> --lane s03 --out out/  # S03 lane -> bus -> arbiter (docs/BUS.md)
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
@@ -84,12 +85,15 @@ src/plato40/
   policy.py       autonomy levels, approval and consent flags, forbidden actions
   contract.py     decision contract checks and JSONL I/O
   pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
-  bus.py          trigger bus contract (docs/BUS.md); arbiter.py merges lane proposals
+  bus.py          trigger bus contract: signal, proposal and verdict rows (docs/BUS.md)
+  lane_s03.py     S03 trigger lane: heating and comfort signals and proposals on the bus
+  arbiter.py      judges lane proposals on one shared ledger and merges them with the
+                  pipeline's decisions (contract, known-at, roster, policy, message guard)
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
   trace.py        run summary, trace file and explain
   ui.py, ui.html  operations console: one self-contained HTML page per run
   audit/          one module per audit section, assembled by audit/report.py
-  cli.py          plato40 run | arbiter | validate | explain | ui | audit
+  cli.py          plato40 run | arbiter | bus | validate | explain | ui | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
 scripts/          fetch_data.sh

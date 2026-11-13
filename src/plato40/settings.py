@@ -198,6 +198,11 @@ class DetectorSettings:
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
+    preheat_forecast_c: float = -5.0
+    """Coldest forecast hour (degC) in the next 24 h below which a degraded HP1 gets a
+    pre-heat plan (bus lane s03). A design value, not fitted: every quickstart HP1 episode
+    hour had a 24 h mean outdoor below it."""
+
 
 @dataclass(frozen=True)
 class Settings:

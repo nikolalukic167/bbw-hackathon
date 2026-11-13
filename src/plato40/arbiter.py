@@ -1,10 +1,13 @@
 """The arbiter (docs/BUS.md): turns lane proposals into decisions next to the pipeline's own.
 
-Proposals are judged in time order, and within one minute by priority. A proposal is
-rejected, with the reason in its verdict, when it breaks the bus contract or known-at, when
-a claim overlaps a resource already granted, when the policy forbids it, or when the decision
-built from it breaks the decision contract. An accepted proposal is copied unchanged into a
-decision (``event_id`` = proposal id); the policy then sets autonomy and the approval flags.
+Proposals are judged in time order, within one minute by priority, then lane (s02 safety,
+s01 turnaround, s03 comfort). A proposal is rejected, with the reason in its verdict, when it
+breaks the bus contract or known-at, when it needs a proposal not accepted, when its guest
+message breaks the LLM contract, when a claimed person is not on shift at the claim's start
+(roster as known at ``t``), when a claim overlaps a resource already granted, when the policy
+forbids it, or when the decision built from it breaks the decision contract. An accepted
+proposal is copied unchanged into a decision (``event_id`` = proposal id); the policy then
+sets autonomy and the approval flags.
 
 The shared ledger starts with the pipeline's own staffed decisions, each held for its
 setting's duration from its timestamp. For a lane listed in ``lanes``, the pipeline's
@@ -25,6 +28,7 @@ from plato40.contract import Decision
 from plato40.detect.grid import stamp
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
+from plato40.staff import Roster
 from plato40.state import RoomStates
 
 COPIED = (
@@ -35,6 +39,9 @@ COPIED = (
     "verification_plan",
 )
 RANK = {p: n for n, p in enumerate(contract.PRIORITIES)}
+LANE_RANK = {"s02": 0, "s01": 1, "s03": 2}
+"""At one minute, safety first: a leak gets the technician before the heat pump does."""
+ROSTER_ROLE = {"cleaner": "cleaner", "robot": "robot", "technician": "technician"}
 
 
 class Ledger:
@@ -167,7 +174,15 @@ def arbitrate(
         for n, r in enumerate(rows, start=1)
         if isinstance(r, Mapping) and r.get("row") == "proposal"
     ]
-    proposals.sort(key=lambda x: (str(x[1].get("t")), RANK.get(str(x[1].get("priority")), 9), x[0]))
+    proposals.sort(
+        key=lambda x: (
+            str(x[1].get("t")),
+            RANK.get(str(x[1].get("priority")), 9),
+            LANE_RANK.get(str(x[1].get("lane")), 9),
+            x[0],
+        )
+    )
+    roster = Roster(ds)
     verdicts = []
     accepted: set[str] = set()
     for n, p in proposals:
@@ -180,6 +195,11 @@ def arbitrate(
                 if x not in accepted
             ]
             why += _message_problems(p, req)
+            t = pd.Timestamp(p["t"])
+            for c in p.get("claims", []):
+                role = ROSTER_ROLE.get(str(c["res"]))
+                if role and c["id"] not in roster.on_shift(role, pd.Timestamp(c["from"]), t):
+                    why.append(f"{c['id']} not on shift at {c['from']} (roster known at {p['t']})")
             for rid, start, end in claims:
                 holder = ledger.clash(rid, start, end)
                 if holder is not None:

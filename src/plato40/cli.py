@@ -6,21 +6,28 @@
 ``plato40 validate <decisions.jsonl> <data_dir>``  check contract and autonomy policy
 ``plato40 explain <trace.jsonl> [episode]``        why the pipeline acted or did not
 ``plato40 ui <decisions.jsonl> <trace.jsonl> --out console.html``  operations console page
+``plato40 bus <data_dir> --lane s03 --out <dir>``  one trigger lane through the bus and arbiter
 ``plato40 audit <data_root> --out <dir>``          write the data audit report
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
-from plato40 import arbiter, bus, contract, pipeline, trace, ui
+import pandas as pd
+
+from plato40 import arbiter, bus, contract, lane_s03, llm_guard, pipeline, trace, ui
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
+
+ROW_ORDER = {"signal": 0, "proposal": 1, "verdict": 2}
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -61,6 +68,18 @@ def _parser() -> argparse.ArgumentParser:
     page.add_argument("decisions", type=Path, help="decisions.jsonl written by run")
     page.add_argument("trace", type=Path, help="trace written by run --trace")
     page.add_argument("--out", type=Path, required=True, help="HTML page to write")
+    lane = sub.add_parser("bus", help="run one trigger lane through the bus and the arbiter")
+    lane.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
+    lane.add_argument("--lane", choices=("s03",), default="s03", help="trigger lane to run")
+    lane.add_argument(
+        "--out", type=Path, required=True, help="directory for <lane>.bus.jsonl and decisions"
+    )
+    lane.add_argument(
+        "--llm-cache",
+        type=Path,
+        default=Path("cache/llm"),
+        help="checked LLM answers (llm_guard); a miss uses the template",
+    )
     audit = sub.add_parser("audit", help="write the data audit report")
     audit.add_argument(
         "data_root",
@@ -123,6 +142,44 @@ def _validate(path: Path, data_dir: Path) -> int:
     return 1 if errors else 0
 
 
+def _bus(data_dir: Path, lane: str, out: Path, cache: Path) -> int:
+    ds = load_dataset(data_dir)
+    settings = Settings(data_root=data_dir, out_dir=out)
+    call = None
+    if os.environ.get("PLATO40_LLM", "off") == "on":
+        model = os.environ.get("PLATO40_LLM_MODEL", llm_guard.DEFAULT_MODEL)
+        call = llm_guard.anthropic_call(model)
+    rows, sources = lane_s03.rows(ds, settings, cache, call)
+    decisions, verdicts = arbiter.arbitrate(ds, settings, [], rows)
+    board = sorted(
+        rows + verdicts,
+        key=lambda r: (pd.Timestamp(r.get("t_known") or r["t"]), ROW_ORDER[r["row"]], r["id"]),
+    )
+    out.mkdir(parents=True, exist_ok=True)
+    bus_path, dec_path = out / f"{lane}.bus.jsonl", out / f"{lane}.decisions.jsonl"
+    bus_path.unlink(missing_ok=True)  # a new run starts a new board; rows are only appended
+    bus.append(bus_path, board)
+    contract.write_decisions(decisions, dec_path)
+    req = ds.table("guest_requests.csv")
+    asked = {
+        str(k): pd.Timestamp(v)
+        for k, v in zip(req["request_id"], req["timestamp_utc"], strict=True)
+    }
+    written: list[Mapping[str, Any]] = list(board)
+    errors = bus.check_file(written, contract.known_asset_ids(ds.building))
+    errors += bus.check_known_at(written, asked)
+    errors += pipeline.check(ds, RoomStates(ds), decisions)
+    n = {k: sum(r["row"] == k for r in board) for k in bus.ROWS}
+    rejected = sum(not v["accepted"] for v in verdicts)
+    print(f"{lane}: {n['signal']} signals, {n['proposal']} proposals, {rejected} rejected")
+    print(f"{lane}: guest messages by source {dict(sorted(sources.items()))}")
+    print(f"wrote {bus_path} and {len(decisions)} decisions to {dec_path}")
+    for e in errors:
+        print(e, file=sys.stderr)
+    print(f"checks: bus contract, known-at, decision contract and policy: {len(errors)} violations")
+    return 1 if errors else 0
+
+
 def _audit(data_root: Path, out: Path) -> int:
     paths = discover_datasets(data_root)
     if not paths:
@@ -155,4 +212,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         n = ui.render(args.decisions, args.trace, args.out)
         print(f"wrote {args.out} with {n} episodes")
         return 0
+    if args.command == "bus":
+        return _bus(args.data_dir, args.lane, args.out, args.llm_cache)
     return _audit(args.data_root, args.out)

@@ -99,6 +99,8 @@ LANES: dict[str, dict[str, Any]] = {
             "escalate_contractor",
             "notify_guest_comfort",
             "flag_sensor_gap",
+            "boost_room_setpoint",
+            "flag_room_heating",
         ),
         "actions": (
             "adjust_room_setpoint",

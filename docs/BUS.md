@@ -3,8 +3,11 @@
 One append-only JSONL file (`bus.jsonl`). Triggers write **signals** and **proposals** to their
 own lane, the arbiter writes **verdicts**, and only the arbiter writes `decisions.jsonl`.
 Contract code: `src/plato40/bus.py`. LLM contract: `src/plato40/llm_guard.py`.
+Arbiter: `src/plato40/arbiter.py`. First native trigger lane: `src/plato40/lane_s03.py`.
 Golden examples, all generated from a real quickstart run: `examples/bus/s01.bus.jsonl`
 (copy this one), `s02.bus.jsonl`, `s03.bus.jsonl` and the matching `*.decisions.jsonl`.
+S01 and S02 are exported from the pipeline (`scripts/export_examples.py`); S03 is written
+by its own lane and the arbiter: `plato40 bus <data_dir> --lane s03 --out examples/bus`.
 
 ```
 trigger s01 ─┐  signal, proposal          verdict             decisions.jsonl
@@ -59,13 +62,13 @@ IDs: `<lane>-<episode without EP->-sigNN`, `-propNN`, and `<proposal id>-v` for 
 ## Enums per lane
 
 `kind` = what the trigger saw; `intent` = why it proposes; `action` = the contract verb.
-*Italic* = recommended, not emitted by the code at `97b00cc` yet.
+*Italic* = recommended, not emitted by the code yet (S01/S02 at `97b00cc`; S03 by `lane_s03.py`).
 
 | lane | issue_type | kind | intent | action | cause |
 |---|---|---|---|---|---|
 | **s01** | `room_turnaround` | `request checkin_due overstay checkout ready day_plan` | `clean_first robot_prepass promise_ready_time notify_ready_now notify_day_delay offer_alternative_room withdraw_offer escalate_waiting_guest request_extra_cleaning` | `schedule_cleaning dispatch_robot notify_guest reassign_room request_human_approval release_room defer_action` | none |
 | **s02** | `water_leak` | `night_flow burst burst_flow night_gap night_blank` | `flag_suspected_leak inspect_room inspect_pipes ask_entry_consent block_room dispatch_plumber` *`flag_meter_artefact watch_next_night`* | `request_inspection dispatch_technician block_room notify_guest flag_anomaly request_human_approval defer_action` | *`room_leak pipe_leak guest_use cleaning_use meter_artefact meter_exchange unknown`* |
-| **s03** | `heating_comfort` | `cop_low` *`comfort_deficit cold_forecast price_peak`* | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort` *`preheat_before_cold shift_load_off_peak flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | *`hp_degradation cold_snap sensor_gap unknown`* |
+| **s03** | `heating_comfort` | `cop_low comfort_deficit cold_forecast price_peak` | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort preheat_before_cold shift_load_off_peak boost_room_setpoint flag_room_heating` *`flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | `hp_degradation cold_snap sensor_gap unknown` |
 
 `cause` is how S02 and S03 tell a real fault from a look-alike (guest bath, cleaning, meter
 swap, cold snap). A proposal with `cause: meter_artefact` should be `flag_anomaly`, never a
@@ -180,8 +183,70 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
    decisions for those lanes; without it, accepted proposals are added next to them.
    One file per lane, committed by its owner: nobody writes another lane's file.
 
+## S03 lane: what it writes (`src/plato40/lane_s03.py`)
+
+`plato40 bus <data_dir> --lane s03 --out <dir>` runs the lane, then the arbiter, writes
+`<dir>/s03.bus.jsonl` and `<dir>/s03.decisions.jsonl`, and exits 1 on any bus, known-at,
+decision-contract or policy violation. HP1 counts as *degraded at t* when the hourly check
+at `t` floored to the hour is `cop_low`.
+
+| kind | when (t_known) | assets | cause | proposals (intent → action) |
+|---|---|---|---|---|
+| `cop_low` | each hourly check with 24 h COP below `cop_ratio_low` of the reference | HP1 | `hp_degradation` | first of an episode: `flag_hp_degradation` → `flag_anomaly`; `service_heat_pump` → `dispatch_technician` with a TECH_1 claim, or `escalate_contractor` → `order_service` if no technician on shift within 24 h; `protect_occupied_rooms` → `optimize_energy`. Later: `escalate_contractor` once, 24 h after the technician's start if the COP is still low |
+| `comfort_deficit` | at a `cop_low` check | the rooms | `hp_degradation` | one `notify_guest_comfort` per guest newly in deficit, once per stay and episode |
+| `comfort_deficit` | at a `temperature_cold` request, rounded up to the minute (so before `response_due_utc`) | the room | `hp_degradation` while degraded, else `unknown` (`sensor_gap` with no reading in the last hour) | a reply to that guest with `guest_request_ids`; outside HP1 episodes also `boost_room_setpoint` → `adjust_room_setpoint` (room below the band, window not reported open) and `flag_room_heating` → `flag_anomaly` (also below its setpoint by `comfort_deficit_k`) |
+| `cold_forecast` | each forecast issue while degraded, coldest hour of the next 24 h below `preheat_forecast_c` | HP1, BUILDING | `cold_snap` | `preheat_before_cold` → `optimize_energy` |
+| `price_peak` | each tariff publication while degraded | HP1, BUILDING | none | `shift_load_off_peak` → `optimize_energy`, only where occupied rooms stay in the band |
+
+Guest messages: one proposal per guest, language from the request, else the booking's latest
+request known at `t`, else `en`. Text goes through `llm_guard.phrase` with `say = {room}`;
+three templates (`hp`, `room`, `window`) in all six languages, so a cache miss or a rejected
+LLM answer still gives the guest their language. A cold report with the window reported open
+asks the guest to close it.
+
+Quickstart: 114 signals, 72 proposals, 72 accepted, 0 violations; byte-identical on rerun.
+Real lines from `examples/bus/s03.bus.jsonl` (shortened with `…`):
+
+```json
+{"row":"proposal","lane":"s03","id":"s03-heating_comfort-HP1-20260115T1900Z-prop02",
+ "t":"2026-01-15T19:00Z","intent":"service_heat_pump","action":"dispatch_technician",
+ "assets":["HP1"],"priority":"high","cause":"hp_degradation","resource_id":"TECH_1",
+ "claims":[{"res":"technician","id":"TECH_1","from":"2026-01-16T07:00Z","min":1440}],
+ "reason":"Service HP1 (COP 0.87 of reference); technician TECH_1 on shift from Fri 16 Jan 08:00 local.", …}
+{"row":"signal","lane":"s03","id":"s03-heating_comfort-HP1-20260115T1900Z-sig73",
+ "t_known":"2026-01-17T18:00Z","kind":"comfort_deficit","assets":["R406"],"cause":"hp_degradation",
+ "detail":"guest of BK000213 reports cold in R406 (13.8 degC, window open) while HP1 is degraded",
+ "facts":{"request":"GR000051","due":"2026-01-17T18:44Z","language":"en","window_open":1.0, …}, …}
+{"row":"proposal","lane":"s03","id":"s03-heating_comfort-HP1-20260115T1900Z-prop40",
+ "t":"2026-01-17T18:00Z","intent":"notify_guest_comfort","action":"notify_guest","assets":["R406"],
+ "guest_request_ids":["GR000051"],"message":{"language":"en","text":"Thank you for your message
+ about room R406. The window sensor shows an open window; please close it so the room can warm
+ up. We are also checking the heating."}, …}
+```
+
+## The arbiter (`src/plato40/arbiter.py`)
+
+Proposals are judged in time order, then by lane rank (s02 safety, s01 turnaround, s03
+comfort), then by ID, using only rows known at their `t`:
+
+1. **Contract**: `bus.check_row`, and every cited signal and guest request known at `t`.
+2. **Policy**: a forbidden action is rejected; otherwise `policy.apply` sets `autonomy` and
+   both flags from the room states at `t`.
+3. **Ledger**: each claim's resource must be believed on shift at its `from` (roster as
+   known at `t`; on-call and rooms have no roster rows) and free then; an accepted claim
+   holds it for `min` minutes.
+
+An accepted proposal is copied unchanged into a decision with the next
+`<episode_id>-NN` event ID and the previous decision of its episode as dependency. A
+rejection is a verdict with `why` and no decision, for example `claims: TECH_1 is not on
+shift at 2026-01-15T07:00Z (roster known at …)` or `contract: autonomy is set by the policy,
+not by a proposal`.
+
 ## Known gaps in the examples (current code at 97b00cc, not the target)
 
-- S01 `notify_day_delay` and every S03 `notify_guest_comfort` are one English line for many rooms.
-  The target is one proposal per guest, in the guest's language, before the request's `response_due_utc`.
+- S01 `notify_day_delay` is one English line for many rooms. The target is one proposal per
+  guest, in the guest's language, before the request's `response_due_utc` (S03 does this).
 - The S02 example episode (R104 burst) has no guest message; R305 (from 20 Jan) shows `ask_entry_consent`.
+- `plato40 run` still plans S03 with `plan._heating`; only `plato40 bus --lane s03` uses the
+  lane and the arbiter. S01 and S02 still have no native lane.
+- S03 `flag_sensor_gap` is not emitted; a blank room gets `cause: sensor_gap` on its reply.
