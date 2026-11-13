@@ -8,7 +8,7 @@ import pandas as pd
 
 from plato40 import contract, plan, policy
 from plato40.contract import Decision
-from plato40.detect import data_quality, heating, turnaround, water
+from plato40.detect import data_quality, heating, logistics, turnaround, water
 from plato40.episodes import Episode, Signal, group
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
@@ -67,6 +67,7 @@ def run(ds: Dataset, settings: Settings) -> Run:
         water.signals(ds, settings)
         + turnaround.signals(ds, settings)
         + heating.signals(ds, settings)
+        + logistics.signals(ds, settings)
         + data_quality.signals(ds, settings)
     )
     episodes = group(signals, settings.detect.episode_quiet_h)

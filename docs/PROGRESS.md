@@ -84,8 +84,8 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T9 | Capacity from present cleaners, on-call 15:30-22:00, two robots; never invented | S05 | A | todo | Constraints 8 |
 | T10 | Staggered check-in times sent to guests | S05 | A | todo | Guest comms 6 |
 | T9 | Daily `optimize_energy`: battery and pre-heat against published prices and PV | Energy | A | todo | Trade-offs 6 |
-| T9 | Waste pickup before the container fills; robots carry bins if Q10 allows | Logistics | A | todo | Coordination 8 |
-| T9 | Vending restock before stock-out (first on the cut list) | Logistics | A | todo | Coordination 8 |
+| T9 | Waste pickup before the container fills (96 h fill rate vs next Tue/Fri pickup, 24 h lead); floor bins never fill, robots not used (Q10) | Logistics | A | done | Coordination 8 |
+| T9 | Vending restock before stock-out, same forecast against Mon/Thu restock | Logistics | A | done | Coordination 8 |
 
 ## Level 3: learn and feed back
 

@@ -507,6 +507,30 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
     return chain.out
 
 
+def _logistics(ep: Episode, settings: Settings) -> list[Decision]:
+    chain = _Chain(ep)
+    s = ep.signals[0]
+    d = s.data
+    service = "waste pickup" if s.kind == "pickup" else "vending restock"
+    arrive = _local(s.time + d["lead"], s.time, settings)
+    chain.add(
+        s,
+        "order_service",
+        "medium",
+        f"Order an extra {service} (lead {d['lead'].total_seconds() / 3600:.0f} h, by "
+        f"{arrive}): {s.detail}.",
+        expected_outcome=f"Extra {service} before {_local(d['empty'], s.time, settings)} "
+        "(simulated).",
+        verification_plan=(
+            f"A {'waste_pickup' if s.kind == 'pickup' else 'vending_restocked'} event by "
+            f"{arrive} and no {'waste_bin_full' if s.kind == 'pickup' else 'vending_out_of_stock'}"
+            "; escalate otherwise."
+        ),
+        confidence=0.7,
+    )
+    return chain.out
+
+
 def _data_quality(ep: Episode) -> list[Decision]:
     chain = _Chain(ep)
     s = ep.signals[0]
@@ -523,6 +547,8 @@ def decisions(episodes: list[Episode], states: RoomStates, settings: Settings) -
             out += _water(ep, states, settings)
         elif ep.issue_type == "heating_comfort":
             out += _heating(ep, settings)
+        elif ep.issue_type == "logistics":
+            out += _logistics(ep, settings)
         elif ep.issue_type == "data_quality":
             out += _data_quality(ep)
         elif ep.issue_type != "room_turnaround":

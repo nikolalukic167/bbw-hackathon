@@ -170,6 +170,14 @@ class DetectorSettings:
     notice_gap_h: float = 12.0
     """Minimum hours between two heating notices to guests in one episode."""
 
+    logistics_rate_h: int = 96
+    """Hours over which the waste fill or vending use rate is averaged; several days, since
+    the container fills in jumps when floor bins are emptied into it."""
+
+    logistics_buffer_h: float = 12.0
+    """Hours beyond the order lead time within which an extra pickup or restock is ordered.
+    On dev 96 h and 12 h give 21 of 23 shortages ordered 20 h ahead or more, 1 false order."""
+
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
