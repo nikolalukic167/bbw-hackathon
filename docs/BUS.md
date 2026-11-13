@@ -122,7 +122,9 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
   - **every number and ID in the text is a `say` value**;
   - every `must_say` value appears;
   - at most 400 characters;
-  - no banned claims (`guarantee`, `confirmed`, `kostenlos`, …).
+  - no banned claims in any of the six languages (`guarantee`, `garanti`, `confirm`, `kostenlos`, …);
+  - an estimate stays an estimate: when the rules' text says "expected", the answer keeps a
+    hedge word of its language (`voraussichtlich`, `devrait`, `dovrebbe`, `verwacht`, `debería`, …).
 - **Call:** output forced through one tool, so the reply is JSON. The API takes no
   temperature for these models and two calls can differ, so determinism comes from the **cache**:
   - only an answer that passes is cached, keyed by sha256(model + prompt version + full task);

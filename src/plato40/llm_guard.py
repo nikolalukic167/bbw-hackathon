@@ -8,7 +8,8 @@ chooses the words around them.
   built only from bus rows known by ``t`` (``known_by`` <= ``t``; read them with
   ``bus.read(path, until=t)``); the template contains every ``must_say`` key.
 - Postconditions (on the output): schema; same language; every number and ID in the text is
-  a ``say`` value; every ``must_say`` value appears; length limit; no banned claim.
+  a ``say`` value; every ``must_say`` value appears; length limit; no banned claim in any
+  of the six languages; a hedged task keeps a hedge word of its language.
 - On any postcondition failure the template text is used and the failure is returned for
   the trace. A failed precondition raises: it is a bug in the caller, not in the LLM.
 
@@ -33,18 +34,40 @@ import pandas as pd
 
 from plato40.bus import LANGUAGES
 
-PROMPT_VERSION = "guest_message/2"
+PROMPT_VERSION = "guest_message/3"
 DEFAULT_MODEL = "claude-haiku-5-5"
 MAX_CHARS = 400
 NUMBER = re.compile(r"\d+(?:[:.,]\d+)*")
 ID = re.compile(r"\b(?:R\d{3}|BK\d+|GR\d+|WO\d+|EP-\S+|[A-Z]+_\d+)\b")
 ISO = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?Z$")
-BANNED = ("guarantee", "garantiert", "confirmed", "bestätigt", "free of charge", "kostenlos")
+BANNED = (
+    "guarantee",
+    "garanti",  # fr, it, es
+    "gegarandeerd",
+    "confirm",  # en, fr confirmé, es confirmado
+    "confermat",
+    "bestätigt",
+    "bevestig",
+    "free of charge",
+    "kostenlos",
+    "gratuit",  # fr, it gratuito
+    "gratis",
+)
+HEDGES = {
+    "en": ("expected", "should", "likely"),
+    "de": ("voraussichtlich", "erwartet"),
+    "fr": ("devrait", "prévu", "prévue"),
+    "it": ("dovrebbe", "previst"),
+    "nl": ("verwacht",),
+    "es": ("previst", "debería", "se espera"),
+}
 SYSTEM = (
     "You write one short message to a hotel guest in the language given. Use only the facts "
     "given. Copy every time, date, room number and ID exactly as it appears in SAY; write no "
     "other number, time, price, ID or promise. Never use the words guarantee or confirmed, "
-    "in any language: an offer pending approval is only offered. "
+    "in any language: an offer pending approval is only offered. Keep every estimate an "
+    "estimate (expected, voraussichtlich, devrait, dovrebbe, naar verwachting, debería): "
+    "never turn it into a promise. "
     "Answer with the message tool."
 )
 TOOL: Any = {
@@ -74,6 +97,7 @@ class Task:
     say: Mapping[str, str]
     must_say: tuple[str, ...]
     template: str
+    hedged: bool = False
 
 
 @dataclass
@@ -138,6 +162,8 @@ def postconditions(task: Task, raw: str) -> list[str]:
     errors += [f"invented id {i!r}" for i in ids if i not in allowed_ids]
     errors += [f"missing {k}={task.say[k]!r}" for k in task.must_say if task.say[k] not in text]
     errors += [f"banned claim {b!r}" for b in BANNED if b in text.lower()]
+    if task.hedged and not any(h in text.lower() for h in HEDGES[task.language]):
+        errors.append(f"hedge lost: none of {HEDGES[task.language]}")
     return errors
 
 

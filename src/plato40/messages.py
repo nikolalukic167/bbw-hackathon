@@ -64,6 +64,7 @@ def task_for(d: Decision) -> Task | None:
         say=say,
         must_say=tuple(say),
         template=template,
+        hedged="expected" in m["text"],
     )
 
 
