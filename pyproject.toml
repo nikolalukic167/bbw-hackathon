@@ -1,0 +1,54 @@
+[project]
+name = "plato40"
+version = "0.1.0"
+description = "Steward: deterministic operations pipeline for the fictional PLATO-40 hotel (proximata Hackathon '26, Rhomberg track)."
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "nikolalukic167", email = "nikolalukic167@gmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "matplotlib>=3.9",
+    "numpy>=2.0",
+    "pandas>=2.2",
+]
+
+[project.scripts]
+plato40 = "plato40.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "pandas-stubs>=2.2",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF", "D", "PTH", "NPY"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["matplotlib", "matplotlib.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

@@ -1,0 +1,21 @@
+# Datasets are downloaded, never committed (see scripts/fetch_data.sh).
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Local configuration
+.env
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
