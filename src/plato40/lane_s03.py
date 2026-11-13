@@ -46,6 +46,7 @@ import pandas as pd
 
 from plato40 import llm_guard
 from plato40.bus import LANES, LANGUAGES, VERSION
+from plato40.contract import PRIORITIES
 from plato40.detect import heating
 from plato40.detect.grid import local_time, stamp
 from plato40.episodes import Signal, group
@@ -57,8 +58,6 @@ from plato40.staff import Roster
 
 LANE = "s03"
 ISSUE = str(LANES[LANE]["issue_type"])
-HOUR = pd.Timedelta(hours=1)
-OUTLOOK = pd.Timedelta(hours=24)
 Row = dict[str, Any]
 
 # Guest message templates: the only token is {room}; the rules render it (llm_guard.Task.say).
@@ -128,6 +127,8 @@ SAYS = {
 
 def _json(x: Any) -> Any:
     """Return ``x`` as JSON: UTC times as ``...Z``, numpy scalars as Python, floats rounded."""
+    if x is pd.NaT or (isinstance(x, float) and np.isnan(x)):
+        return None
     if isinstance(x, pd.Timestamp):
         return stamp(x)
     if isinstance(x, Mapping):
@@ -239,10 +240,12 @@ class _Lane:
         self.roster = Roster(ds)
         self.stays = stays(ds)
         self.requests = ds.table("guest_requests.csv")
-        self.deficit = comfort_deficit(ds, self.lo, self.th.comfort_deficit_k)
         bound = BOUNDS[("room_telemetry.csv", "temperature_c")]
         temp = telemetry_wide(ds, "temperature_c")
         self.temp = temp.where((temp >= bound.low) & (temp <= bound.high))
+        self.recent = pd.Timedelta(hours=self.th.room_reading_h)
+        self.outlook = pd.Timedelta(hours=self.th.cold_outlook_h)
+        self.deficit = comfort_deficit(ds, self.lo, self.th.comfort_deficit_k, self.temp)
         self.setpoint = telemetry_wide(ds, "setpoint_c")
         self.window = telemetry_wide(ds, "window_open")
         cop = heating.signals(ds, settings)
@@ -267,7 +270,8 @@ class _Lane:
 
     def _language(self, booking: str, t: pd.Timestamp) -> str:
         r = self.requests
-        earlier = r.loc[(r["booking_id"] == booking) & (r["timestamp_utc"] <= t), "language"]
+        mine = r.loc[(r["booking_id"] == booking) & (r["timestamp_utc"] <= t)]
+        earlier = mine.sort_values("timestamp_utc", kind="stable")["language"]
         lang = str(earlier.iloc[-1]) if len(earlier) else "en"
         return lang if lang in LANGUAGES else "en"
 
@@ -275,12 +279,8 @@ class _Lane:
         if room not in frame.columns:
             return None
         col = frame[room]
-        recent = col.loc[(col.index > t - HOUR) & (col.index <= t)].dropna()
+        recent = col.loc[(col.index > t - self.recent) & (col.index <= t)].dropna()
         return float(recent.iloc[-1]) if len(recent) else None
-
-    def _technician(self) -> str:
-        staff = self.ds.building["staff"]["resources"]
-        return next(str(r["resource_id"]) for r in staff if r["role"] == "technician")
 
     def _local(self, t: pd.Timestamp, ref: pd.Timestamp) -> str:
         return local_time(t, ref, self.settings.local_tz)
@@ -454,7 +454,8 @@ class _Lane:
 
     def _cold_guests(self, eid: str, t: pd.Timestamp, state: _Hp) -> None:
         """Signal guests newly in comfort deficit in the last hour and tell each of them."""
-        recent = self.deficit.loc[(self.deficit.index > t - HOUR) & (self.deficit.index <= t)]
+        idx = self.deficit.index
+        recent = self.deficit.loc[(idx > t - self.recent) & (idx <= t)]
         guests: list[tuple[str, str, str, pd.Timestamp]] = []
         for room in sorted(str(c) for c in recent.columns[recent.any(axis=0).to_numpy()]):
             when = pd.Timestamp(recent.index[recent[room].to_numpy(dtype=bool)][-1])
@@ -472,7 +473,7 @@ class _Lane:
             rooms,
             [
                 f"room_telemetry.csv:{','.join(rooms)} temperature_c,setpoint_c,window_open:"
-                f"{stamp(t - HOUR)}..{stamp(t)}",
+                f"{stamp(t - self.recent)}..{stamp(t)}",
                 *(f"bookings.csv:{b}" for _, b, _, _ in guests),
             ],
             f"{len(guests)} occupied rooms newly below {self.lo:.0f} degC and at least "
@@ -499,7 +500,9 @@ class _Lane:
         eid, s = hit
         fc = self.ds.table("weather_forecast.csv")
         ahead = fc.loc[
-            (fc["issued_utc"] == t) & (fc["target_utc"] > t) & (fc["target_utc"] <= t + OUTLOOK)
+            (fc["issued_utc"] == t)
+            & (fc["target_utc"] > t)
+            & (fc["target_utc"] <= t + self.outlook)
         ].dropna(subset=["outdoor_c_forecast"])
         if ahead.empty:
             return
@@ -586,14 +589,14 @@ class _Lane:
     def _request(self, t: pd.Timestamp, r: pd.Series, room_eid: str | None) -> None:
         rid, room, booking = str(r["request_id"]), str(r["room_id"]), str(r["booking_id"])
         lang = str(r["language"]) if str(r["language"]) in LANGUAGES else "en"
-        priority = str(r["priority"])
+        priority = str(r["priority"]) if str(r["priority"]) in PRIORITIES else "medium"
         temp = self._last(self.temp, room, t)
         setpoint = self._last(self.setpoint, room, t)
         window = self._last(self.window, room, t)
         evidence = [
             f"guest_requests.csv:{rid}",
             f"room_telemetry.csv:{room} temperature_c,setpoint_c,window_open:"
-            f"{stamp(t - HOUR)}..{stamp(t)}",
+            f"{stamp(t - self.recent)}..{stamp(t)}",
         ]
         measured = "no valid reading in the last hour" if temp is None else f"{temp:.1f} degC"
         opened = window == 1.0
@@ -654,7 +657,8 @@ class _Lane:
                     confidence=0.6,
                     expected_outcome=f"{room} reaches {self.lo:.0f} degC (simulated).",
                     verification_plan=(
-                        f"{room} at or above {self.lo:.0f} degC within 2 h; otherwise inspect "
+                        f"{room} at or above {self.lo:.0f} degC within "
+                        f"{self.th.room_heat_verify_h:.0f} h; otherwise inspect "
                         "the room's heating (approval, guest consent)."
                     ),
                 )
@@ -673,7 +677,8 @@ class _Lane:
                     confidence=0.6,
                     expected_outcome="Operations see a room heating fault; no physical effect.",
                     verification_plan=(
-                        f"{room} at or above {self.lo:.0f} degC within 2 h; otherwise inspect "
+                        f"{room} at or above {self.lo:.0f} degC within "
+                        f"{self.th.room_heat_verify_h:.0f} h; otherwise inspect "
                         "the room's heating (approval, guest consent)."
                     ),
                 )

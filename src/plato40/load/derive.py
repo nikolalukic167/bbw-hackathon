@@ -115,14 +115,17 @@ def occupancy_matrix(ds: Dataset, index: pd.DatetimeIndex) -> pd.DataFrame:
     return occ
 
 
-def comfort_deficit(ds: Dataset, low_c: float, deficit_k: float) -> pd.DataFrame:
+def comfort_deficit(
+    ds: Dataset, low_c: float, deficit_k: float, temp: pd.DataFrame | None = None
+) -> pd.DataFrame:
     """Return a boolean time x room frame of occupied comfort deficits.
 
     A deficit interval is occupied (reconstructed stay), window closed or unknown,
     temperature below ``low_c`` and at least ``deficit_k`` below the active setpoint.
-    The setpoint condition excludes guests who chose a cool room.
+    The setpoint condition excludes guests who chose a cool room. ``temp`` replaces the raw
+    temperatures, e.g. with implausible readings masked.
     """
-    temp = telemetry_wide(ds, "temperature_c")
+    temp = telemetry_wide(ds, "temperature_c") if temp is None else temp
     setpoint = telemetry_wide(ds, "setpoint_c").reindex_like(temp)
     window = telemetry_wide(ds, "window_open").reindex_like(temp)
     occ = occupancy_matrix(ds, pd.DatetimeIndex(temp.index))

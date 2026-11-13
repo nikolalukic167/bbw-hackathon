@@ -198,6 +198,17 @@ class DetectorSettings:
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
+    room_reading_h: float = 1.0
+    """Look-back (h) for a room's latest temperature, setpoint and window reading, and for
+    guests newly in comfort deficit (bus lane s03); readings come every 15 min."""
+
+    cold_outlook_h: float = 24.0
+    """Forecast horizon (h) the s03 lane scans for the coldest hour at each forecast issue."""
+
+    room_heat_verify_h: float = 2.0
+    """Hours (h) a boosted or flagged room has to reach the comfort band before the room's
+    heating is inspected (s03 verification plan)."""
+
     preheat_forecast_c: float = -5.0
     """Coldest forecast hour (degC) in the next 24 h below which a degraded HP1 gets a
     pre-heat plan (bus lane s03). A design value, not fitted: every quickstart HP1 episode
