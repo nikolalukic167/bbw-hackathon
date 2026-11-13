@@ -19,16 +19,16 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T0 | Open questions Q1-Q12 sent to the mentor on Discord | S | todo | all |
 | T1 | Package skeleton, loader, schema and units, blank = missing, known-at helpers | D | done | Reproducibility 10 |
 | T1 | Data audit for quickstart and dev (`make audit`, `reports/audit/01_data_audit.md`) | D | done | Robustness 7 |
-| T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | todo | Reproducibility 10 |
-| T1 | Contract validator (required fields, enums, vocabulary) as a test | D | todo | Reproducibility 10 |
+| T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | done | Reproducibility 10 |
+| T1 | Contract validator (`plato40 validate`; sample file passes) | D | done | Reproducibility 10 |
 | T1 | Hand-written sample `decisions.jsonl` (one per scenario) handed to F | A | todo | Demo 8 |
 | T1 | Replay clock: detectors see only rows known at `now` | D | todo | Robustness 7 |
 | T2 | Room state machine (occupied, dirty, cleaning, clean, inspected, OOO) from events and telemetry | D | todo | Constraints 8 |
 | T2 | Staff and robot availability from roster, as known at decision time | D | todo | Constraints 8 |
 | T6 | Episodes: one `episode_id` per incident, priority from impact and deadline | D/A | todo | Prioritisation 8 |
 | T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
-| T7 | Policy layer: verb to autonomy and approval/consent flags, forbidden checks | A | todo | Safe autonomy 10 |
-| T7 | Violation test over every decision in `decisions.jsonl` | A | todo | Safe autonomy 10 |
+| T7 | Policy layer: target-aware levels (cost = fixed list, no euro amounts; vacant inspection autonomous) | A | done | Safe autonomy 10 |
+| T7 | Violation check over every decision (`plato40 validate`); unit tests pending | A | doing | Safe autonomy 10 |
 | T8 | Planner: action chain per episode in the 14-verb vocabulary | A | todo | Coordination 8 |
 | T8 | Mock executor: effects labelled `simulated`, `expected_outcome`, `verification_plan` | A | todo | Limits and verification 5 |
 | T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002 | S | done | Reproducibility 10 |
