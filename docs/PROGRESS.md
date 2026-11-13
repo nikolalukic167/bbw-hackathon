@@ -1,0 +1,125 @@
+# Progress board
+
+Our stand-up. One row per piece of work, grouped by the challenge's Levels and scenarios
+(CHALLENGE.md section 4). IDs `T0`-`T15` are the project plan's work breakdown; sub-items
+are ours. Points are the rubric line the item serves (CHALLENGE.md section 9).
+
+Status: `done` · `doing` · `todo` · `blocked` · `cut`. Owner is a role until names are
+filled in: **D** data and detectors, **A** agent and policy, **F** frontend, **S** story,
+Level 3 and submission.
+
+Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14:00 CET
+(CHALLENGE.md; our plan said 15:00, see Q1) · submit by 13:30 if Q1 stays at 14:00.
+
+## Foundation (serves every Level)
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T0 | Data fetched with checksums, CHALLENGE.md, dataset README and DECISION_CONTRACT.md read | S | done | all |
+| T0 | Open questions Q1-Q12 sent to the mentor on Discord | S | todo | all |
+| T1 | Package skeleton, loader, schema and units, blank = missing, known-at helpers | D | done | Reproducibility 10 |
+| T1 | Data audit for quickstart and dev (`make audit`, `reports/audit/01_data_audit.md`) | D | done | Robustness 7 |
+| T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | todo | Reproducibility 10 |
+| T1 | Contract validator (required fields, enums, vocabulary) as a test | D | todo | Reproducibility 10 |
+| T1 | Hand-written sample `decisions.jsonl` (one per scenario) handed to F | A | todo | Demo 8 |
+| T1 | Replay clock: detectors see only rows known at `now` | D | todo | Robustness 7 |
+| T2 | Room state machine (occupied, dirty, cleaning, clean, inspected, OOO) from events and telemetry | D | todo | Constraints 8 |
+| T2 | Staff and robot availability from roster, as known at decision time | D | todo | Constraints 8 |
+| T6 | Episodes: one `episode_id` per incident, priority from impact and deadline | D/A | todo | Prioritisation 8 |
+| T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
+| T7 | Policy layer: verb to autonomy and approval/consent flags, forbidden checks | A | todo | Safe autonomy 10 |
+| T7 | Violation test over every decision in `decisions.jsonl` | A | todo | Safe autonomy 10 |
+| T8 | Planner: action chain per episode in the 14-verb vocabulary | A | todo | Coordination 8 |
+| T8 | Mock executor: effects labelled `simulated`, `expected_outcome`, `verification_plan` | A | todo | Limits and verification 5 |
+| T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002 | S | done | Reproducibility 10 |
+| T13 | README run command and architecture updated once `run` exists | S | todo | Reproducibility 10 |
+| T14 | Fresh-clone rehearsal with quickstart as the pretend holdout | D | todo | Reproducibility 10 |
+| T14 | Tag `pre-holdout`, push (needs the go to push) | D | todo | Reproducibility 10 |
+| T14 | Holdout run unchanged, commit `decisions_holdout.jsonl` | D | todo | Reproducibility 10 |
+
+## Level 1: operate and detect (mandatory)
+
+### S01 The Perfect Checkout
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T3 | Signals located: early checkout, early check-in requests, cleaning 45 min median (p90 60) | D | done | Detection 10 |
+| T3 | Detector: predicted clean-by (queue x per-room time) vs promised arrival | D | todo | Detection 10 |
+| T3 | Look-alikes: door event without checkout; robot `completed` is not readiness | D | todo | Robustness 7 |
+| T8 | Actions: `schedule_cleaning` priority, `dispatch_robot`, `notify_guest` with realistic time, `reassign_room` (approval) | A | todo | Coordination 8 |
+| T7 | Rule: never `release_room` before inspection (or completed cleaning, see Q8) | A | todo | Safe autonomy 10 |
+| T10 | Guest message in the guest's language, deadline honoured | A | todo | Guest comms 6 |
+
+### S02 The Hidden Water Leak
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T4 | Signals located: night floor, burst volume, main-minus-rooms night gap; 4/4 and 9/9 orders covered | D | done | Detection 10 |
+| T4 | Detector A: continuous night flow, two nights in a row (audit implication 1) | D | todo | Detection 10 |
+| T4 | Detector B: burst volume in a vacant or sleeping room, any hour (implication 2) | D | todo | Detection 10 |
+| T4 | Detector C: night gap above normal p95 (implication 3); never daily gap totals | D | todo | Detection 10 |
+| T4 | Look-alikes: meter resets and jitter, cleaning water, floor gateway outages | D | todo | Robustness 7 |
+| T8 | Actions: `flag_anomaly`, `request_inspection`, `dispatch_technician` (approval), shutoff (approval + consent) | A | todo | Safe autonomy 10 |
+
+### S03 Energy vs Comfort
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T5 | Signals located: COP vs outdoor (dev Theil-Sen curve), comfort deficit, lockouts | D | done | Detection 10 |
+| T5 | Detector: COP against a fixed reference curve, never refit on the judged window (implication 4) | D | todo | Detection 10 |
+| T5 | Comfort deficit: occupied, window closed, >= 1.5 K below setpoint (implication 5) | D | todo | Robustness 7 |
+| T5 | Forecast cold snap and price peaks joined by `issued_utc` / `published_utc` | D | todo | Trade-offs 6 |
+| T8 | Actions: pre-heat within band, vacant setback, `dispatch_technician` HP1 (approval), `notify_guest` | A | todo | Trade-offs 6 |
+| T7 | Rule: comfort band never breached for an energy metric | A | todo | Safe autonomy 10 |
+
+## Level 2: act autonomously (advanced)
+
+| ID | Item | Scenario | Owner | Status | Points |
+|---|---|---|---|---|---|
+| T9 | Filter detector: day-mode dp, fan power as the second signal through gaps (implication 6) | S04 | D | todo | Detection 10 |
+| T9 | Data gap reported as `data_quality`, never as recovery; technician availability known-at | S04 | D/A | todo | Robustness 7 |
+| T9 | Actions: `defer_action` on thin evidence, `order_service` / `dispatch_technician` (approval) | S04 | A | todo | Coordination 8 |
+| T9 | Weekend plan re-run whenever a roster row becomes known (implication 10) | S05 | A | todo | Coordination 8 |
+| T9 | Capacity from present cleaners, on-call 15:30-22:00, two robots; never invented | S05 | A | todo | Constraints 8 |
+| T10 | Staggered check-in times sent to guests | S05 | A | todo | Guest comms 6 |
+| T9 | Daily `optimize_energy`: battery and pre-heat against published prices and PV | Energy | A | todo | Trade-offs 6 |
+| T9 | Waste pickup before the container fills; robots carry bins if Q10 allows | Logistics | A | todo | Coordination 8 |
+| T9 | Vending restock before stock-out (first on the cut list) | Logistics | A | todo | Coordination 8 |
+
+## Level 3: learn and feed back
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T12 | Candidate findings from the audit: July overheating (no cooling), BMS alarm tuning, F3 gateway, May/Aug/Sep comfort deficits, cleaning capacity on surge weekends | S | done | Feedback 10 |
+| T12 | `insights.py`: every number in `insights.md` produced by a script | S | todo | Feedback 10 |
+| T12 | CLARA recommendations with evidence and uncertainty | S | todo | Feedback 10 |
+| T12 | PLATO design recommendations with evidence and uncertainty | S | todo | Feedback 10 |
+| T12 | Target architecture: one diagram plus one page | S | todo | Architecture 5 |
+| T12 | Limits section | S | todo | Limits 5 |
+
+## Demo and submission
+
+| ID | Item | Owner | Status | Points |
+|---|---|---|---|---|
+| T11 | Floor-plan twin (4 x 10 rooms) with time scrubber, reading `decisions.jsonl` | F | todo | Demo 8 |
+| T11 | Decision feed with autonomy badge, evidence on click, approval queue | F | todo | Trail 7 |
+| T15 | 3-minute video, end to end | S/F | todo | Demo 8 |
+| T15 | Written submission text and form | S | todo | all |
+| T15 | Repo moved to the Proximata organisation and made public (needs the go) | S | todo | all |
+
+## Open questions for the mentor
+
+| Q | Question | Affects | Status |
+|---|---|---|---|
+| Q1 | Code freeze 14:00 (CHALLENGE.md) or 15:00? | schedule | open |
+| Q2 | When is a cancellation known? ADR-002 assumes the booked arrival time | S01, S05 | open |
+| Q3 | How does the check match a decision to an incident; do routine decisions count as spam? | all | open |
+| Q4 | Holdout: same building, length and season as dev? | T14 | open |
+| Q5 | Are the alarm lag and the 19 unsupported comm-loss alarms intended? | S02, S04 | open |
+| Q6 | Why do occupied rooms fall below setpoint mostly in May, August, September? | S03, Level 3 | open |
+| Q7 | Is HP1 COP meant to be derived (declared metric `cop` never appears)? | S03 | open |
+| Q8 | `inspection_required` never occurs: is a completed cleaning enough to release? | S01 | open |
+| Q9 | May decisions name `MUNICIPAL_SERVICE`, `VENDOR_EXT`, `housekeeping`? | S05, logistics | open |
+| Q10 | May robots carry waste bins? | logistics, S05 | open |
+| Q11 | Is the on-call housekeeper always available, and does calling them need approval? | S05 | open |
+| Q12 | Which attribution string exactly? | README | open |
