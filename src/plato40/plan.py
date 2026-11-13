@@ -136,13 +136,27 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     nights = 0
     prev: pd.Timestamp | None = None
     next_night = pd.Timedelta(hours=th.next_night_h)
+    verify = (
+        VERIFY_LEAK
+        if in_room
+        else f"Median night gap main minus rooms below {th.gap_night_l_per_h:.0f} L/h after "
+        "repair (the main meter also feeds common areas); escalate if it stays above another night."
+    )
     for s in ep.signals:
         what = WHAT[s.kind]
         if s.kind in ("burst", "burst_flow"):
             if technician:
                 continue
             if not flagged:
-                chain.add(s, "flag_anomaly", "critical", f"{what}: {s.detail}.", confidence=0.8)
+                chain.add(
+                    s,
+                    "flag_anomaly",
+                    "critical",
+                    f"{what}: {s.detail}.",
+                    expected_outcome="Operations see the suspected burst; no physical effect.",
+                    verification_plan=VERIFY_LEAK,
+                    confidence=0.8,
+                )
             asked = _inspect(chain, s, states, "critical", 0.8, asked)
             chain.add(
                 s,
@@ -165,7 +179,7 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 "medium",
                 f"{what}, night {nights} in a row: {s.detail}.",
                 expected_outcome="Operations see the suspected leak; no physical effect.",
-                verification_plan=VERIFY_LEAK,
+                verification_plan=verify,
                 confidence=conf,
             )
             if in_room:
@@ -180,7 +194,7 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 "high",
                 f"{what} persists, night {nights} in a row: {s.detail}.",
                 expected_outcome="Technician finds and repairs the leak (simulated).",
-                verification_plan=VERIFY_LEAK,
+                verification_plan=verify,
                 confidence=conf + 0.1,
             )
             technician = True
