@@ -213,6 +213,34 @@ LANES: dict[str, dict[str, Any]] = {
             "unknown",
         ),
     },
+    "s08": {
+        "issue_type": "guest_service",
+        "kinds": (
+            "access_issue",
+            "maintenance_issue",
+            "water_issue",
+            "air_quality",
+            "cleaning_request",
+            "late_checkout",
+            "early_checkin",
+            "noise_complaint",
+            "wifi_help",
+            "parking",
+            "invoice",
+            "luggage_storage",
+            "extra_towels",
+            "arrival_delay",
+            "waiting_for_room",
+        ),
+        "intents": (
+            "answer_request",
+            "inspect_room",
+            "order_repair",
+            "clean_room",
+        ),
+        "actions": ("notify_guest", "request_inspection", "order_service", "schedule_cleaning"),
+        "causes": ("guest_request", "unknown"),
+    },
 }
 LANGUAGES = ("de", "en", "fr", "it", "nl", "es")
 RESOURCES = ("cleaner", "robot", "technician", "on_call", "room")

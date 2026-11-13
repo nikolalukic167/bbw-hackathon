@@ -21,7 +21,7 @@ Rows = Callable[[Dataset, Settings, Path, Call | None], tuple[list[dict[str, Any
 
 def registry() -> dict[str, Rows]:
     """Return every lane by name, in the order they run."""
-    from plato40 import lane_s03, lane_s04, lane_s05, lane_s06, lane_s07
+    from plato40 import lane_s03, lane_s04, lane_s05, lane_s06, lane_s07, lane_s08
 
     return {
         "s03": lane_s03.rows,
@@ -29,4 +29,5 @@ def registry() -> dict[str, Rows]:
         "s05": lane_s05.rows,
         "s06": lane_s06.rows,
         "s07": lane_s07.rows,
+        "s08": lane_s08.rows,
     }
