@@ -2,8 +2,8 @@
 
 The required level depends on the action and its target, not on the verb alone:
 
-- Entering an occupied room (cleaning, inspection, technician) needs approval and guest
-  consent. A robot never enters an occupied room (building.json); that is forbidden.
+- Entering an occupied room (cleaning, inspection, technician, contractor) needs approval
+  and guest consent. A robot never enters an occupied room (building.json); that is forbidden.
 - Technician, room block, room move and contractor services need approval. Waste pickup
   and vending restock are named autonomous in section 7; calling the on-call housekeeper
   is "costly" in building.json and needs approval.
@@ -22,7 +22,9 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
 
-ENTERS_ROOM = frozenset({"schedule_cleaning", "request_inspection", "dispatch_technician"})
+ENTERS_ROOM = frozenset(
+    {"schedule_cleaning", "request_inspection", "dispatch_technician", "order_service"}
+)
 ALWAYS_APPROVAL = frozenset(
     {"dispatch_technician", "block_room", "reassign_room", "request_human_approval"}
 )
