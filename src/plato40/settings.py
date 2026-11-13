@@ -90,6 +90,25 @@ class DetectorSettings:
     gap_night_l_per_h: float = 10.0
     """Median night gap main minus rooms (L/h) above which a pipe leak is suspected."""
 
+    gap_min_coverage: float = 0.75
+    """Share of a night's intervals with the main and every room meter needed for a gap verdict."""
+
+    burst_flow_l_per_15min: float = 10.0
+    """Room volume (L per 15 min) that, held over ``burst_flow_intervals``, is a burst at any
+    hour; the highest 2 h sustained room flow without a leak is 2.8 L (dev)."""
+
+    burst_flow_intervals: int = 8
+    """Consecutive intervals (count) at ``burst_flow_l_per_15min`` or more for a burst."""
+
+    next_night_h: float = 26.0
+    """Hours between two night verdicts still counted as consecutive nights (DST nights)."""
+
+    meter_reset_drop_l: float = 1000.0
+    """A meter drop larger than this (L) is a reset or exchange; the interval is missing."""
+
+    outage_min_intervals: int = 2
+    """Consecutive blank intervals (count) on a whole floor that make a telemetry outage."""
+
     episode_quiet_h: float = 48.0
     """Hours without a new signal after which an episode is closed."""
 

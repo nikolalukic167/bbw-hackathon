@@ -28,12 +28,24 @@ from plato40.episodes import Episode, Signal
 from plato40.settings import Settings
 from plato40.state import RoomStates
 
-NEXT_NIGHT = pd.Timedelta(hours=26)
 NOTICE_GAP = pd.Timedelta(hours=12)
 WHAT = {
     "night_flow": "continuous night flow",
     "burst": "burst volume in one night",
+    "burst_flow": "sustained high flow",
     "night_gap": "unmetered night flow outside the rooms",
+    "floor_outage": "Telemetry outage",
+    "meter_jitter": "Water meter jitter",
+}
+OUTAGE: dict[str, Any] = {
+    "expected_outcome": "Rooms on the floor get no leak or comfort verdict while blank.",
+    "verification_plan": "Readings from the floor resume; escalate if blank for 24 h.",
+    "confidence": 0.9,
+}
+JITTER: dict[str, Any] = {
+    "expected_outcome": "Leak checks on this meter use hourly volumes while it jitters.",
+    "verification_plan": "Meter readings rise monotonically again; check the meter if not.",
+    "confidence": 0.8,
 }
 VERIFY_LEAK = (
     "Night minimum of the meter returns to 0 L after repair; escalate if flow continues "
@@ -69,19 +81,27 @@ class _Chain:
         return event_id
 
 
-def _inspect(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float) -> None:
+def _consent(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float) -> bool:
+    """Ask the guest for consent to enter if the room is occupied; return whether asked."""
     room = s.assets[0]
-    if states.at(room, s.time) == "occupied":
-        chain.add(
-            s,
-            "notify_guest",
-            priority,
-            f"Ask the guest in {room} for consent to enter for a leak inspection "
-            "(proposed message; delivery not confirmed).",
-            expected_outcome="Guest grants or refuses consent.",
-            verification_plan="Inspection waits for a recorded consent; escalate if none.",
-            confidence=conf,
-        )
+    if states.at(room, s.time) != "occupied":
+        return False
+    chain.add(
+        s,
+        "notify_guest",
+        priority,
+        f"Ask the guest in {room} for consent to enter for a leak inspection or repair "
+        "(proposed message; delivery not confirmed).",
+        expected_outcome="Guest grants or refuses consent.",
+        verification_plan="Entry waits for a recorded consent; escalate if none.",
+        confidence=conf,
+    )
+    return True
+
+
+def _inspect(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: float) -> bool:
+    asked = _consent(chain, s, states, priority, conf)
+    room = s.assets[0]
     chain.add(
         s,
         "request_inspection",
@@ -91,18 +111,20 @@ def _inspect(chain: _Chain, s: Signal, states: RoomStates, priority: str, conf: 
         verification_plan=VERIFY_LEAK,
         confidence=conf,
     )
+    return asked
 
 
 def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision]:
     th = settings.detect
     chain = _Chain(ep)
     in_room = ep.assets[0] in states.rooms
-    flagged = technician = False
+    flagged = technician = asked = False
     nights = 0
     prev: pd.Timestamp | None = None
+    next_night = pd.Timedelta(hours=th.next_night_h)
     for s in ep.signals:
         what = WHAT[s.kind]
-        if s.kind == "burst":
+        if s.kind in ("burst", "burst_flow"):
             if technician:
                 continue
             if not flagged:
@@ -119,7 +141,7 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
             )
             flagged = technician = True
             continue
-        nights = nights + 1 if prev is not None and s.time - prev <= NEXT_NIGHT else 1
+        nights = nights + 1 if prev is not None and s.time - prev <= next_night else 1
         prev = s.time
         conf = 0.7 if in_room else 0.6
         if nights >= th.leak_persist_nights and not flagged:
@@ -133,9 +155,11 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
                 confidence=conf,
             )
             if in_room:
-                _inspect(chain, s, states, "medium", conf)
+                asked = _inspect(chain, s, states, "medium", conf)
             flagged = True
         if nights >= th.leak_technician_nights and not technician:
+            if in_room and not asked:
+                asked = _consent(chain, s, states, "high", conf)
             chain.add(
                 s,
                 "dispatch_technician",
@@ -468,15 +492,9 @@ def _heating(ep: Episode, settings: Settings) -> list[Decision]:
 
 def _data_quality(ep: Episode) -> list[Decision]:
     chain = _Chain(ep)
-    chain.add(
-        ep.signals[0],
-        "flag_anomaly",
-        "low",
-        f"Telemetry outage: {ep.signals[0].detail}.",
-        expected_outcome="Rooms on the floor get no leak or comfort verdict while blank.",
-        verification_plan="Readings from the floor resume; escalate if blank for 24 h.",
-        confidence=0.9,
-    )
+    s = ep.signals[0]
+    texts = OUTAGE if s.kind == "floor_outage" else JITTER
+    chain.add(s, "flag_anomaly", "low", f"{WHAT[s.kind]}: {s.detail}.", **texts)
     return chain.out
 
 

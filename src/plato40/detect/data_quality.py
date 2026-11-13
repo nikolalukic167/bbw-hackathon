@@ -1,24 +1,33 @@
-"""Floor-wide telemetry outages (one gateway per floor, audit section 2).
+"""Data quality: floor-wide telemetry outages and jittering water meters.
 
-A floor outage is every room of a floor blank in room telemetry for at least
-``MIN_INTERVALS`` consecutive intervals. It is signalled once, when the last of those
-intervals fails to arrive; its end is unknown at that time and is not cited.
+A floor outage (one gateway per floor, audit section 2) is every room of a floor blank in
+room telemetry for at least ``outage_min_intervals`` consecutive intervals. It is
+signalled once, when the last of those intervals fails to arrive; its end is unknown at
+that time and is not cited. A jittering meter shows a negative step in a night window
+(after a meter exchange, audit section 6); it is signalled at the end of each such night,
+so one episode covers a run of jittering nights.
 """
 
 from __future__ import annotations
 
-from plato40.audit.derive import telemetry_wide
-from plato40.detect.grid import grid, stamp
+import pandas as pd
+
+from plato40.detect.grid import grid, nights, stamp
+from plato40.detect.water import room_volumes
 from plato40.episodes import Signal
+from plato40.load.derive import telemetry_wide
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 
 ISSUE = "data_quality"
-MIN_INTERVALS = 2
 
 
 def signals(ds: Dataset, settings: Settings) -> list[Signal]:
-    """Return one signal per floor-wide outage run."""
+    """Return one signal per floor-wide outage run and per jittering meter night."""
+    return _outages(ds, settings) + _jitter(ds, settings)
+
+
+def _outages(ds: Dataset, settings: Settings) -> list[Signal]:
     idx = grid(ds, settings)
     temp = telemetry_wide(ds, "temperature_c").reindex(idx)
     out: list[Signal] = []
@@ -30,7 +39,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
         run = 0
         for i, is_blank in enumerate(blank):
             run = run + 1 if is_blank else 0
-            if run == MIN_INTERVALS:
+            if run == settings.detect.outage_min_intervals:
                 start, now = idx[i - run + 1], idx[i]
                 out.append(
                     Signal(
@@ -43,4 +52,26 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                         f"since {stamp(start)}",
                     )
                 )
+    return out
+
+
+def _jitter(ds: Dataset, settings: Settings) -> list[Signal]:
+    rooms = room_volumes(ds, settings)
+    night = nights(pd.DatetimeIndex(rooms.index), settings)
+    inside = night.notna().to_numpy()
+    out: list[Signal] = []
+    for _, block in rooms.loc[inside].groupby(night[inside].to_numpy(), sort=True):
+        first, last = block.index[0], block.index[-1]
+        for room in block.columns[(block < 0).any().to_numpy()]:
+            out.append(
+                Signal(
+                    last,
+                    ISSUE,
+                    "meter_jitter",
+                    (str(room),),
+                    (f"room_water.csv:{room}:{stamp(first)}..{stamp(last)}",),
+                    f"{room} meter steps back {int((block[room] < 0).sum())} times in the "
+                    f"night, lowest {block[room].min():.1f} L",
+                )
+            )
     return out
