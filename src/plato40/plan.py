@@ -5,6 +5,9 @@ flags and inspects; at ``leak_technician_nights`` it requests a technician. A bu
 flags, inspects and requests a technician at once, all critical. Inspecting an occupied
 room first asks the guest for consent. Water is never shut off by the system.
 Water leak (main-minus-rooms gap): flag, then technician, on the same night counts.
+Turnaround: prioritise the cleaning (and a robot pass) once the room is vacant, call the
+on-call housekeeper only when no cleaner is on shift, offer a ready room (approval), and
+tell the guest a realistic time.
 Data quality: one flag per outage episode.
 """
 
@@ -140,6 +143,91 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     return chain.out
 
 
+def _local(t: pd.Timestamp | None, settings: Settings) -> str:
+    return "not today" if t is None else f"{t.tz_convert(settings.local_tz):%H:%M} local"
+
+
+def _turnaround(ep: Episode, settings: Settings) -> list[Decision]:
+    chain = _Chain(ep)
+    cleaning_planned = False
+    offered: str | None = None
+    for s in ep.signals:
+        d = s.data
+        room = s.assets[0]
+        lead = d["wanted"] - s.time
+        prio = "critical" if d["waiting"] else "high" if lead <= pd.Timedelta(hours=3) else "medium"
+        promise = d["ready_prio"]
+        verify = (
+            f"{room} shows cleaning_completed by {_local(promise, settings)}; "
+            "if not, update the guest and escalate."
+        )
+        if d["vacant"] and not cleaning_planned:
+            if d["cleaner"]:
+                chain.add(
+                    s,
+                    "schedule_cleaning",
+                    prio,
+                    f"Clean {room} first: {s.detail}.",
+                    resource_id=d["cleaner"],
+                    expected_outcome=f"{room} clean by {_local(promise, settings)} (simulated).",
+                    verification_plan=verify,
+                    confidence=0.7,
+                )
+                cleaning_planned = True
+            if d["robot"]:
+                chain.add(
+                    s,
+                    "dispatch_robot",
+                    prio,
+                    f"Robot floor pass in {room} before the human clean; robots do not "
+                    "certify or release a room.",
+                    resource_id=d["robot"],
+                    expected_outcome="Shorter human cleaning (simulated).",
+                    verification_plan=f"robot_floor_cleaning_completed in {room}.",
+                    confidence=0.7,
+                )
+            if d["oncall"] and not cleaning_planned:
+                promise = d["ready_oncall"]
+                chain.add(
+                    s,
+                    "schedule_cleaning",
+                    prio,
+                    f"No cleaner on shift; call the on-call housekeeper for {room}: {s.detail}.",
+                    resource_id=d["oncall"],
+                    expected_outcome=f"{room} clean by {_local(promise, settings)} (simulated).",
+                    verification_plan=verify,
+                    confidence=0.6,
+                )
+                cleaning_planned = True
+        offer = offered or d["alternative"]
+        if offer and not offered:
+            chain.add(
+                s,
+                "reassign_room",
+                prio,
+                f"{offer} is clean, vacant and not booked before the guest arrives; offer it "
+                f"instead of {room}.",
+                assets=[room, offer],
+                expected_outcome="Guest checks in on time in another room (simulated).",
+                verification_plan=f"Guest checks in to {offer}; {room} keeps its cleaning.",
+                confidence=0.7,
+            )
+            offered = offer
+        message = f"{offer} is offered pending approval; otherwise {room}" if offer else f"{room}"
+        chain.add(
+            s,
+            "notify_guest",
+            prio,
+            f"Tell the guest ({d['language']}): {message} expected ready at "
+            f"{_local(promise, settings)} (proposed message; delivery not confirmed).",
+            **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
+            expected_outcome="Guest knows a realistic ready time.",
+            verification_plan="No waiting_for_room request from the guest; escalate on one.",
+            confidence=0.7,
+        )
+    return chain.out
+
+
 def _data_quality(ep: Episode) -> list[Decision]:
     chain = _Chain(ep)
     chain.add(
@@ -158,6 +246,8 @@ def decisions(ep: Episode, states: RoomStates, settings: Settings) -> list[Decis
     """Return the decisions of one episode, without approval flags."""
     if ep.issue_type == "water_leak":
         return _water(ep, states, settings)
+    if ep.issue_type == "room_turnaround":
+        return _turnaround(ep, settings)
     if ep.issue_type == "data_quality":
         return _data_quality(ep)
     raise ValueError(f"no plan for issue_type {ep.issue_type!r}")
