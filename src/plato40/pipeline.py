@@ -22,11 +22,27 @@ def context_at(ds: Dataset, states: RoomStates, t: pd.Timestamp) -> policy.Conte
     )
 
 
+def _known_at(ds: Dataset, decisions: list[Decision]) -> list[str]:
+    """Return decisions citing a guest request or an event_id from after their own time."""
+    req = ds.table("guest_requests.csv")
+    asked = dict(zip(req["request_id"].astype(str), req["timestamp_utc"], strict=True))
+    when = {d["event_id"]: pd.Timestamp(d["timestamp_utc"]) for d in decisions}
+    errors = []
+    for n, d in enumerate(decisions, start=1):
+        t = pd.Timestamp(d["timestamp_utc"])
+        late = [g for g in d.get("guest_request_ids", []) if g in asked and asked[g] > t]
+        late += [e for e in d.get("dependencies", []) if e in when and when[e] > t]
+        if late:
+            errors.append(f"line {n}: cites {late} from after {d['timestamp_utc']}")
+    return errors
+
+
 def check(ds: Dataset, states: RoomStates, decisions: list[Decision]) -> list[str]:
-    """Return contract and policy violations, each prefixed with its line number."""
+    """Return contract, known-at and policy violations, each prefixed with its line number."""
     errors = contract.check_file(decisions, contract.known_asset_ids(ds.building))
     if errors:
         return errors
+    errors = _known_at(ds, decisions)
     for n, d in enumerate(decisions, start=1):
         ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
         errors += [f"line {n}: {e}" for e in policy.violations(d, ctx)]
@@ -41,6 +57,7 @@ class Run:
     episodes: list[Episode]
     decisions: list[Decision]
     rules: dict[str, str] = field(default_factory=dict)
+    violations: list[str] = field(default_factory=list)
 
 
 def run(ds: Dataset, settings: Settings) -> Run:
@@ -59,7 +76,7 @@ def run(ds: Dataset, settings: Settings) -> Run:
     for d in decisions:
         ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
         result.rules[d["event_id"]] = policy.apply(d, ctx)
-    errors = check(ds, states, decisions)
-    if errors:
-        raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(errors))
+    result.violations = check(ds, states, decisions)
+    if result.violations:
+        raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(result.violations))
     return result

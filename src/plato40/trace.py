@@ -84,7 +84,7 @@ def summary(ds: Dataset, result: Run) -> str:
         f"no action {sum(silent.values())} ({_counts(silent)})",
         f"decisions  {len(result.decisions)}  "
         + _counts(Counter(d["autonomy"] for d in result.decisions)),
-        "checks     contract and policy: 0 violations",
+        f"checks     contract, known-at and policy: {len(result.violations)} violations",
     ]
     return "\n".join(rows)
 

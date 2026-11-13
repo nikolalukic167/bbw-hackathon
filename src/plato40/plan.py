@@ -51,7 +51,7 @@ class _Chain:
         decision: Decision = {
             "event_id": event_id,
             "episode_id": self.ep.episode_id,
-            "timestamp_utc": stamp(s.time),
+            "timestamp_utc": stamp(s.time.ceil("min")),
             "affected_assets": list(extra.pop("assets", s.assets)),
             "issue_type": self.ep.issue_type,
             "action": action,
