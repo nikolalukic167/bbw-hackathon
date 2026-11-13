@@ -196,7 +196,7 @@ def main(data: Path, out: Path) -> None:
                                 "res": "technician",
                                 "id": d["resource_id"],
                                 "from": d["timestamp_utc"],
-                                "min": 120,
+                                "min": int(settings.detect.technician_job_h * 60),
                             }
                         ]
                 who = d.get("resource_id") or next(
