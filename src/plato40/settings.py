@@ -157,6 +157,23 @@ class DetectorSettings:
     day_load_help: float = 1.0
     """Load above which extra cleaning help is requested (approval; never assumed)."""
 
+    surge_lookahead_d: int = 7
+    """Days ahead the S05 event outlook judges, at ``day_plan_hour`` local."""
+
+    surge_occupancy: int = 36
+    """Bookings over the night (22:00 local), cancelled kept (no cancel time in the data), that
+    make an event day (0.9 x 40 rooms)."""
+
+    surge_early_arrivals: int = 11
+    """Arrivals booked ``surge_early_days`` or more ahead that make an event day (p95 of
+    normal dev days); with ``surge_occupancy`` it flags exactly the 3 dev event weekends."""
+
+    surge_early_days: float = 14.0
+    """Booking lead (days) from which an arrival counts as booked early."""
+
+    checkout_estimate_local: str = "09:45"
+    """Planned checkout of a departing room until its checkout event (dev p75; p50 08:45)."""
+
     cop_ref_intercept: float = 2.78
     """Reference HP1 COP (-) at 0 degC: Theil-Sen fit on the dev year (audit section 8)."""
 

@@ -123,6 +123,24 @@ LANES: dict[str, dict[str, Any]] = {
         "actions": ("adjust_room_setpoint", "optimize_energy", "flag_anomaly", "defer_action"),
         "causes": ("arrival", "s03_backoff", "stale_input", "unknown"),
     },
+    "s05": {
+        "issue_type": "occupancy_surge",
+        "kinds": ("surge_forecast", "day_plan"),
+        "intents": (
+            "request_standby_cleaner",
+            "clean_first",
+            "robot_prepass",
+            "notify_day_delay",
+            "request_extra_cleaning",
+        ),
+        "actions": (
+            "schedule_cleaning",
+            "dispatch_robot",
+            "notify_guest",
+            "request_human_approval",
+        ),
+        "causes": ("event_weekend", "sick_cleaner", "turnover_peak"),
+    },
 }
 LANGUAGES = ("de", "en", "fr", "it", "nl", "es")
 RESOURCES = ("cleaner", "robot", "technician", "on_call", "room")

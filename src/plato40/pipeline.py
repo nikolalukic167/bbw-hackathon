@@ -75,6 +75,8 @@ def run(ds: Dataset, settings: Settings) -> Run:
         + logistics.signals(ds, settings)
         + data_quality.signals(ds, settings)
     )
+    if "s05" in settings.lanes:  # the s05 lane owns the day plan
+        signals = [s for s in signals if s.kind != "day_plan"]
     episodes = group(signals, settings.detect.episode_quiet_h)
     decisions = plan.decisions(episodes, states, settings)
     decisions.sort(key=lambda d: (d["timestamp_utc"], d["event_id"]))
