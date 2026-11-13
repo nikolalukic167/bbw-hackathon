@@ -44,7 +44,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T3 | Signals located: early checkout, early check-in requests, cleaning 45 min median (p90 60) | D | done | Detection 10 |
-| T3 | Morning check of today's arrivals vs dirty rooms (4 dev waits had no request before the wait) | D | todo | Detection 10 |
+| T3 | Morning check of today's arrivals vs dirty rooms (11 of 24 dev waits first seen when the guest already waited) | D | todo | Detection 10 |
 | T3 | Detector: requests and waiting events; ready time = queue x 60 min vs requested time | D | done | Detection 10 |
 | T3 | Look-alikes: robot `completed` is not readiness; room ready when guest arrives = no action | D | done | Robustness 7 |
 | T8 | Actions: cleaning at checkout, robot pass, one room offer (approval), on-call (approval), guest notice | A | done | Coordination 8 |
