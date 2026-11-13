@@ -2,7 +2,9 @@
 
 - ``night_flow``: every night interval of a room has at least ``leak_floor_l_per_15min``.
   Normal rooms reach zero at least once on 100 % of nights (audit section 6). Needs the
-  whole night present; a night with a blank interval gives no verdict. On a night where
+  whole night present; a lone blank reading is bridged (one bridged reading can hide at
+  most one of the 10 or more dry intervals every normal dev night has), a longer blank
+  gives no verdict. On a night where
   the meter jitters (a negative step), hourly volumes are judged instead, since the
   jitter cancels within an hour.
 - ``burst``: a room's night volume reaches ``burst_night_volume_l``. Known from the
@@ -30,10 +32,14 @@ def _volumes(wide: pd.DataFrame, ds: Dataset, settings: Settings) -> pd.DataFram
     """Return litres per interval on the full grid from cumulative readings (L).
 
     Readings go on the grid before differencing, so an absent row is missing rather than
-    folded into the next interval. A meter reset is missing.
+    folded into the next interval. A lone blank reading between two present ones is
+    bridged linearly: the volume over its two intervals is measured, only the split is
+    not. Longer blanks (gateway outages) stay missing, and so does a meter reset.
     """
     on_grid = wide.reindex(grid(ds, settings))
-    return derive.meter_deltas(on_grid, settings.detect.meter_reset_drop_l).deltas
+    lone = on_grid.isna() & on_grid.shift(1).notna() & on_grid.shift(-1).notna()
+    bridged = on_grid.mask(lone, (on_grid.shift(1) + on_grid.shift(-1)) / 2)
+    return derive.meter_deltas(bridged, settings.detect.meter_reset_drop_l).deltas
 
 
 def room_volumes(ds: Dataset, settings: Settings) -> pd.DataFrame:

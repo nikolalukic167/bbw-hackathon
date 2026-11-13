@@ -92,7 +92,8 @@ class DetectorSettings:
     """Median night gap main minus rooms (L/h) above which a pipe leak is suspected."""
 
     gap_min_coverage: float = 0.75
-    """Share of a night's intervals with the main and every room meter needed for a gap verdict."""
+    """Share of a night's intervals with the main and every room meter needed for a gap verdict.
+    With lone blank readings bridged, only gateway-outage nights fall below it (dev 6 of 365)."""
 
     burst_flow_l_per_15min: float = 10.0
     """Room volume (L per 15 min) that, held over ``burst_flow_intervals``, is a burst at any
