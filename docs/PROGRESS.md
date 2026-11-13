@@ -22,9 +22,9 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | done | Reproducibility 10 |
 | T1 | Contract validator (`plato40 validate`; sample file passes) | D | done | Reproducibility 10 |
 | T1 | Hand-written sample `decisions.jsonl` (one per scenario) handed to F | A | todo | Demo 8 |
-| T1 | Replay clock: detectors see only rows known at `now` | D | todo | Robustness 7 |
+| T1 | Known-at discipline: signals timed when known; roster absences, bookings by `created_utc` | D | done | Robustness 7 |
 | T2 | Room state machine from events (occupied, dirty, cleaning, clean); telemetry cross-check open | D | doing | Constraints 8 |
-| T2 | Staff and robot availability from roster, as known at decision time | D | todo | Constraints 8 |
+| T2 | Staff and robot availability from roster, as known at decision time | D | done | Constraints 8 |
 | T6 | Episodes: one `episode_id` per incident, closed after 48 h quiet; priority fixed per scenario | D/A | done | Prioritisation 8 |
 | T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
 | T7 | Policy layer: target-aware levels (cost = fixed list, no euro amounts; vacant inspection autonomous) | A | done | Safe autonomy 10 |
@@ -44,9 +44,10 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T3 | Signals located: early checkout, early check-in requests, cleaning 45 min median (p90 60) | D | done | Detection 10 |
-| T3 | Detector: predicted clean-by (queue x per-room time) vs promised arrival | D | todo | Detection 10 |
-| T3 | Look-alikes: door event without checkout; robot `completed` is not readiness | D | todo | Robustness 7 |
-| T8 | Actions: `schedule_cleaning` priority, `dispatch_robot`, `notify_guest` with realistic time, `reassign_room` (approval) | A | todo | Coordination 8 |
+| T3 | Morning check of today's arrivals vs dirty rooms (4 dev waits had no request before the wait) | D | todo | Detection 10 |
+| T3 | Detector: requests and waiting events; ready time = queue x 60 min vs requested time | D | done | Detection 10 |
+| T3 | Look-alikes: robot `completed` is not readiness; room ready when guest arrives = no action | D | done | Robustness 7 |
+| T8 | Actions: cleaning at checkout, robot pass, one room offer (approval), on-call (approval), guest notice | A | done | Coordination 8 |
 | T7 | Rule: never `release_room` unless clean (vacant + human cleaning completed) | A | done | Safe autonomy 10 |
 | T10 | Guest message in the guest's language, deadline honoured | A | todo | Guest comms 6 |
 
