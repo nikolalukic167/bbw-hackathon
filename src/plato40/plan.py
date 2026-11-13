@@ -265,6 +265,7 @@ class _Ledger:
     def __init__(self, settings: Settings) -> None:
         self.clean = pd.Timedelta(minutes=settings.detect.clean_room_min)
         self.travel = pd.Timedelta(minutes=settings.detect.oncall_travel_min)
+        self.robot_pass = pd.Timedelta(minutes=settings.detect.robot_pass_min)
         self.free: dict[str, pd.Timestamp] = {}
 
     def cleaner(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
@@ -281,8 +282,15 @@ class _Ledger:
         busy = self.free.get(who)
         return (busy if busy is not None and busy > d["start"] else d["start"] + self.travel, who)
 
-    def book(self, begin: pd.Timestamp, who: str) -> pd.Timestamp:
-        self.free[who] = begin + self.clean
+    def robot(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
+        """Return the earliest start and the robot on shift that is free first."""
+        start = d["start"]
+        return min(((max(start, self.free.get(r, start)), r) for r in d["robots"]), default=None)
+
+    def book(
+        self, begin: pd.Timestamp, who: str, length: pd.Timedelta | None = None
+    ) -> pd.Timestamp:
+        self.free[who] = begin + (self.clean if length is None else length)
         return self.free[who]
 
 
@@ -353,18 +361,22 @@ def _turnaround_step(
                 verification_plan=f"{room} shows cleaning_started; escalate if not.",
                 confidence=0.6,
             )
-        if d["robot"]:
+        robot = ledger.robot(d)
+        if robot is not None:
+            begin, who = robot
+            when = "" if begin <= d["start"] else f" from {_local(begin, s.time, settings)}"
             chain.add(
                 s,
                 "dispatch_robot",
                 prio,
-                f"Robot floor pass in {room} before the human clean; robots do not "
+                f"Robot floor pass in {room}{when} before the human clean; robots do not "
                 "certify or release a room.",
-                resource_id=d["robot"],
+                resource_id=who,
                 expected_outcome="Shorter human cleaning (simulated).",
                 verification_plan=f"robot_floor_cleaning_completed in {room}.",
                 confidence=0.7,
             )
+            ledger.book(begin, who, ledger.robot_pass)
         guest.planned = True
     offer = guest.offered or d["alternative"]
     if offer and not guest.offered:
@@ -539,6 +551,29 @@ def _data_quality(ep: Episode) -> list[Decision]:
     return chain.out
 
 
+def _one_technician(decisions: list[Decision], settings: Settings) -> None:
+    """Send a repair to a contractor while the in-house technician holds another job.
+
+    Scenarios plan independently; this pass walks all technician dispatches in time order
+    so S02 and S03 never count on the one technician at the same time.
+    """
+    hold = pd.Timedelta(hours=settings.detect.technician_job_h)
+    busy: tuple[pd.Timestamp, str] | None = None
+    jobs = [d for d in decisions if d["action"] == "dispatch_technician"]
+    for d in sorted(jobs, key=lambda d: (d["timestamp_utc"], d["event_id"])):
+        t, asset = pd.Timestamp(d["timestamp_utc"]), d["affected_assets"][0]
+        if busy is None or t >= busy[0] + hold or busy[1] == asset:
+            busy = (t, asset)
+            continue
+        d["action"] = "order_service"
+        d.pop("resource_id", None)
+        d["reason"] = (
+            f"In-house technician is on {busy[1]} since {stamp(busy[0])}; order a contractor "
+            f"instead. {d['reason']}"
+        )
+        d["expected_outcome"] = "Contractor finds and repairs the fault (simulated)."
+
+
 def decisions(episodes: list[Episode], states: RoomStates, settings: Settings) -> list[Decision]:
     """Return the decisions of all episodes, without approval flags."""
     out = _turnaround([ep for ep in episodes if ep.issue_type == "room_turnaround"], settings)
@@ -553,4 +588,5 @@ def decisions(episodes: list[Episode], states: RoomStates, settings: Settings) -
             out += _data_quality(ep)
         elif ep.issue_type != "room_turnaround":
             raise ValueError(f"no plan for issue_type {ep.issue_type!r}")
+    _one_technician(out, settings)
     return out

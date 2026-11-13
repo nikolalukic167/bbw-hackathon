@@ -116,6 +116,13 @@ class DetectorSettings:
     clean_room_min: float = 60.0
     """Minutes one human room cleaning is planned to take (audit p90; median 45)."""
 
+    robot_pass_min: float = 30.0
+    """Minutes one robot floor pass takes (every dev pass took 30 min)."""
+
+    technician_job_h: float = 24.0
+    """Hours one dispatched repair holds the in-house technician; a second job in that time
+    goes to a contractor."""
+
     oncall_travel_min: float = 45.0
     """Minutes until the on-call housekeeper is on site (building.json staff notes)."""
 

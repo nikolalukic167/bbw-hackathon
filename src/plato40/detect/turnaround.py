@@ -71,8 +71,7 @@ class _Facts:
             "cleaner_now": bool(now),
             "cleaners": [] if begin is None else self.roster.on_shift("cleaner", begin, known),
         }
-        robots = self.roster.on_shift("robot", start, known)
-        facts["robot"] = robots[0] if robots else None
+        facts["robots"] = self.roster.on_shift("robot", start, known)
         if begin is None:
             facts["ready_prio"] = facts["ready_now"] = None
         else:
