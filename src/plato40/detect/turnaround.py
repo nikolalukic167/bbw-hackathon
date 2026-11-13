@@ -45,6 +45,8 @@ class _Facts:
         self.states = RoomStates(ds)
         self.roster = Roster(ds)
         self.bookings = ds.table("bookings.csv")
+        req = ds.table("guest_requests.csv")
+        self.late = req.loc[req["request_type"] == "late_checkout"]
         self.max_guests = {
             str(r["id"]): int(r["max_guests"]) for r in ds.building["building"]["rooms"]
         }
@@ -90,7 +92,12 @@ class _Facts:
 
     def occupant_departure(
         self, room: str, booking_id: str, t: pd.Timestamp
-    ) -> pd.Timestamp | None:
+    ) -> tuple[pd.Timestamp, str] | None:
+        """Return when the current occupant is expected out, and their booking.
+
+        A late-checkout request known at ``t`` moves the booked departure to the time it
+        names, on the departure day.
+        """
         b = self.bookings
         mine = b.loc[
             (b["room_id"] == room)
@@ -101,7 +108,14 @@ class _Facts:
         ]
         if mine.empty:
             return None
-        return max(pd.Timestamp(mine.sort_values("arrival_utc")["departure_utc"].iloc[-1]), t)
+        row = mine.sort_values("arrival_utc").iloc[-1]
+        out, occupant = pd.Timestamp(row["departure_utc"]), str(row["booking_id"])
+        asked = self.late.loc[
+            (self.late["booking_id"] == occupant) & (self.late["timestamp_utc"] <= t)
+        ]
+        for text in asked["text"]:
+            out = max(out, requested_time(str(text), out, out, self.tz))
+        return max(out, t), occupant
 
     def alternatives(
         self, room: str, guests: int, t: pd.Timestamp, until: pd.Timestamp
@@ -220,10 +234,12 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
         if state not in ("occupied", "dirty", "cleaning"):
             continue
         wanted = t if waiting else requested_time(r["text"], arrival[bid], t, f.tz)
+        occupant = None
         if state == "occupied":
-            checkout = f.occupant_departure(room, bid, t)
-            if checkout is None:
+            expected = f.occupant_departure(room, bid, t)
+            if expected is None:
                 continue
+            checkout, occupant = expected
         else:
             checkout = t
         facts = f.plan_at(room, checkout, t)
@@ -257,6 +273,27 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
         out.append(Signal(t, ISSUE, "request", (room,), evidence, detail, facts))
         if state == "occupied":
             actual = f.states.next_entry(room, "dirty", t)
+            if actual is not None and checkout > t and actual > checkout and checkout - t < follow:
+                out.append(
+                    Signal(
+                        checkout,
+                        ISSUE,
+                        "overstay",
+                        (room,),
+                        (
+                            f"bookings.csv:{occupant}",
+                            f"events.jsonl:{room} still occupied at {stamp(checkout)}",
+                        ),
+                        f"guest of {occupant} has not checked out of {room} by "
+                        f"{f.local(checkout, checkout)} as expected; guest of {bid} waits for it",
+                        guest
+                        | {
+                            "alternatives": f.alternatives(
+                                room, int(guest_count[bid]), checkout, departure[bid]
+                            )
+                        },
+                    )
+                )
             if actual is not None and actual - t < follow:
                 later = f.plan_at(room, actual, actual) | guest
                 later |= {"vacant": True, "in_progress": False, "alternatives": []}
@@ -345,6 +382,7 @@ def _day_plans(f: _Facts, ds: Dataset, settings: Settings) -> list[Signal]:
             "arrival_rooms": arrival_rooms,
             "vacant_arrival": sorted(set(arrival_rooms) & set(dirty)),
             "latest": latest,
+            "late": sorted(r for r in arrival_rooms if r not in ready or ready[r] > checkin),
             "checkin": checkin,
         }
         detail = (

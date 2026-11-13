@@ -230,6 +230,40 @@ def _ready(chain: _Chain, s: Signal) -> None:
     )
 
 
+def _overstay(chain: _Chain, guest: _Guest, s: Signal, ledger: _Ledger) -> None:
+    d = s.data
+    room = s.assets[0]
+    free = [r for r in d["alternatives"] if ledger.offered.get(r, s.time) <= s.time]
+    if free and not guest.offered:
+        guest.offered = free[0]
+        ledger.offered[free[0]] = d["departure"]
+        chain.add(
+            s,
+            "reassign_room",
+            "high",
+            f"{free[0]} is clean, vacant and not booked during the guest's stay; offer it, "
+            f"since {s.detail}.",
+            assets=[room, free[0]],
+            expected_outcome="Guest checks in on time in another room (simulated).",
+            verification_plan=f"Guest checks in to {free[0]}; {room} keeps its cleaning.",
+            confidence=0.7,
+        )
+    offer = f"{guest.offered} is offered pending approval; " if guest.offered else ""
+    chain.add(
+        s,
+        "notify_guest",
+        "high",
+        f"Tell the guest ({d['language']}): the previous guest of {room} has not checked out "
+        f"yet; {offer}a new ready time follows at checkout (proposed message; delivery not "
+        "confirmed).",
+        **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
+        expected_outcome="Guest is not left with a promise that has passed.",
+        verification_plan=f"Checkout of {room} and an updated ready time follow; escalate if not.",
+        confidence=0.7,
+    )
+    ledger.answered[room] = s.time
+
+
 def _day_plan(chain: _Chain, s: Signal, settings: Settings, told: set[str]) -> None:
     """Plan a day at risk; guests already given a ready time (``told``) get no blanket notice."""
     d = s.data
@@ -269,20 +303,16 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings, told: set[str]) -> N
             verification_plan="robot_floor_cleaning_completed before each human clean.",
             confidence=0.6,
         )
-    notify = [r for r in d["arrival_rooms"] if r not in told]
+    notify = [r for r in d["late"] if r not in told]
     if notify:
         chain.add(
             s,
             "notify_guest",
             prio,
-            f"Tell guests arriving today ({', '.join(notify)}): check-in from {checkin} as "
-            "booked, early check-in is not possible today"
-            + (
-                f"; all rooms expected ready by {latest}"
-                if d["latest"]
-                else "; some rooms may be ready only after check-in time"
-            )
-            + " (proposed message; delivery not confirmed).",
+            f"Tell guests arriving today in {', '.join(notify)}: their room may be ready only "
+            f"after check-in at {checkin}"
+            + (f", by {latest} at the latest" if d["latest"] else "")
+            + "; we confirm the time when it is clean (proposed message; delivery not confirmed).",
             assets=notify,
             expected_outcome="Guests do not arrive early and wait.",
             verification_plan="No arrival_waiting_room event today; escalate on one.",
@@ -484,6 +514,10 @@ def _turnaround(episodes: list[Episode], settings: Settings) -> list[Decision]:
             continue
         if s.kind == "ready":
             _ready(chains[eid], s)
+            continue
+        if s.kind == "overstay":
+            guest = guests.setdefault((eid, s.data["booking"]), _Guest())
+            _overstay(chains[eid], guest, s, ledger)
             continue
         guest = guests.setdefault((eid, s.data["booking"]), _Guest())
         _turnaround_step(chains[eid], guest, s, ledger, settings)
