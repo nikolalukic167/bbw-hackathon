@@ -43,7 +43,8 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ```bash
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
-                              # S03 comes from the s03 bus lane; --no-s03-lane for the old planner
+                              # bus lanes (src/plato40/lanes.py) replace the planner for their
+                              # issue type; --lanes s03 ... to pick, --lanes alone for none
                               # follow-ups from verify.py; --no-follow-ups to skip them
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
 uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl
@@ -88,6 +89,7 @@ src/plato40/
   contract.py     decision contract checks and JSONL I/O
   pipeline.py     load -> signals -> episodes -> decisions -> policy -> checks
   bus.py          trigger bus contract: signal, proposal and verdict rows (docs/BUS.md)
+  lanes.py        registry of the bus lanes plato40 run runs (lane_s03.py, ...)
   lane_s03.py     S03 trigger lane: heating and comfort signals and proposals on the bus
   arbiter.py      judges lane proposals on one shared ledger and merges them with the
                   pipeline's decisions (contract, known-at, roster, policy, message guard)

@@ -236,7 +236,7 @@ class Settings:
     detect: DetectorSettings = field(default_factory=DetectorSettings)
     figure_dpi: int = 110
     llm_cache: Path | None = None
-    s03_lane: bool = True
+    lanes: tuple[str, ...] = ("s03",)
     follow_ups: bool = True
 
     @property

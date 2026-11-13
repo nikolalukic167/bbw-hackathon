@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from typing import Any
 
 import pandas as pd
 
@@ -60,6 +61,7 @@ class Run:
     rules: dict[str, str] = field(default_factory=dict)
     violations: list[str] = field(default_factory=list)
     messages: dict[str, llm_guard.Result] = field(default_factory=dict)
+    verdicts: list[dict[str, Any]] = field(default_factory=list)
 
 
 def run(ds: Dataset, settings: Settings) -> Run:
@@ -82,8 +84,8 @@ def run(ds: Dataset, settings: Settings) -> Run:
     for d in decisions:
         ctx = context_at(ds, states, pd.Timestamp(d["timestamp_utc"]))
         result.rules[d["event_id"]] = policy.apply(d, ctx)
-    if settings.s03_lane:
-        _s03_lane(ds, settings, result)
+    if settings.lanes:
+        _lanes(ds, settings, result)
     if settings.follow_ups:
         more = verify.follow_ups(ds, result.episodes, result.decisions, states, settings)
         if settings.llm_cache is not None:
@@ -100,30 +102,33 @@ def run(ds: Dataset, settings: Settings) -> Run:
     return result
 
 
-def _s03_lane(ds: Dataset, settings: Settings, result: Run) -> None:
-    """Replace the planner's S03 decisions by the s03 bus lane, judged by the arbiter.
+def _lanes(ds: Dataset, settings: Settings, result: Run) -> None:
+    """Replace the planner's decisions of each lane in ``settings.lanes`` by that lane's.
 
-    The lane's signals and episodes replace the heating ones in ``result`` too, so the
-    trace, explain and the console show what the decisions came from.
+    All lanes go to the arbiter together, so they share one ledger and the lane rank. The
+    lanes' signals and episodes replace the planner's of the same issue type in ``result``,
+    so the trace, explain and the console show what the decisions came from.
     """
-    from plato40 import arbiter, lane_s03  # the arbiter imports this module
+    from plato40 import arbiter, bus, lanes  # the arbiter imports this module
 
     call = None
     if settings.llm_cache is not None and os.environ.get("PLATO40_LLM") == "on":
         model = os.environ.get("PLATO40_LLM_MODEL", llm_guard.DEFAULT_MODEL)
         call = llm_guard.anthropic_call(model)
     cache = settings.llm_cache or settings.out_dir / "llm_cache"
-    rows, _ = lane_s03.rows(ds, settings, cache, call)
-    decisions, verdicts = arbiter.arbitrate(ds, settings, result.decisions, rows, ["s03"])
-    rejected = [f"{v['proposal_id']}: {v['why']}" for v in verdicts if not v["accepted"]]
-    if rejected:
-        raise RuntimeError("s03 lane proposals rejected:\n" + "\n".join(rejected))
-    issue = heating.ISSUE
+    known = lanes.registry()
+    rows: list[dict[str, Any]] = []
+    for lane in settings.lanes:
+        rows += known[lane](ds, settings, cache, call)[0]
+    decisions, verdicts = arbiter.arbitrate(ds, settings, result.decisions, rows, settings.lanes)
+    result.verdicts = verdicts
+    issues = {str(bus.LANES[lane]["issue_type"]) for lane in settings.lanes}
     episodes: dict[str, Episode] = {}
     for r in rows:
         if r["row"] != "signal":
             continue
-        eid = "EP-" + str(r["id"]).removeprefix("s03-").rsplit("-sig", 1)[0]
+        issue = str(r["issue_type"])
+        eid = "EP-" + str(r["id"]).removeprefix(f"{r['lane']}-").rsplit("-sig", 1)[0]
         ep = episodes.setdefault(eid, Episode(eid, issue, tuple(r["assets"])))
         ep.signals.append(
             Signal(
@@ -136,10 +141,10 @@ def _s03_lane(ds: Dataset, settings: Settings, result: Run) -> None:
                 r["facts"],
             )
         )
-    result.signals = [s for s in result.signals if s.issue_type != issue] + [
+    result.signals = [s for s in result.signals if s.issue_type not in issues] + [
         s for ep in episodes.values() for s in ep.signals
     ]
-    result.episodes = [e for e in result.episodes if e.issue_type != issue] + list(
+    result.episodes = [e for e in result.episodes if e.issue_type not in issues] + list(
         episodes.values()
     )
     result.decisions = decisions

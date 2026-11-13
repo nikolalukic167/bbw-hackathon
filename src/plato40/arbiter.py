@@ -40,8 +40,9 @@ COPIED = (
     "verification_plan",
 )
 RANK = {p: n for n, p in enumerate(contract.PRIORITIES)}
-LANE_RANK = {"s02": 0, "s01": 1, "s03": 2}
-"""At one minute, safety first: a leak gets the technician before the heat pump does."""
+LANE_RANK = {"s02": 0.0, "s01": 1.0, "s05": 1.5, "s03": 2.0, "s04": 3.0, "s07": 4.0, "s06": 5.0}
+"""At one minute: safety, waiting guest, day capacity, comfort, maintenance, logistics, energy.
+There is no pre-emption: a lane ranked below s03 claims only from its own ``t``."""
 ROSTER_ROLE = {"cleaner": "cleaner", "robot": "robot", "technician": "technician"}
 
 
@@ -196,7 +197,7 @@ def arbitrate(
         key=lambda x: (
             str(x[1].get("t")),
             RANK.get(str(x[1].get("priority")), 9),
-            LANE_RANK.get(str(x[1].get("lane")), 9),
+            LANE_RANK.get(str(x[1].get("lane")), 9.0),
             x[0],
         )
     )

@@ -6,7 +6,7 @@
 ``plato40 validate <decisions.jsonl> <data_dir>``  check contract and autonomy policy
 ``plato40 explain <trace.jsonl> [episode]``        why the pipeline acted or did not
 ``plato40 ui <decisions.jsonl> <trace.jsonl> --out console.html``  operations console page
-``plato40 bus <data_dir> --lane s03 --out <dir>``  one trigger lane through the bus and arbiter
+``plato40 bus <data_dir> --lane <lane> --out <dir>``  one trigger lane through bus and arbiter
 ``plato40 audit <data_root> --out <dir>``          write the data audit report
 """
 
@@ -22,7 +22,7 @@ from typing import Any
 
 import pandas as pd
 
-from plato40 import arbiter, bus, contract, lane_s03, llm_guard, pipeline, trace, ui
+from plato40 import arbiter, bus, contract, lanes, llm_guard, pipeline, trace, ui
 from plato40.load.reader import discover_datasets, load_dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
@@ -46,9 +46,11 @@ def _parser() -> argparse.ArgumentParser:
         "PLATO40_LLM=on also calls the model on a cache miss",
     )
     run.add_argument(
-        "--no-s03-lane",
-        action="store_true",
-        help="plan S03 with the built-in planner instead of the s03 bus lane",
+        "--lanes",
+        nargs="*",
+        choices=sorted(lanes.registry()),
+        help="bus lanes that replace the planner for their issue type (default: all); "
+        "give none to use the planner only",
     )
     run.add_argument(
         "--no-follow-ups",
@@ -80,7 +82,7 @@ def _parser() -> argparse.ArgumentParser:
     page.add_argument("--out", type=Path, required=True, help="HTML page to write")
     lane = sub.add_parser("bus", help="run one trigger lane through the bus and the arbiter")
     lane.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
-    lane.add_argument("--lane", choices=("s03",), default="s03", help="trigger lane to run")
+    lane.add_argument("--lane", choices=sorted(lanes.registry()), required=True, help="lane to run")
     lane.add_argument(
         "--out", type=Path, required=True, help="directory for <lane>.bus.jsonl and decisions"
     )
@@ -105,7 +107,7 @@ def _run(
     out: Path,
     trace_path: Path | None,
     llm_cache: Path | None,
-    s03_lane: bool,
+    run_lanes: tuple[str, ...],
     follow_ups: bool,
 ) -> int:
     ds = load_dataset(data_dir)
@@ -113,12 +115,20 @@ def _run(
         data_root=data_dir,
         out_dir=out.parent,
         llm_cache=llm_cache,
-        s03_lane=s03_lane,
+        lanes=run_lanes,
         follow_ups=follow_ups,
     )
     result = pipeline.run(ds, settings)
     n = contract.write_decisions(result.decisions, out)
     print(trace.summary(ds, result))
+    if result.verdicts:
+        no = [v for v in result.verdicts if not v["accepted"]]
+        print(
+            f"lanes      {', '.join(settings.lanes)}: {len(result.verdicts)} proposals, "
+            f"{len(no)} rejected"
+        )
+        for v in no:
+            print(f"  rejected {v['proposal_id']}: {v['why']}")
     if llm_cache is not None:
         used = Counter(r.source for r in result.messages.values())
         why = Counter(e.split(" '")[0] for r in result.messages.values() for e in r.errors)
@@ -172,7 +182,7 @@ def _bus(data_dir: Path, lane: str, out: Path, cache: Path) -> int:
     if os.environ.get("PLATO40_LLM", "off") == "on":
         model = os.environ.get("PLATO40_LLM_MODEL", llm_guard.DEFAULT_MODEL)
         call = llm_guard.anthropic_call(model)
-    rows, sources = lane_s03.rows(ds, settings, cache, call)
+    rows, sources = lanes.registry()[lane](ds, settings, cache, call)
     decisions, verdicts = arbiter.arbitrate(ds, settings, [], rows)
     board = sorted(
         rows + verdicts,
@@ -226,7 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.out,
             args.trace,
             args.llm_cache,
-            not args.no_s03_lane,
+            tuple(lanes.registry()) if args.lanes is None else tuple(args.lanes),
             not args.no_follow_ups,
         )
     if args.command == "arbiter":
