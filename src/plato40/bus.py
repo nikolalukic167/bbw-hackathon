@@ -91,7 +91,7 @@ LANES: dict[str, dict[str, Any]] = {
     },
     "s03": {
         "issue_type": "heating_comfort",
-        "kinds": ("cop_low", "comfort_deficit", "cold_forecast", "price_peak"),
+        "kinds": ("cop_low", "comfort_deficit", "comfort_excess", "cold_forecast", "price_peak"),
         "intents": (
             "flag_hp_degradation",
             "protect_occupied_rooms",
@@ -103,6 +103,8 @@ LANES: dict[str, dict[str, Any]] = {
             "flag_sensor_gap",
             "boost_room_setpoint",
             "flag_room_heating",
+            "cool_room_setpoint",
+            "notify_guest_heat",
         ),
         "actions": (
             "adjust_room_setpoint",

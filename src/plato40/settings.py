@@ -258,6 +258,15 @@ class DetectorSettings:
     """Hours (h) a boosted or flagged room has to reach the comfort band before the room's
     heating is inspected (s03 verification plan)."""
 
+    hot_day_start_h: int = 8
+    """Local wall-clock hour (h, Europe/Vienna, inclusive) from which a hot room's open window
+    gets the advice to close it while it is hotter outside (bus lane s03). A design value,
+    not fitted; at night the reply only says that opening the window helps."""
+
+    hot_day_end_h: int = 20
+    """Local wall-clock hour (h, Europe/Vienna, exclusive) at which the daytime window advice
+    of ``hot_day_start_h`` ends."""
+
     preheat_forecast_c: float = -5.0
     """Coldest forecast hour (degC) in the next 24 h below which a degraded HP1 gets a
     pre-heat plan (bus lane s03). A design value, not fitted: every quickstart HP1 episode

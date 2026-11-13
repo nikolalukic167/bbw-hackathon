@@ -68,7 +68,7 @@ IDs: `<lane>-<episode without EP->-sigNN`, `-propNN`, and `<proposal id>-v` for 
 |---|---|---|---|---|---|
 | **s01** | `room_turnaround` | `request checkin_due overstay checkout ready day_plan` | `clean_first robot_prepass promise_ready_time notify_ready_now notify_day_delay offer_alternative_room withdraw_offer escalate_waiting_guest request_extra_cleaning` | `schedule_cleaning dispatch_robot notify_guest reassign_room request_human_approval release_room defer_action` | none |
 | **s02** | `water_leak` | `night_flow burst burst_flow night_gap night_blank` | `flag_suspected_leak inspect_room inspect_pipes ask_entry_consent block_room dispatch_plumber escalate_plumber release_repaired_room` *`flag_meter_artefact watch_next_night`* | `request_inspection dispatch_technician order_service block_room release_room notify_guest flag_anomaly request_human_approval defer_action` | *`room_leak pipe_leak guest_use cleaning_use meter_artefact meter_exchange unknown`* |
-| **s03** | `heating_comfort` | `cop_low comfort_deficit cold_forecast price_peak` | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort preheat_before_cold shift_load_off_peak boost_room_setpoint flag_room_heating` *`flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | `hp_degradation cold_snap sensor_gap unknown` |
+| **s03** | `heating_comfort` | `cop_low comfort_deficit comfort_excess cold_forecast price_peak` | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort preheat_before_cold shift_load_off_peak boost_room_setpoint flag_room_heating cool_room_setpoint notify_guest_heat` *`flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | `hp_degradation cold_snap sensor_gap unknown` |
 | **s06** | `energy_optimization` | `arrival_due s03_active input_stale` | `preheat_arrival back_off_for_comfort flag_energy_data_gap` | `adjust_room_setpoint optimize_energy flag_anomaly defer_action` | `arrival s03_backoff stale_input unknown` |
 
 `cause` is how S02 and S03 tell a real fault from a look-alike (guest bath, cleaning, meter
@@ -196,6 +196,7 @@ at `t` floored to the hour is `cop_low`.
 | `cop_low` | each hourly check with 24 h COP below `cop_ratio_low` of the reference | HP1 | `hp_degradation` | first of an episode: `flag_hp_degradation` → `flag_anomaly`; `service_heat_pump` → `dispatch_technician` with a TECH_1 claim, or `escalate_contractor` → `order_service` if no technician on shift within 24 h; `protect_occupied_rooms` → `optimize_energy`. Later: `escalate_contractor` once, 24 h after the technician's start if the COP is still low |
 | `comfort_deficit` | at a `cop_low` check | the rooms | `hp_degradation` | one `notify_guest_comfort` per guest newly in deficit, once per stay and episode |
 | `comfort_deficit` | at a `temperature_cold` request, rounded up to the minute (so before `response_due_utc`) | the room | `hp_degradation` while degraded, else `unknown` (`sensor_gap` with no reading in the last hour) | a reply to that guest with `guest_request_ids`; outside HP1 episodes also `boost_room_setpoint` → `adjust_room_setpoint` (room below the band, window not reported open) and `flag_room_heating` → `flag_anomaly` (also below its setpoint by `comfort_deficit_k`) |
+| `comfort_excess` | at a `temperature_hot` request, rounded up to the minute | the room | `unknown` (`sensor_gap` with no reading in the last hour); never the HP1 episode | `notify_guest_heat` → `notify_guest` with `guest_request_ids`; `cool_room_setpoint` → `adjust_room_setpoint` to the band low when the room is above the band and its setpoint above the band low (the building has heating only, no cooling) |
 | `cold_forecast` | each forecast issue while degraded, coldest hour of the next 24 h below `preheat_forecast_c` | HP1, BUILDING | `cold_snap` | `preheat_before_cold` → `optimize_energy` |
 | `price_peak` | each tariff publication while degraded | HP1, BUILDING | none | `shift_load_off_peak` → `optimize_energy`, only where occupied rooms stay in the band |
 
@@ -203,7 +204,11 @@ Guest messages: one proposal per guest, language from the request, else the book
 request known at `t`, else `en`. Text goes through `llm_guard.phrase` with `say = {room}`;
 three templates (`hp`, `room`, `window`) in all six languages, so a cache miss or a rejected
 LLM answer still gives the guest their language. A cold report with the window reported open
-asks the guest to close it.
+asks the guest to close it. A hot report gets the `hot` parts, joined in order: no cooling in
+the building, the setpoint lowered (if it was), the window open at night helps, and, with the
+window reported open between `hot_day_start_h` and `hot_day_end_h` local, close it while it
+is hotter outside. Dev: 201 hot requests, 201 replies before their due time, 176 setpoints
+lowered, 0 rejected.
 
 Quickstart: 114 signals, 72 proposals, 72 accepted, 0 violations; byte-identical on rerun.
 Real lines from `examples/bus/s03.bus.jsonl` (shortened with `…`):

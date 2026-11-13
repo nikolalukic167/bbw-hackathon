@@ -22,6 +22,14 @@ Signals (``kind``, ``cause``) and what they propose:
     the band if the room is below the band and its window is not reported open, and a room
     heating flag if it is also in deficit below its setpoint. With the window reported
     open, the reply asks the guest to close it instead.
+- ``comfort_excess``: at a guest's ``temperature_hot`` request, a reply to that guest at the
+  request time, in the room's own episode (``unknown``, or ``sensor_gap`` with no valid
+  reading in the last hour; never the HP1 episode). The building has heating only and no
+  cooling, so if the room is above the band and its setpoint above the band low, the lane
+  lowers the setpoint to the band low, which stops any heating. The reply says there is no
+  cooling, that the setpoint was lowered (if it was) and that the window open at night
+  helps; with the window reported open between ``hot_day_start_h`` and ``hot_day_end_h``
+  local, also that closing it keeps the heat out while it is hotter outside.
 - ``cold_forecast`` (``cold_snap``): at each forecast issue while HP1 is degraded, if the
   coldest hour of the next 24 h is below ``preheat_forecast_c``: a pre-heat plan.
 - ``price_peak``: at each tariff publication while HP1 is degraded: shift load off the
@@ -116,12 +124,59 @@ TEMPLATES: dict[str, dict[str, str]] = {
         "abierta; por favor, ciérrela para que la habitación pueda calentarse. También "
         "revisamos la calefacción.",
     },
+    # A reply to a hot room joins these parts in order: hot, [hot_set], hot_night, [hot_window].
+    "hot": {
+        "en": "Thank you for your message about the heat in room {room}. The building has "
+        "heating only, no cooling or air conditioning.",
+        "de": "Danke für Ihre Nachricht zur Wärme in Zimmer {room}. Das Haus hat nur eine "
+        "Heizung, keine Kühlung und keine Klimaanlage.",
+        "fr": "Merci pour votre message sur la chaleur dans la chambre {room}. Le bâtiment a "
+        "seulement un chauffage, sans climatisation.",
+        "it": "Grazie per il messaggio sul caldo nella camera {room}. L'edificio ha solo il "
+        "riscaldamento, senza aria condizionata.",
+        "nl": "Bedankt voor uw bericht over de warmte in kamer {room}. Het gebouw heeft alleen "
+        "verwarming, geen koeling of airconditioning.",
+        "es": "Gracias por su mensaje sobre el calor en la habitación {room}. El edificio solo "
+        "tiene calefacción, sin aire acondicionado.",
+    },
+    "hot_set": {
+        "en": "We have lowered the room's setpoint, so the heating stays off.",
+        "de": "Wir haben die Solltemperatur gesenkt, die Heizung bleibt aus.",
+        "fr": "Nous avons abaissé la consigne : le chauffage reste éteint.",
+        "it": "Abbiamo abbassato la temperatura impostata: il riscaldamento resta spento.",
+        "nl": "We hebben de ingestelde temperatuur verlaagd: de verwarming blijft uit.",
+        "es": "Hemos bajado la consigna: la calefacción permanece apagada.",
+    },
+    "hot_night": {
+        "en": "Opening the window at night, when it is cooler outside, helps.",
+        "de": "Nachts, wenn es draußen kühler ist, hilft ein offenes Fenster.",
+        "fr": "Ouvrir la fenêtre la nuit, quand il fait plus frais dehors, aide.",
+        "it": "Aprire la finestra di notte, quando fuori è più fresco, aiuta.",
+        "nl": "Het raam 's nachts openen, als het buiten koeler is, helpt.",
+        "es": "Abrir la ventana por la noche, cuando fuera hace más fresco, ayuda.",
+    },
+    "hot_window": {
+        "en": "The window is reported open: please close it in the daytime while it is hotter "
+        "outside.",
+        "de": "Das Fenster ist offen gemeldet: Schließen Sie es bitte tagsüber, solange es "
+        "draußen heißer ist.",
+        "fr": "La fenêtre est signalée ouverte : fermez-la en journée tant qu'il fait plus "
+        "chaud dehors.",
+        "it": "La finestra risulta aperta: la chiuda di giorno, finché fuori fa più caldo.",
+        "nl": "Het raam staat open gemeld: sluit het overdag, zolang het buiten warmer is.",
+        "es": "La ventana figura abierta: ciérrela de día mientras fuera haga más calor.",
+    },
 }
 SAYS = {
     "hp": "heating runs at reduced capacity, a repair is requested and heat goes to occupied "
     "rooms first",
     "room": "the heating of the room is being checked now",
     "window": "the window sensor shows an open window; please close it; the heating is checked",
+    "hot": "the building has heating only and no cooling",
+    "hot_set": "the room's setpoint was lowered, so the heating stays off",
+    "hot_night": "opening the window at night helps",
+    "hot_window": "the window is reported open; please close it in the daytime while it is "
+    "hotter outside",
 }
 
 
@@ -226,6 +281,23 @@ class _Hp:
     deadline: pd.Timestamp | None = None
 
 
+@dataclass(frozen=True)
+class _Reading:
+    """A temperature request and its room's latest readings known at the request time."""
+
+    rid: str
+    room: str
+    booking: str
+    lang: str
+    priority: str
+    due: Any
+    temp: float | None
+    setpoint: float | None
+    window: float | None
+    measured: str
+    evidence: list[str]
+
+
 class _Lane:
     """Builds the s03 rows of one dataset in time order."""
 
@@ -295,29 +367,33 @@ class _Lane:
         room: str,
         booking: str,
         language: str,
-        template: str,
+        template: str | tuple[str, ...],
         priority: str,
         request: str | None = None,
+        hot: bool = False,
     ) -> None:
+        parts = (template,) if isinstance(template, str) else template
+        intent = "notify_guest_heat" if hot else "notify_guest_comfort"
         task = llm_guard.Task(
             lane=LANE,
             t=stamp(t),
             known_by=sig["t_known"],
             language=language,
-            intent="notify_guest_comfort",
+            intent=intent,
             facts={"room": room, "booking": booking, "cause": sig.get("cause", "unknown")},
             say={"room": room},
             must_say=("room",),
-            template=TEMPLATES[template][language],
+            template=" ".join(TEMPLATES[p][language] for p in parts),
         )
         said = llm_guard.phrase(task, self.cache, self.call)
         self.board.messages[said.source] += 1
-        what = SAYS[template]
+        what = "; ".join(SAYS[p] for p in parts)
+        request_type = "temperature_hot" if hot else "temperature_cold"
         self.board.propose(
             eid,
             t,
             sig,
-            "notify_guest_comfort",
+            intent,
             "notify_guest",
             [room],
             priority,
@@ -326,9 +402,13 @@ class _Lane:
             message={"language": language, "text": said.text},
             guest_request_ids=[request] if request else None,
             confidence=0.8 if request else 0.7,
-            expected_outcome="The guest knows the cause and that help is coming.",
+            expected_outcome=(
+                "The guest knows the building has no cooling and what helps."
+                if hot
+                else "The guest knows the cause and that help is coming."
+            ),
             verification_plan=(
-                f"No further temperature_cold request from {booking}; escalate on one."
+                f"No further {request_type} request from {booking}; escalate on one."
             ),
         )
 
@@ -586,32 +666,51 @@ class _Lane:
 
     # ---------------------------------------------------------------- guest requests
 
-    def _request(self, t: pd.Timestamp, r: pd.Series, room_eid: str | None) -> None:
-        rid, room, booking = str(r["request_id"]), str(r["room_id"]), str(r["booking_id"])
+    def _read(self, t: pd.Timestamp, r: pd.Series) -> _Reading:
+        """Return a temperature request with its room's readings known at ``t``."""
+        rid, room = str(r["request_id"]), str(r["room_id"])
         lang = str(r["language"]) if str(r["language"]) in LANGUAGES else "en"
-        priority = str(r["priority"]) if str(r["priority"]) in PRIORITIES else "medium"
         temp = self._last(self.temp, room, t)
-        setpoint = self._last(self.setpoint, room, t)
         window = self._last(self.window, room, t)
-        evidence = [
-            f"guest_requests.csv:{rid}",
-            f"room_telemetry.csv:{room} temperature_c,setpoint_c,window_open:"
-            f"{stamp(t - self.recent)}..{stamp(t)}",
-        ]
         measured = "no valid reading in the last hour" if temp is None else f"{temp:.1f} degC"
-        opened = window == 1.0
-        if opened:
+        if window == 1.0:
             measured += ", window open"
-        facts = {
-            "request": rid,
-            "booking": booking,
-            "language": lang,
-            "due": r["response_due_utc"],
-            "temperature": temp,
-            "setpoint": setpoint,
-            "window_open": window,
+        return _Reading(
+            rid=rid,
+            room=room,
+            booking=str(r["booking_id"]),
+            lang=lang,
+            priority=str(r["priority"]) if str(r["priority"]) in PRIORITIES else "medium",
+            due=r["response_due_utc"],
+            temp=temp,
+            setpoint=self._last(self.setpoint, room, t),
+            window=window,
+            measured=measured,
+            evidence=[
+                f"guest_requests.csv:{rid}",
+                f"room_telemetry.csv:{room} temperature_c,setpoint_c,window_open:"
+                f"{stamp(t - self.recent)}..{stamp(t)}",
+            ],
+        )
+
+    def _facts(self, x: _Reading) -> dict[str, Any]:
+        return {
+            "request": x.rid,
+            "booking": x.booking,
+            "language": x.lang,
+            "due": x.due,
+            "temperature": x.temp,
+            "setpoint": x.setpoint,
+            "window_open": x.window,
             "band": [self.lo, self.hi],
         }
+
+    def _request(self, t: pd.Timestamp, r: pd.Series, room_eid: str | None) -> None:
+        x = self._read(t, r)
+        rid, room, booking, lang, priority = x.rid, x.room, x.booking, x.lang, x.priority
+        temp, setpoint, evidence, measured = x.temp, x.setpoint, x.evidence, x.measured
+        opened = x.window == 1.0
+        facts = self._facts(x)
         hit = self._degraded(t)
         if hit is not None:
             eid, _ = hit
@@ -685,15 +784,77 @@ class _Lane:
         template = "window" if opened else "room"
         self._notify(room_eid, t, sig, room, booking, lang, template, priority, rid)
 
+    def _hot(self, t: pd.Timestamp, r: pd.Series, room_eid: str) -> None:
+        """Answer a ``temperature_hot`` request: lower a heating setpoint, then reply.
+
+        The building has no cooling, so the lane can only stop heating the room (setpoint
+        down to the band low) and tell the guest what helps: the window open at night, and
+        closed in the daytime while it is hotter outside.
+        """
+        x = self._read(t, r)
+        th = self.th
+        hour = t.tz_convert(self.settings.local_tz).hour
+        day_window = x.window == 1.0 and th.hot_day_start_h <= hour < th.hot_day_end_h
+        sig = self.board.signal(
+            room_eid,
+            t,
+            "comfort_excess",
+            (x.room,),
+            x.evidence,
+            f"guest of {x.booking} reports heat in {x.room} ({x.measured}); the building has "
+            "heating only and no cooling",
+            self._facts(x),
+            "sensor_gap" if x.temp is None else "unknown",
+        )
+        lower = (
+            x.temp is not None
+            and x.temp > self.hi
+            and x.setpoint is not None
+            and x.setpoint > self.lo
+        )
+        if lower:
+            self.board.propose(
+                room_eid,
+                t,
+                sig,
+                "cool_room_setpoint",
+                "adjust_room_setpoint",
+                [x.room],
+                x.priority,
+                f"Lower the setpoint of {x.room} from {x.setpoint:.1f} to {self.lo:.0f} degC "
+                f"(bottom of the band): {x.temp:.1f} degC is above {self.hi:.0f} degC and the "
+                "guest is hot; a lower setpoint stops any heating of the room. The building "
+                "has no cooling.",
+                confidence=0.7,
+                expected_outcome=f"No heat goes to {x.room} (simulated).",
+                verification_plan=(
+                    f"{x.room} setpoint at {self.lo:.0f} degC at the next reading; the room "
+                    "cools only by ventilation, so a repeat request gets a reply, not a repair."
+                ),
+            )
+        parts: tuple[str, ...] = ("hot", "hot_set", "hot_night") if lower else ("hot", "hot_night")
+        if day_window:
+            parts += ("hot_window",)
+        self._notify(
+            room_eid, t, sig, x.room, x.booking, x.lang, parts, x.priority, x.rid, hot=True
+        )
+
     # ---------------------------------------------------------------- run
 
     def run(self) -> list[Row]:
         cold = self.requests.loc[self.requests["request_type"] == "temperature_cold"]
         cold = cold.assign(t=cold["timestamp_utc"].dt.ceil("min")).sort_values(["t", "request_id"])
+        hot = self.requests.loc[self.requests["request_type"] == "temperature_hot"]
+        hot = hot.assign(t=hot["timestamp_utc"].dt.ceil("min")).sort_values(["t", "request_id"])
         outside = [
             Signal(pd.Timestamp(t), ISSUE, "comfort_deficit", (str(room),), (), "")
             for t, room in zip(cold["t"], cold["room_id"], strict=True)
             if self._degraded(pd.Timestamp(t)) is None
+        ]
+        # A hot room never joins an HP1 episode: a degraded heat pump does not explain heat.
+        outside += [
+            Signal(pd.Timestamp(t), ISSUE, "comfort_excess", (str(room),), (), "")
+            for t, room in zip(hot["t"], hot["room_id"], strict=True)
         ]
         room_eid: dict[tuple[pd.Timestamp, str], str] = {}
         for ep in group(outside, self.th.episode_quiet_h):
@@ -705,6 +866,7 @@ class _Lane:
         pub = self.ds.table("tariff.csv")["published_utc"].dropna().unique()
         steps += [(pd.Timestamp(t), 2, "", None) for t in pub]
         steps += [(pd.Timestamp(r["t"]), 3, str(r["request_id"]), r) for _, r in cold.iterrows()]
+        steps += [(pd.Timestamp(r["t"]), 3, str(r["request_id"]), r) for _, r in hot.iterrows()]
         for t, kind, _, r in sorted(steps, key=lambda x: x[:3]):
             if kind == 0:
                 self._cop(t)
@@ -712,6 +874,8 @@ class _Lane:
                 self._forecast(t)
             elif kind == 2:
                 self._tariff(t)
+            elif r["request_type"] == "temperature_hot":
+                self._hot(t, r, room_eid[(t, str(r["room_id"]))])
             else:
                 self._request(t, r, room_eid.get((t, str(r["room_id"]))))
         return self.board.rows
