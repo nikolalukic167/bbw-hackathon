@@ -77,7 +77,7 @@ nothing from that review is added:
 - **Supervisor:** `claude-sonnet-5-5` (`PLATO40_SUPERVISOR_MODEL`), prompt `supervisor/1`.
   It uses `tool_choice: auto` with one retry, because Sonnet 5.5 refuses a forced tool
   choice.
-- **Guest messages:** `claude-haiku-5-5` (`PLATO40_LLM_MODEL`), prompt `guest_message/3`
+- **Guest messages:** `claude-haiku-5-5` (`PLATO40_LLM_MODEL`), prompt `guest_message/4`
   (ADR-001, `llm_guard.py`), with the tool forced.
 - **Temperature:** these models take no temperature parameter. Determinism comes from the
   cache, not from sampling settings.

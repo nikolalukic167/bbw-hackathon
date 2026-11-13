@@ -34,7 +34,7 @@ import pandas as pd
 
 from plato40.bus import LANGUAGES
 
-PROMPT_VERSION = "guest_message/3"
+PROMPT_VERSION = "guest_message/4"
 DEFAULT_MODEL = "claude-haiku-5-5"
 MAX_CHARS = 400
 NUMBER = re.compile(r"\d+(?:[:.,]\d+)*")
@@ -64,7 +64,8 @@ HEDGES = {
 SYSTEM = (
     "You write one short message to a hotel guest in the language given. Use only the facts "
     "given. Copy every time, date, room number and ID exactly as it appears in SAY; write no "
-    "other number, time, price, ID or promise. Never use the words guarantee or confirmed, "
+    "other number, time, price, ID or promise, and never a booking or request reference. "
+    "Never use the words guarantee or confirmed, "
     "in any language: an offer pending approval is only offered. Keep every estimate an "
     "estimate (expected, voraussichtlich, devrait, dovrebbe, naar verwachting, debería): "
     "never turn it into a promise. "
