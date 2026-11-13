@@ -73,11 +73,19 @@ def intent_s02(d: dict[str, Any]) -> str:
         return "ask_entry_consent"
     if d["action"] == "request_inspection":
         return "inspect_pipes" if "WM_MAIN" in d["affected_assets"] else "inspect_room"
+    if d["action"] == "order_service" and "after the technician" in d["reason"]:
+        return "escalate_plumber"
     return {
         "flag_anomaly": "flag_suspected_leak",
         "block_room": "block_room",
         "dispatch_technician": "dispatch_plumber",
+        "order_service": "dispatch_plumber",
     }.get(d["action"], "watch_next_night")
+
+
+def cause_s02(assets: list[str]) -> str:
+    """Return the S02 cause: a leak in a room, or in pipes only the main meter sees."""
+    return "pipe_leak" if assets == ["WM_MAIN"] else "room_leak"
 
 
 def intent_s03(d: dict[str, Any]) -> str:
@@ -147,6 +155,8 @@ def main(data: Path, out: Path) -> None:
                         "facts": plain(dict(s.data)),
                     }
                 )
+                if lane == "s02" and s.kind != "night_blank":
+                    rows[-1]["cause"] = cause_s02(list(s.assets))
             for n, d in enumerate((d for d in run.decisions if d["episode_id"] == eid), start=1):
                 answered = [
                     v for (e, t), v in sig_ids.items() if e == eid and t <= d["timestamp_utc"]
@@ -178,6 +188,17 @@ def main(data: Path, out: Path) -> None:
                         p[k] = d[k]
                 if d["action"] == "notify_guest":
                     p["message"] = message(d, "en")
+                if lane == "s02":
+                    p["cause"] = cause_s02(d["affected_assets"])
+                    if d["action"] == "dispatch_technician" and "resource_id" in d:
+                        p["claims"] = [
+                            {
+                                "res": "technician",
+                                "id": d["resource_id"],
+                                "from": d["timestamp_utc"],
+                                "min": 120,
+                            }
+                        ]
                 who = d.get("resource_id") or next(
                     (a for a in d["affected_assets"] if a in staff), None
                 )

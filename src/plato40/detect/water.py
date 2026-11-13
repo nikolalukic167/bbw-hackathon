@@ -18,9 +18,15 @@
   stays one incident.
 - ``night_gap``: median of main meter minus room meters reaches ``gap_night_l_per_h``;
   points at pipes outside the rooms. Needs the gap on ``gap_min_coverage`` of the night.
+
+Every signal carries the in-house technician's availability as known at its time
+(``technician`` on shift now, ``technician_from`` his next shift), so the planner can
+route the repair to him or to an external plumber.
 """
 
 from __future__ import annotations
+
+from dataclasses import replace
 
 import pandas as pd
 
@@ -29,6 +35,7 @@ from plato40.episodes import Signal, group
 from plato40.load import derive
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
+from plato40.staff import Roster
 
 ISSUE = "water_leak"
 
@@ -184,7 +191,22 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                     {"streak": n},
                 )
             )
-    return out + _burst_flow(rooms, settings)
+    return _with_technician(out + _burst_flow(rooms, settings), ds)
+
+
+def _with_technician(signals: list[Signal], ds: Dataset) -> list[Signal]:
+    """Return the signals with the technician's availability as known at each signal time."""
+    roster = Roster(ds)
+    out = []
+    for s in signals:
+        on = roster.on_shift("technician", s.time, s.time)
+        when = s.time if on else roster.next_start("technician", s.time, s.time)
+        out.append(
+            replace(
+                s, data={**s.data, "technician": on[0] if on else None, "technician_from": when}
+            )
+        )
+    return out
 
 
 def _burst_flow(rooms: pd.DataFrame, settings: Settings) -> list[Signal]:

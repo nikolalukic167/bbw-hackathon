@@ -76,8 +76,10 @@ class AuditThresholds:
 class DetectorSettings:
     """Detector thresholds. Starting values come from the audit (sections 5, 6, 8)."""
 
-    leak_floor_l_per_15min: float = 0.5
-    """A night whose every 15-min room volume (L) is at least this has continuous flow."""
+    leak_floor_l_per_15min: float = 0.2
+    """A night whose every 15-min room volume (L) is at least this has continuous flow. Running
+    toilets draw 0.9-1.1 L (quickstart, dev); outside leaks no two nights in a row stay at
+    0.1 L or more, so 0.2 L catches a toilet running at a fifth of that rate."""
 
     leak_persist_nights: int = 2
     """Consecutive continuous-flow nights (count) before a slow leak is acted on."""
@@ -85,12 +87,17 @@ class DetectorSettings:
     leak_technician_nights: int = 3
     """Consecutive continuous-flow nights (count) before a technician is requested."""
 
+    leak_contractor_nights: int = 2
+    """Further leak nights (count) after the technician was requested before an external
+    plumber is ordered; the leak is then not fixed in time."""
+
     burst_night_volume_l: float = 250.0
     """Night-window volume (L) in one room that is a burst, counted only while every night
     interval flows; normal nights reach <= 180 L, but one bath alone draws up to 250 L."""
 
-    gap_night_l_per_h: float = 10.0
-    """Median night gap main minus rooms (L/h) above which a pipe leak is suspected."""
+    gap_night_l_per_h: float = 4.0
+    """Median night gap main minus rooms (L/h) above which a pipe leak is suspected. Normal
+    nights reach at most 2.0 L/h (dev, 0.4 quickstart); the dev pipe leak ran at ~25 L/h."""
 
     gap_min_coverage: float = 0.75
     """Share of a night's intervals with the main and every room meter needed for a gap verdict.
