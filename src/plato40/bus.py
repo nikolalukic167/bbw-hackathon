@@ -116,6 +116,13 @@ LANES: dict[str, dict[str, Any]] = {
         ),
         "causes": ("hp_degradation", "cold_snap", "sensor_gap", "unknown"),
     },
+    "s06": {
+        "issue_type": "energy_optimization",
+        "kinds": ("arrival_due", "s03_active", "input_stale"),
+        "intents": ("preheat_arrival", "back_off_for_comfort", "flag_energy_data_gap"),
+        "actions": ("adjust_room_setpoint", "optimize_energy", "flag_anomaly", "defer_action"),
+        "causes": ("arrival", "s03_backoff", "stale_input", "unknown"),
+    },
 }
 LANGUAGES = ("de", "en", "fr", "it", "nl", "es")
 RESOURCES = ("cleaner", "robot", "technician", "on_call", "room")

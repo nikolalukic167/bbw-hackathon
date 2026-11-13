@@ -198,6 +198,30 @@ class DetectorSettings:
     price_peaks: int = 3
     """Number of dearest published price hours named in the energy plan."""
 
+    preheat_lead_h: float = 3.0
+    """Hours (h) before a booked arrival that a vacant room below the comfort band is
+    pre-heated (S06). Winter warm-up takes a median 2.75-3.25 h (dev)."""
+
+    preheat_setpoint_c: float = 21.0
+    """Setpoint (degC) a vacant room is pre-heated to before an arrival (S06), one kelvin
+    above the bottom of the comfort band."""
+
+    s03_backoff_h: float = 24.0
+    """Hours (h) without an HP1 cop_low verdict before S06 resumes pre-heat and load shifting;
+    also the gap that splits S03 episodes for the back-off notice."""
+
+    tariff_due_local_h: float = 14.0
+    """Local hour (h) by which tomorrow's tariff must be published (it comes at 13:00 local);
+    later counts as a stale energy input (S06)."""
+
+    forecast_stale_h: float = 30.0
+    """Age (h) of the latest weather forecast at 07:00 local above which it is stale (S06);
+    forecasts are issued daily at 06:00 local."""
+
+    energy_balance_tol_kw: float = 1.0
+    """Tolerance (kW) on the energy balance and the BAT1 limits before an energy.csv row
+    counts as broken (S06); the dev balance residual is at most 0.001 kW."""
+
     repair_verify_h: float = 24.0
     """Hours (h) after a leak repair completes in which a new leak signal means the repair did
     not hold; a blocked room is released after it (verify.py). One night falls inside it."""

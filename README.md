@@ -91,6 +91,7 @@ src/plato40/
   bus.py          trigger bus contract: signal, proposal and verdict rows (docs/BUS.md)
   lanes.py        registry of the bus lanes plato40 run runs (lane_s03.py, ...)
   lane_s03.py     S03 trigger lane: heating and comfort signals and proposals on the bus
+  lane_s06.py     S06 energy lane: arrival pre-heat, S03 back-off, stale energy inputs
   arbiter.py      judges lane proposals on one shared ledger and merges them with the
                   pipeline's decisions (contract, known-at, roster, policy, message guard)
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
