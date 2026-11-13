@@ -5,8 +5,8 @@ from __future__ import annotations
 import pandas as pd
 
 from plato40.audit import candidates as cand
-from plato40.audit import derive
 from plato40.audit.render import fmt, image, new_figure, save_figure, table
+from plato40.load import derive
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 

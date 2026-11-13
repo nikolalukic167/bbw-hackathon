@@ -1,4 +1,4 @@
-"""Derived series shared by the audit sections.
+"""Derived series shared by the audit and the detectors.
 
 Every function here is a pure transformation of loaded frames. Units are stated per
 function. Missing inputs stay missing in the outputs.
@@ -113,6 +113,20 @@ def occupancy_matrix(ds: Dataset, index: pd.DatetimeIndex) -> pd.DataFrame:
         if room in occ.columns:
             occ.loc[(index >= start) & (index < end), str(room)] = True
     return occ
+
+
+def comfort_deficit(ds: Dataset, low_c: float, deficit_k: float) -> pd.DataFrame:
+    """Return a boolean time x room frame of occupied comfort deficits.
+
+    A deficit interval is occupied (reconstructed stay), window closed or unknown,
+    temperature below ``low_c`` and at least ``deficit_k`` below the active setpoint.
+    The setpoint condition excludes guests who chose a cool room.
+    """
+    temp = telemetry_wide(ds, "temperature_c")
+    setpoint = telemetry_wide(ds, "setpoint_c").reindex_like(temp)
+    window = telemetry_wide(ds, "window_open").reindex_like(temp)
+    occ = occupancy_matrix(ds, pd.DatetimeIndex(temp.index))
+    return occ & (window != 1.0) & (temp < low_c) & (setpoint - temp >= deficit_k)
 
 
 def telemetry_wide(ds: Dataset, column: str) -> pd.DataFrame:

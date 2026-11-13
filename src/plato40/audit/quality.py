@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from plato40.audit import derive
 from plato40.audit.render import fmt, image, iso, new_figure, save_figure, table
+from plato40.load import derive
 from plato40.load.reader import Dataset
 from plato40.load.schema import CSV_SCHEMAS, Kind
 from plato40.load.units import BOUNDS, MAIN_WATER_DELTA, ROOM_WATER_DELTA

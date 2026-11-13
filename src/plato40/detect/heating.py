@@ -15,9 +15,9 @@ from typing import Any
 import pandas as pd
 
 from plato40.audit.candidates import comfort_deficit
-from plato40.audit.derive import equipment_numeric, weather_series
 from plato40.detect.grid import stamp
 from plato40.episodes import Signal
+from plato40.load.derive import equipment_numeric, weather_series
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.staff import Roster

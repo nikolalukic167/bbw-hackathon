@@ -13,7 +13,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from plato40.audit import derive
+from plato40.load import derive
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 
@@ -159,23 +159,9 @@ def s02_candidates(ds: Dataset, settings: Settings) -> list[Candidate]:
 
 
 def comfort_deficit(ds: Dataset, settings: Settings) -> pd.DataFrame:
-    """Return a boolean time x room frame of occupied comfort deficits.
-
-    A deficit interval is occupied (reconstructed stay), window closed or unknown,
-    temperature below the comfort band, and at least ``comfort_deficit_k`` below the
-    active setpoint. The setpoint condition excludes guests who chose a cool room.
-    """
+    """Return the occupied comfort deficits with the audit thresholds (see ``derive``)."""
     th = settings.thresholds
-    temp = derive.telemetry_wide(ds, "temperature_c")
-    setpoint = derive.telemetry_wide(ds, "setpoint_c").reindex_like(temp)
-    window = derive.telemetry_wide(ds, "window_open").reindex_like(temp)
-    occ = derive.occupancy_matrix(ds, pd.DatetimeIndex(temp.index))
-    return (
-        occ
-        & (window != 1.0)
-        & (temp < th.comfort_low_c)
-        & (setpoint - temp >= th.comfort_deficit_k)
-    )
+    return derive.comfort_deficit(ds, th.comfort_low_c, th.comfort_deficit_k)
 
 
 def occupied_cold_hours(ds: Dataset, settings: Settings) -> pd.Series:
