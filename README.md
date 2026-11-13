@@ -83,7 +83,7 @@ checked, and both cached so that a rerun without the network is byte-identical
 | Use | Model (default) | Prompt | Env var to override | Code |
 |---|---|---|---|---|
 | Guest messages in the guest's language | `claude-haiku-5-5` | `guest_message/4`, tool forced | `PLATO40_LLM_MODEL` | `llm_guard.py`, `messages.py` |
-| Supervisor: reviews the rules' decisions daily and at cross-domain hotspots, adds at most 2 checked decisions per review | `claude-sonnet-5-5` | `supervisor/1`, tool `auto` + one retry | `PLATO40_SUPERVISOR_MODEL` | `supervise.py`, `context.py` |
+| Supervisor: reviews the rules' decisions daily and at cross-domain hotspots, adds at most 2 checked decisions per review | `claude-sonnet-5-5` | `supervisor/2`, tool `auto` + one retry | `PLATO40_SUPERVISOR_MODEL` | `supervise.py`, `context.py` |
 
 | Env var | Values | Effect |
 |---|---|---|

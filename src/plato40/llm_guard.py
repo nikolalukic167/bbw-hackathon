@@ -25,7 +25,8 @@ import hashlib
 import json
 import os
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -187,14 +188,40 @@ def user_prompt(task: Task) -> str:
     )
 
 
-def phrase(task: Task, cache_dir: Path, call: Call | None = None, model: str = "") -> Result:
+def prefetch(
+    tasks: Iterable[Task], cache_dir: Path, call: Call | None, model: str = "", workers: int = 16
+) -> dict[str, Result]:
+    """Phrase the cache misses among ``tasks`` in parallel; return the results by cache key.
+
+    Pass the result to ``phrase(..., done=...)`` so a rejected answer is not asked for twice.
+    """
+    if call is None or os.environ.get("PLATO40_LLM", "off") != "on":
+        return {}
+    model = model or os.environ.get("PLATO40_LLM_MODEL", DEFAULT_MODEL)
+    todo = {cache_key(t, model): t for t in tasks if not preconditions(t)}
+    todo = {k: t for k, t in todo.items() if not (cache_dir / f"{k}.json").exists()}
+    with ThreadPoolExecutor(workers) as pool:
+        out = pool.map(lambda kt: (kt[0], phrase(kt[1], cache_dir, call, model)), todo.items())
+        return dict(out)
+
+
+def phrase(
+    task: Task,
+    cache_dir: Path,
+    call: Call | None = None,
+    model: str = "",
+    done: Mapping[str, Result] | None = None,
+) -> Result:
     """Return checked LLM text from cache or ``call``; on any violation, the template text."""
     errors = preconditions(task)
     if errors:
         raise ValueError(f"LLM task precondition: {errors}")
     fallback = task.template.format(**task.say)
     model = model or os.environ.get("PLATO40_LLM_MODEL", DEFAULT_MODEL)
-    path = cache_dir / f"{cache_key(task, model)}.json"
+    key = cache_key(task, model)
+    if done and key in done:
+        return done[key]
+    path = cache_dir / f"{key}.json"
     if path.exists():
         raw, source = json.loads(path.read_text("utf-8"))["answer"], "cache"
     elif call is None or os.environ.get("PLATO40_LLM", "off") != "on":

@@ -24,6 +24,7 @@ from plato40.llm_guard import (
     Task,
     anthropic_call,
     phrase,
+    prefetch,
 )
 
 ONE_GUEST = re.compile(
@@ -77,11 +78,13 @@ def localise(decisions: list[Decision], cache_dir: Path) -> dict[str, Result]:
     model = os.environ.get("PLATO40_LLM_MODEL", DEFAULT_MODEL)
     call: Call | None = anthropic_call(model) if os.environ.get("PLATO40_LLM") == "on" else None
     results = {}
+    tasks = {d["event_id"]: t for d in decisions if (t := task_for(d)) is not None}
+    done = prefetch(tasks.values(), cache_dir, call, model)
     for d in decisions:
-        task = task_for(d)
+        task = tasks.get(d["event_id"])
         if task is None:
             continue
-        r = phrase(task, cache_dir, call, model)
+        r = phrase(task, cache_dir, call, model, done)
         results[d["event_id"]] = r
         if r.source != "template":
             d["reason"] += f' Message ({task.language}): "{r.text}"'

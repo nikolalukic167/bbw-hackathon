@@ -36,7 +36,7 @@ from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.state import RoomStates
 
-PROMPT_VERSION = "supervisor/1"
+PROMPT_VERSION = "supervisor/2"
 DEFAULT_MODEL = "claude-sonnet-5-5"
 ADD = ("flag_anomaly", "request_human_approval", "request_inspection", "defer_action")
 MAX_ADDS = 2
@@ -57,12 +57,16 @@ SYSTEM = (
     "request_human_approval, request_inspection or defer_action. Each must name in 'about' "
     "the event_ids it follows up, cite evidence copied exactly from 'refs', and use in its "
     "reason only numbers, times and IDs that appear in the input. Never invent a cause, a "
-    "capacity or a person. Reading the snapshot: cop_ratio is HP1's COP divided by its own "
-    "reference COP, so 1.0 is normal and 0.97 is fine; night water is a room's total over the "
-    "night, and an occupied room uses water at night (a shower is 50 to 80 l), so a leak shows "
-    "as flow in every night interval, not as one large total; an open work order has no "
-    "completion time yet, which does not prove the work was not done. Always answer with the "
-    "review tool, with an empty add list when you add nothing."
+    "capacity or a person. This is a replay of recorded data: our decisions are proposals "
+    "and never show up in the data, so never flag that a setpoint, command or requested visit "
+    "was not applied, not followed up or has no record. Reading the snapshot: cop_ratio is "
+    "HP1's COP divided by its own reference COP, so a ratio of one is normal; before calling "
+    "a room too hot or too cold, compare it with the building's other rooms, because weather "
+    "moves all rooms together; night water is a room's total over the night, and an occupied "
+    "room uses water at night (one shower is fifty to eighty litres), so a leak shows as flow "
+    "in every night interval, not as one large total. Prefer flag_anomaly to a visit when the "
+    "shortfall is small. Always answer with the review tool, with an empty add list when you "
+    "add nothing."
 )
 SKIP_HOTSPOT = ("energy_optimization",)
 """Issue types that never make a hotspot: arrival pre-heat touches most rooms every day."""
@@ -195,7 +199,8 @@ def _problems(
         out = json.loads(raw)
     except json.JSONDecodeError:
         return ["answer is not JSON"]
-    if isinstance(out, dict) and set(out) == {"assessment"}:
+    if isinstance(out, dict) and set(out) <= {"assessment"}:
+        out.setdefault("assessment", "")
         out["add"] = []
     if not isinstance(out, dict) or set(out) != {"assessment", "add"}:
         return ["answer is not {assessment, add}"]
@@ -330,7 +335,7 @@ def review(
             log.append(row | {"why": "; ".join(why)})
             continue
         out = json.loads(raw)
-        row["assessment"] = out["assessment"]
+        row["assessment"] = out.get("assessment", "")
         mine = []
         for n, a in enumerate(out.get("add", []), start=1):
             first = by_id[a["about"][0]]

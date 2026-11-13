@@ -74,7 +74,7 @@ nothing from that review is added:
 - Without `--llm-cache`, or with `--no-supervisor`, the supervisor does not run.
 
 **Models** (named in the README; overridable by env var):
-- **Supervisor:** `claude-sonnet-5-5` (`PLATO40_SUPERVISOR_MODEL`), prompt `supervisor/1`.
+- **Supervisor:** `claude-sonnet-5-5` (`PLATO40_SUPERVISOR_MODEL`), prompt `supervisor/2`.
   It uses `tool_choice: auto` with one retry, because Sonnet 5.5 refuses a forced tool
   choice.
 - **Guest messages:** `claude-haiku-5-5` (`PLATO40_LLM_MODEL`), prompt `guest_message/4`
