@@ -84,8 +84,8 @@ class DetectorSettings:
     leak_technician_nights: int = 3
     """Consecutive continuous-flow nights (count) before a technician is requested."""
 
-    burst_night_volume_l: float = 300.0
-    """Night-window volume (L) in one room that is a burst."""
+    burst_night_volume_l: float = 250.0
+    """Night-window volume (L) in one room that is a burst; normal nights reach <= 180 L."""
 
     gap_night_l_per_h: float = 10.0
     """Median night gap main minus rooms (L/h) above which a pipe leak is suspected."""

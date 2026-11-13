@@ -92,6 +92,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 |---|---|---|---|---|
 | T12 | Candidate findings from the audit: July overheating (no cooling), BMS alarm tuning, F3 gateway, May/Aug/Sep comfort deficits, cleaning capacity on surge weekends | S | done | Feedback 10 |
 | T12 | `insights.py`: every number in `insights.md` produced by a script | S | todo | Feedback 10 |
+| T12 | Insight: recurring F3 gateway outages (count from the outage episodes) | S | todo | Feedback 10 |
 | T12 | CLARA recommendations with evidence and uncertainty | S | todo | Feedback 10 |
 | T12 | PLATO design recommendations with evidence and uncertainty | S | todo | Feedback 10 |
 | T12 | Target architecture: one diagram plus one page | S | todo | Architecture 5 |
