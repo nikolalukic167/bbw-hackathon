@@ -91,6 +91,16 @@ class RoomStates:
                 return pd.Timestamp(times[i])
         return None
 
+    def last_entry(self, room: str, state: str, t: pd.Timestamp) -> pd.Timestamp | None:
+        """Return the last time at or before ``t`` that ``room`` entered ``state``, if any."""
+        times = self._times.get(room)
+        if times is None:
+            return None
+        for i in range(int(times.searchsorted(t, side="right")) - 1, -1, -1):
+            if self._states[room][i] == state:
+                return pd.Timestamp(times[i])
+        return None
+
     def rooms_in(self, state: str, t: pd.Timestamp) -> frozenset[str]:
         """Return the rooms in ``state`` at ``t``."""
         return frozenset(r for r in self.rooms if self.at(r, t) == state)

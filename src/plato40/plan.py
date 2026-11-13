@@ -312,7 +312,7 @@ def _day_plan(chain: _Chain, s: Signal, settings: Settings, told: set[str]) -> N
             f"Tell guests arriving today in {', '.join(notify)}: their room may be ready only "
             f"after check-in at {checkin}"
             + (f", by {latest} at the latest" if d["latest"] else "")
-            + "; we confirm the time when it is clean (proposed message; delivery not confirmed).",
+            + "; a ready time follows at check-in (proposed message; delivery not confirmed).",
             assets=notify,
             expected_outcome="Guests do not arrive early and wait.",
             verification_plan="No arrival_waiting_room event today; escalate on one.",
@@ -339,6 +339,7 @@ class _Guest:
     planned: bool = False
     committed: pd.Timestamp | None = None
     offered: str | None = None
+    escalated: bool = False
 
 
 class _Ledger:
@@ -357,10 +358,14 @@ class _Ledger:
         self.answered: dict[str, pd.Timestamp] = {}
 
     def cleaner(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
-        """Return the earliest start and the cleaner on shift who is free first."""
-        if d["begin"] is None or not d["cleaners"]:
-            return None
-        return min((max(d["begin"], self.free.get(c, d["begin"])), c) for c in d["cleaners"])
+        """Return the earliest start and the cleaner free first, within one of their shifts."""
+        options = [
+            (begin, c)
+            for c, a, z in d["cleaners"]
+            for begin in [max(a, self.free.get(c, a))]
+            if begin + self.clean <= z
+        ]
+        return min(options, default=None)
 
     def oncall(self, d: Mapping[str, Any]) -> tuple[pd.Timestamp, str] | None:
         """Return when the on-call housekeeper can start, travelling only if not on site."""
@@ -395,12 +400,10 @@ def _turnaround_step(
     oncall = ledger.oncall(d) if d["waiting"] else None
     if oncall is not None and cleaner is not None and cleaner[0] <= oncall[0]:
         oncall = None
-    if guest.committed is not None:
-        promise: pd.Timestamp | None = (
-            guest.committed if guest.committed > s.time else s.time + ledger.clean
-        )
-    elif d["in_progress"]:
-        promise = d["ready_prio"]
+    if d["in_progress"]:
+        promise: pd.Timestamp | None = d["ready_prio"]
+    elif guest.committed is not None:
+        promise = guest.committed if guest.committed > s.time else s.time + ledger.clean
     elif oncall is not None:
         promise = oncall[0] + ledger.clean
     else:
@@ -449,7 +452,7 @@ def _turnaround_step(
                 verification_plan=f"{room} shows cleaning_started; escalate if not.",
                 confidence=0.6,
             )
-        robot = ledger.robot(d)
+        robot = None if d["robot_done"] else ledger.robot(d)
         if robot is not None:
             begin, who = robot
             when = "" if begin <= d["start"] else f" from {_local(begin, s.time, settings)}"
@@ -467,28 +470,47 @@ def _turnaround_step(
             ledger.book(begin, who, ledger.robot_pass)
         guest.planned = True
     ledger.answered[room] = s.time
+    late = promise is None or promise > d["wanted"]
+    news = ""
+    if guest.offered and not late:
+        news = f"; {room} is on time, so the offer of {guest.offered} is withdrawn"
+        ledger.offered.pop(guest.offered, None)
+        guest.offered = None
     free = [r for r in d["alternatives"] if ledger.offered.get(r, s.time) <= s.time]
-    offer = guest.offered or (free[0] if free else None)
-    if offer and not guest.offered:
-        ledger.offered[offer] = d["departure"]
+    if late and d["vacant"] and free and not guest.offered:
+        guest.offered = free[0]
+        ledger.offered[free[0]] = d["departure"]
         chain.add(
             s,
             "reassign_room",
             prio,
-            f"{offer} is clean, vacant and not booked during the guest's stay; offer it "
-            f"instead of {room}.",
-            assets=[room, offer],
+            f"{free[0]} is clean, vacant and not booked during the guest's stay, and {room} "
+            f"misses the wanted time; offer it instead of {room}.",
+            assets=[room, free[0]],
             expected_outcome="Guest checks in on time in another room (simulated).",
-            verification_plan=f"Guest checks in to {offer}; {room} keeps its cleaning.",
+            verification_plan=f"Guest checks in to {free[0]}; {room} keeps its cleaning.",
             confidence=0.7,
         )
-        guest.offered = offer
+    elif guest.offered and d["waiting"] and not guest.escalated:
+        guest.escalated = True
+        chain.add(
+            s,
+            "request_human_approval",
+            "critical",
+            f"The guest is waiting and {room} is ready only at {ready}; decide the pending "
+            f"offer of {guest.offered} now.",
+            assets=[room, guest.offered],
+            expected_outcome="A manager approves or declines the room move.",
+            verification_plan=f"Guest checks in to {guest.offered} or {room}; escalate if not.",
+            confidence=0.7,
+        )
+    offer = guest.offered
     message = f"{offer} is offered pending approval; otherwise {room}" if offer else f"{room}"
     chain.add(
         s,
         "notify_guest",
         prio,
-        f"Tell the guest ({d['language']}): {message} expected ready at {ready} "
+        f"Tell the guest ({d['language']}): {message} expected ready at {ready}{news} "
         "(proposed message; delivery not confirmed).",
         **({"guest_request_ids": [d["request_id"]]} if d["request_id"] else {}),
         expected_outcome="Guest knows a realistic ready time.",
@@ -520,6 +542,8 @@ def _turnaround(episodes: list[Episode], settings: Settings) -> list[Decision]:
             _overstay(chains[eid], guest, s, ledger)
             continue
         guest = guests.setdefault((eid, s.data["booking"]), _Guest())
+        if s.kind == "checkin_due" and guest.committed is not None and guest.committed > s.time:
+            continue
         _turnaround_step(chains[eid], guest, s, ledger, settings)
     return [d for c in chains.values() for d in c.out]
 

@@ -116,6 +116,9 @@ class DetectorSettings:
     clean_room_min: float = 60.0
     """Minutes one human room cleaning is planned to take (audit p90; median 45)."""
 
+    shift_lookahead_h: float = 24.0
+    """Hours of cleaner shifts searched for one in which a room clean still fits."""
+
     robot_pass_min: float = 30.0
     """Minutes one robot floor pass takes (every dev pass took 30 min)."""
 
