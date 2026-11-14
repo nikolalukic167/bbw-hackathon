@@ -208,8 +208,10 @@ Decisions that shape the code are recorded as ADRs:
   labelled simulated, and outcomes are judged against events and work orders people wrote.
 - A guest's language is that of their latest request known at the time; bookings carry no
   language, so a guest who never wrote gets English.
-- The data has no costs: Steward claims no savings, and "notable cost" in the autonomy rules
-  is a fixed list of actions (`src/plato40/policy.py`), not an amount.
+- The data's only costs are hourly electricity prices. The one saving Steward reports is the
+  battery plan's, simulated against no battery at the published prices; no other saving is
+  claimed. "Notable cost" in the autonomy rules is a fixed list of actions
+  (`src/plato40/policy.py`), not an amount.
 
 ## Changes after pre-holdout
 

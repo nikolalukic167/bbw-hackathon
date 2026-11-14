@@ -63,3 +63,9 @@ computed when the page is written, so this script quotes none: read them off the
   rule's decision.
 - **Would it work on new data?** The holdout ran unchanged with one command.
 - **What did it get wrong?** The Limits panel lists it, with numbers.
+- **Does it save energy?** The battery plan's saving is simulated against no battery at the
+  published prices (Limits panel, `insights.md` energy paragraph). Pre-heat raises vacant
+  arrival rooms only, and the energy lane backs off while the heat pump is weak (Day A).
+- **How do you avoid false alarms?** Persistence and known-at: a single night of flow, a
+  jittering meter, a guest with the window open or a room inside the band gets no fault
+  decision. `insights.md`, "Look-alikes and bad data", counts each.
