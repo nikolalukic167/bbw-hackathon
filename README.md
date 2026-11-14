@@ -47,7 +47,7 @@ Each file in the repository root is made by one command on one dataset directory
 |---|---|
 | `decisions.jsonl` (dev) | `uv run plato40 run data/PLATO40_v2_dev --out decisions.jsonl --llm-cache llm_cache` |
 | `decisions_holdout.jsonl` | `scripts/holdout.sh <holdout_dir>` ([docs/HOLDOUT.md](docs/HOLDOUT.md)): one run, a rerun from the cache that must be byte-identical, and the contract check |
-| `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache llm_cache` |
+| `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache llm_cache --supervisor decisions.supervisor.jsonl` |
 | tag `pre-holdout` | set on the commit that produced the dev files, before the holdout release |
 
 `plato40 validate <decisions.jsonl> <data_dir>` checks any of them against the decision
@@ -92,7 +92,8 @@ uv run plato40 bus <data_dir> --lane s03 --out out/  # one lane (s03-s08) -> bus
 uv run plato40 snapshot <data_dir> --at 2026-05-09T11:00Z --assets R209 HP1  # supervisor context
 uv run python scripts/rolling_medians.py <data_dir> out/rolling_medians.json  # past-only medians, every room and 15 min
 uv run python scripts/build_r102_check.py <data_dir> out/rolling_medians.json out/r102_day1.json  # one room, one day check
-uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache <cache_dir>  # Level 3 report
+uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache <cache_dir> \
+    --supervisor <out>.supervisor.jsonl   # Level 3 report; the log makes it describe that run
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```

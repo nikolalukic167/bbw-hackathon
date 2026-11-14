@@ -134,7 +134,8 @@ TEMPLATE = """\
 
 Steward ran over the `{profile}` dataset ({start} to {end}, {days} days, {rooms} rooms) with
 {violations} contract or autonomy violations. Every number below is computed from that run
-and the dataset tables by `uv run python scripts/insights.py <data_dir> --out insights.md`.
+and the dataset tables by `uv run python scripts/insights.py <data_dir> --out insights.md
+--llm-cache llm_cache --supervisor decisions.supervisor.jsonl`.
 PLATO-40 is fictional and the data synthetic: these are findings about the replay, and every
 effect of an action is simulated.
 
