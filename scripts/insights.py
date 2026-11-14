@@ -21,7 +21,7 @@ import os
 import re
 import statistics
 import textwrap
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime
 from itertools import pairwise
@@ -31,11 +31,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from plato40 import contract, lanes, pipeline
+from plato40 import contract, kpi, lanes, pipeline
 from plato40.audit import candidates as cand
 from plato40.audit import quality, timing
 from plato40.audit.scenarios import corrective_orders
-from plato40.detect.logistics import _schedule
 from plato40.episodes import Episode
 from plato40.load import derive
 from plato40.load.reader import Dataset, load_dataset
@@ -373,9 +372,8 @@ def reflow(markdown: str, width: int = 96) -> str:
 
 
 def _acted(run: pipeline.Run) -> list[Episode]:
-    """Return the episodes Steward made at least one decision on: its incidents."""
-    decided = {d["episode_id"] for d in run.decisions}
-    return [e for e in run.episodes if e.episode_id in decided]
+    """Return the episodes Steward made at least one decision on (``kpi.acted``)."""
+    return kpi.acted(run)
 
 
 def _of(run: pipeline.Run, issue: str) -> list[Episode]:
@@ -418,14 +416,8 @@ def overview(ds: Dataset, run: pipeline.Run, tz: str) -> Facts:
 
 
 def _too_hot(run: pipeline.Run) -> set[str]:
-    """Return heating episodes made only of replies to ``temperature_hot`` requests."""
-    return {
-        e.episode_id
-        for e in run.episodes
-        if e.issue_type == "heating_comfort"
-        and e.signals
-        and all(s.kind == "comfort_excess" for s in e.signals)
-    }
+    """Return heating episodes made only of too-hot replies (``kpi.too_hot``)."""
+    return kpi.too_hot(run)
 
 
 def lane_table(run: pipeline.Run, facts: Mapping[str, str]) -> str:
@@ -468,47 +460,12 @@ def turnaround(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     tz = settings.local_tz
     ev = ds.events
     waits = ev.loc[ev["type"] == "arrival_waiting_room"]
-    entered = (
-        ev.loc[ev["type"] == "checkin_after_wait"]
-        .drop_duplicates("booking_id")
-        .set_index("booking_id")["timestamp_utc"]
-    )
-    # The day plan is the planner's (room_turnaround) or, with the s05 lane, occupancy_surge.
-    acted = {
-        pd.Timestamp(d["timestamp_utc"])
-        for d in run.decisions
-        if d["issue_type"] in ("room_turnaround", "occupancy_surge")
-    }
-    plans = {
-        _local_date(s.time, tz): s for s in run.signals if s.kind == "day_plan" and s.time in acted
-    }
-    by_room: dict[str, list[pd.Timestamp]] = defaultdict(list)
-    for d in run.decisions:
-        for asset in d["affected_assets"]:
-            by_room[str(asset)].append(pd.Timestamp(d["timestamp_utc"]))
-    req = ds.table("guest_requests.csv")
-    early = req.loc[req["request_type"] == "early_checkin"]
-    leads: list[float] = []
-    wait_hit: list[float] = []
-    wait_miss: list[float] = []
-    miss_requested = 0
-    for t_raw, room, booking in zip(
-        waits["timestamp_utc"], waits["room_id"], waits["booking_id"], strict=True
-    ):
-        t, day = pd.Timestamp(t_raw), _local_date(pd.Timestamp(t_raw), tz)
-        earlier = [x for x in by_room.get(str(room), []) if x < t and _local_date(x, tz) == day]
-        plan = plans.get(day)
-        rooms = plan.data.get("arrival_rooms") or list(plan.data.get("keys", {})) if plan else []
-        if plan is not None and plan.time < t and room in rooms:
-            earlier.append(plan.time)
-        waited = _hours(t, entered[booking]) if booking in entered.index else float("nan")
-        if earlier:
-            leads.append(_hours(min(earlier), t))
-            wait_hit.append(waited)
-        else:
-            wait_miss.append(waited)
-            asked = early.loc[(early["booking_id"] == booking) & (early["timestamp_utc"] <= t)]
-            miss_requested += int(not asked.empty)
+    plans = kpi.plan_days(run, settings)
+    rows = kpi.waits(ds, run, settings)
+    leads = [float(w["lead_h"]) for w in rows if w["anticipated"]]
+    wait_hit = [float(w["waited_h"]) for w in rows if w["anticipated"]]
+    wait_miss = [float(w["waited_h"]) for w in rows if not w["anticipated"]]
+    miss_requested = sum(w["requested"] for w in rows if not w["anticipated"])
     wait_days = {_local_date(pd.Timestamp(t), tz) for t in waits["timestamp_utc"]}
     roster = ds.table("staff_roster.csv")
     cleaners = roster.loc[roster["role"] == "cleaner"]
@@ -661,37 +618,13 @@ def logistics(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     tz, th = settings.local_tz, settings.detect
     ev = ds.events
     out = ev.loc[ev["type"] == "vending_out_of_stock"]
-    full = ev.loc[ev["type"] == "waste_bin_full"]
-    shortage = {
-        a["id"]: (out if a["type"] == "vending_machine" else full.loc[full["asset_id"] == a["id"]])
-        for a in ds.building["building"]["assets"]
-        if a["type"] in ("vending_machine", "waste_container")
-    }
-    ordered = {d["episode_id"] for d in run.decisions if d["action"] == "order_service"}
-    eps = [e for e in _of(run, "logistics") if e.episode_id in ordered]
-    hits = 0
-    leads: list[float] = []
-    lead_need: list[float] = []
-    hit_need: list[float] = []
-    covered: set[Any] = set()
-    services = {
-        a["id"]: a.get("restock") or a.get("pickup") or ""
-        for a in ds.building["building"]["assets"]
-    }
-    for ep in eps:
-        first = ep.signals[0].time
-        # The planner's signals carry the lead; the s07 lane's take it from building.json.
-        regular = max(pd.Timestamp(s.data["regular"]) for s in ep.signals)
-        lead = ep.signals[0].data.get("lead") or _schedule(services[ep.assets[0]])[2]
-        lead_need.append(_hours(first, first + pd.Timedelta(lead)))
-        rows = shortage.get(ep.assets[0], out.iloc[:0])
-        hit = rows.loc[(rows["timestamp_utc"] >= first) & (rows["timestamp_utc"] <= regular)]
-        if not hit.empty:
-            hits += 1
-            hit_need.append(lead_need[-1])
-            leads.append(_hours(first, pd.Timestamp(hit["timestamp_utc"].min())))
-            covered |= set(hit.index)
-    per_asset = Counter(e.assets[0] for e in eps)
+    found = kpi.orders(ds, run)
+    rows = found["orders"]
+    hits = sum(r["hit"] for r in rows)
+    leads = [float(r["lead_h"]) for r in rows if r["hit"]]
+    lead_need = [float(r["need_h"]) for r in rows]
+    hit_need = [float(r["need_h"]) for r in rows if r["hit"]]
+    per_asset = Counter(r["asset"] for r in rows)
     months = out["timestamp_utc"].dt.tz_convert(tz)
     by_month = months.dt.month.value_counts()
     first_m, last_m = (months.min(), months.max()) if len(months) else (None, None)
@@ -707,17 +640,16 @@ def logistics(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     if first_m is not None:
         when = pd.Timestamp(year=first_m.year, month=int(by_month.idxmax()), day=1)
         out_peak = f"{when:%B} ({_n(int(by_month.max()))})"
-    n_short = sum(len(v) for v in shortage.values())
     return {
-        "orders": _n(len(eps)),
+        "orders": _n(len(rows)),
         "orders_detail": ", ".join(f"{_n(n)} for {a}" for a, n in sorted(per_asset.items())),
         "hits": _n(hits),
-        "false_orders": _n(len(eps) - hits),
+        "false_orders": _n(len(rows) - hits),
         "log_lead": _median(leads),
         "in_time": _n(sum(x >= need for x, need in zip(leads, hit_need, strict=True))),
         "lead_need": _median(lead_need, 0),
-        "shortages": _n(n_short),
-        "covered": _n(len(covered)),
+        "shortages": _n(found["shortages"]),
+        "covered": _n(found["covered"]),
         "vend_outs": _n(len(out)),
         "drink_outs": _n(int((out["product"] == "drinks").sum())),
         "restock_days": " and ".join(
@@ -917,46 +849,37 @@ def water_gap(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
 
 def guest_requests(ds: Dataset, run: pipeline.Run) -> Facts:
     """Return per request type: requests, answered (cited by a decision), answered by due."""
-    req = ds.table("guest_requests.csv")
-    first: dict[str, pd.Timestamp] = {}
-    for d in run.decisions:
-        t = pd.Timestamp(d["timestamp_utc"])
-        for g in d.get("guest_request_ids", []):
-            first[g] = min(first.get(g, t), t)
-    rows, total, answered, on_time = [], 0, 0, 0
-    hot = {"hotreq_n": _n(0), "hotreq_answered": _n(0), "hotreq_on_time": _n(0)}
-    for kind, g in sorted(req.groupby("request_type"), key=lambda x: (-len(x[1]), str(x[0]))):
-        ids = g["request_id"].astype(str).tolist()
-        due = dict(zip(ids, g["response_due_utc"], strict=True))
-        hit = [i for i in ids if i in first]
-        ok = [i for i in hit if pd.notna(due[i]) and first[i] <= pd.Timestamp(due[i])]
-        rows.append(f"| {kind} | {_n(len(ids))} | {_n(len(hit))} | {_n(len(ok))} |")
-        if kind == "temperature_hot":
-            hot = {"hotreq_n": _n(len(ids)), "hotreq_answered": _n(len(hit))}
-            hot["hotreq_on_time"] = _n(len(ok))
-        total, answered, on_time = total + len(ids), answered + len(hit), on_time + len(ok)
+    found = kpi.requests(ds, run)
+    rows = [
+        f"| {r['type']} | {_n(r['total'])} | {_n(r['answered'])} | {_n(r['on_time'])} |"
+        for r in found["by_type"]
+    ]
+    hot = next((r for r in found["by_type"] if r["type"] == "temperature_hot"), None)
     return {
         "req_table": "\n".join(rows),
-        "req_total": _n(total),
-        "req_answered": _n(answered),
-        "req_on_time": _n(on_time),
-        **hot,
+        "req_total": _n(found["total"]),
+        "req_answered": _n(found["answered"]),
+        "req_on_time": _n(found["on_time"]),
+        "hotreq_n": _n(hot["total"] if hot else 0),
+        "hotreq_answered": _n(hot["answered"] if hot else 0),
+        "hotreq_on_time": _n(hot["on_time"] if hot else 0),
     }
 
 
+WHY = {
+    "number_or_id_not_in_input": "with a number or ID not in its input",
+    "evidence_not_from_refs": "with evidence not copied from its refs",
+    "asset_or_decision_not_shown": "naming an asset or decision it was not shown",
+    "malformed": "malformed",
+    "call_failed": "call failed",
+    "no_cached_answer": "with no cached answer",
+    "other_check": "failing another check",
+}
+
+
 def _why(text: str) -> str:
-    """Return the class of a supervisor rejection or no-answer reason."""
-    for key, label in (
-        ("not in the input", "with a number or ID not in its input"),
-        ("not copied from refs", "with evidence not copied from its refs"),
-        ("not shown", "naming an asset or decision it was not shown"),
-        ("answer is not", "malformed"),
-        ("call failed", "call failed"),
-        ("no cached answer", "with no cached answer"),
-    ):
-        if key in text:
-            return label
-    return "failing another check"
+    """Return the class of a supervisor rejection or no-answer reason, as words."""
+    return WHY[kpi.reason_class(text)]
 
 
 def _counted(reasons: Iterable[str]) -> str:
@@ -1008,21 +931,8 @@ def supervisor(run: pipeline.Run, log: list[dict[str, Any]]) -> Facts:
 
 
 def routine(run: pipeline.Run) -> set[str]:
-    """Return the episodes that are routine work, not incidents.
-
-    Routine: guest-desk replies, too-hot replies and arrival pre-heat batches.
-    """
-    by_ep: dict[str, set[str]] = defaultdict(set)
-    for d in run.decisions:
-        by_ep[d["episode_id"]].add(d["action"])
-    out = set(_too_hot(run))
-    for e in run.episodes:
-        if e.issue_type == "guest_service" or (
-            e.issue_type == "energy_optimization"
-            and by_ep.get(e.episode_id, set()) <= {"adjust_room_setpoint"}
-        ):
-            out.add(e.episode_id)
-    return out
+    """Return the routine episodes (``kpi.routine``)."""
+    return kpi.routine(run)
 
 
 def level2(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
@@ -1048,38 +958,16 @@ def level2(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
         for s in run.signals
         if s.issue_type == "occupancy_surge" and s.kind == "day_plan"
     }
-    lo = float(ds.building["constraints"]["occupied_comfort_c"][0])
-    temp = derive.telemetry_wide(ds, "temperature_c")
-    ev = ds.events
-    ins = ev.loc[ev["type"].isin(["checkin", "checkin_early", "checkin_after_wait"])]
-    entry = {
-        str(r): pd.DatetimeIndex(g["timestamp_utc"]).sort_values()
-        for r, g in ins.groupby("room_id")
-    }
-    pre_n = pre_ok = 0
-    for d in run.decisions:
-        if d["issue_type"] != "energy_optimization" or d["action"] != "adjust_room_setpoint":
-            continue
-        t = pd.Timestamp(d["timestamp_utc"])
-        for room in (a for a in d["affected_assets"] if a in temp.columns):
-            when = entry.get(room, pd.DatetimeIndex([]))
-            nxt = when[(when > t) & (when <= t + pd.Timedelta(hours=12))]
-            if not len(nxt):
-                continue
-            col = temp[room].loc[: nxt[0]].dropna()
-            if col.empty:
-                continue
-            pre_n += 1
-            pre_ok += int(col.iloc[-1] >= lo)
+    heat = kpi.preheat(ds, run)
+    lo, pre_n, pre_ok = heat["band_low_c"], heat["rooms"], heat["at_band"]
     s04 = sum(d["issue_type"] == "ventilation_maintenance" for d in run.decisions)
     s06 = any(d["issue_type"] == "energy_optimization" for d in run.decisions)
-    approvals = [d for d in run.decisions if d["requires_human_approval"]]
-    desk_appr = sum(d["issue_type"] == "guest_service" for d in approvals)
+    asked = kpi.approvals(ds, run)
     note = FILTER_NOTES["lane" if s04 else "none"].format(filter_rows=_n(s04), ahu=ahu)
     return {
         "routine": _n(len(routine(run) & {e.episode_id for e in _acted(run)})),
-        "desk_approvals": _n(desk_appr),
-        "manager_approvals": _n(len(approvals) - desk_appr),
+        "desk_approvals": _n(asked["guest_desk"]),
+        "manager_approvals": _n(asked["manager"]),
         "desk_staff": _n(len(desk_staff)),
         "vent_eps": _n(len(vent)),
         "vent_wo": _n(vent_wo),
