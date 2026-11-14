@@ -183,6 +183,9 @@ class _Lane:
         lg.index = pd.DatetimeIndex(lg.index)
         self.lg = lg
         self.idx: pd.DatetimeIndex = lg.index
+        # A row after missing rows has no one-step change: the gap, not an event, explains it.
+        gaps = self.idx.to_series().diff()
+        self.after_gap: npt.NDArray[np.bool_] = (gaps > gaps.median()).to_numpy()
         loc = self.idx.tz_convert(self.tz)
         self.lhour: npt.NDArray[np.int_] = np.asarray(loc.hour)
         self.ldate: list[date] = list(loc.date)
@@ -252,7 +255,7 @@ class _Lane:
         self.jump_rows: dict[str, set[pd.Timestamp]] = {}
         for col in VEND:
             s = self.lg[col]
-            prev = s.shift(1)
+            prev = s.shift(1).where(~self.after_gap)
             step = prev - s
             explained = pd.Series([t in restock for t in self.idx], index=self.idx)
             rise = step < -th.logistics_jump_pp
@@ -617,7 +620,7 @@ class _Lane:
                     "sensor_gap",
                 )
                 continue
-            if i == 0 or np.isnan(v[i]) or np.isnan(v[i - 1]):
+            if i == 0 or self.after_gap[i] or np.isnan(v[i]) or np.isnan(v[i - 1]):
                 continue
             step = v[i] - v[i - 1]
             unexplained = False
