@@ -89,7 +89,7 @@ Lane code and rank (the arbiter's order at one minute, lowest first):
 | s05 | S05 busy days: event outlook, 07:00 day plan | `lane_s05.py` | 1.5 |
 | s06 | Energy: arrival pre-heat, S03 back-off, stale inputs | `lane_s06.py` | 5 |
 | s07 | Cleaning and logistics: vending, container, floor bins | `lane_s07.py` | 4 |
-| s08 | Guest desk: one answer to every guest request | `lane_s08.py` | 9 (default: not in `LANE_RANK`) |
+| s08 | Guest desk: one answer to every guest request | `lane_s08.py` | 6 |
 
 `cause` is how S02 and S03 tell a real fault from a look-alike (guest bath, cleaning, meter
 swap, cold snap). A proposal with `cause: meter_artefact` should be `flag_anomaly`, never a

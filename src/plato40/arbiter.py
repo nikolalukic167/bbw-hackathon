@@ -40,8 +40,18 @@ COPIED = (
     "verification_plan",
 )
 RANK = {p: n for n, p in enumerate(contract.PRIORITIES)}
-LANE_RANK = {"s02": 0.0, "s01": 1.0, "s05": 1.5, "s03": 2.0, "s04": 3.0, "s07": 4.0, "s06": 5.0}
-"""At one minute: safety, waiting guest, day capacity, comfort, maintenance, logistics, energy.
+LANE_RANK = {
+    "s02": 0.0,
+    "s01": 1.0,
+    "s05": 1.5,
+    "s03": 2.0,
+    "s04": 3.0,
+    "s07": 4.0,
+    "s06": 5.0,
+    "s08": 6.0,
+}
+"""At one minute: safety, waiting guest, day capacity, comfort, maintenance, logistics, energy,
+guest desk (a critical guest request still wins on priority).
 There is no pre-emption: a lane ranked below s03 claims only from its own ``t``."""
 ROSTER_ROLE = {"cleaner": "cleaner", "robot": "robot", "technician": "technician"}
 

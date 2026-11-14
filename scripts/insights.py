@@ -145,7 +145,7 @@ request, {req_on_time} of them before the request's due time.
 
 {supervisor}
 
-## Operating recommendations for PLATO-40 (next year)
+## Operating recommendations for PLATO-40 next year (feedback to CLARA)
 
 **Turnovers: act at the morning plan, and move on-call help to the hours when guests wait.**
 {waits} guests waited for a room, on {wait_days} days. For {anticipated} of them Steward had
@@ -208,7 +208,7 @@ unplanned by {unplanned_who}, {unplanned_since} days after the previous change;
 FILTER_DP_HIGH was raised {dp_alarms} times. *Recommendation:* trigger the change on
 day-mode filter pressure. *Uncertainty:* {unplanned_n} events. {filter_note}
 
-## Design recommendations for the next building
+## Design recommendations for the next building (feedback to PLATO)
 
 **Plan for summer heat.** The building lists its cooling as "{cooling}". Occupied rooms
 spent {hot_h} room-hours above {hot_c} degC, {hot_peak_share} of them in {hot_peak}, and
