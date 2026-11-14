@@ -529,6 +529,8 @@ def _battery(ds: Dataset, settings: Settings, board: _Board) -> None:
                 "soc_now_kwh": round(soc0, 1),
                 "soc_min_kwh": round(float(path.min()), 1),
                 "soc_max_kwh": round(float(path.max()), 1),
+                "soc_path_from": stamp(pd.Timestamp(times[0])),
+                "soc_path_kwh": [round(float(x), 1) for x in path[:-1]],
                 "night_grid_charge": bool(grid_charge.any()),
                 "night_rule": why,
             },
