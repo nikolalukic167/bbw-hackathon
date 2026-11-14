@@ -26,7 +26,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from plato40.detect.grid import local_time, stamp
+from plato40.detect.grid import events_ref, local_time, stamp, state_ref
 from plato40.load.derive import (
     equipment_numeric,
     hp_status,
@@ -193,7 +193,7 @@ class Snapshots:
         for s in ("occupied", "dirty"):
             out[f"BUILDING {s}"] = (
                 float(counts.get(s, 0)),
-                f"events.jsonl:room states at {stamp(t)}",
+                events_ref(self.ds, t),
             )
         for a in assets:
             if a not in self.tel["temperature_c"]:
@@ -251,7 +251,7 @@ class Snapshots:
         out: dict[str, Any] = {}
         counts = _state_counts(self.states, self.rooms, t)
         out["rooms"] = {s: counts.get(s, 0) for s in STATES if counts.get(s, 0)}
-        refs.append(f"events.jsonl:room states at {stamp(t)}")
+        refs.append(events_ref(self.ds, t))
         temps = [float(hit[0]) for r in self.rooms if (hit := self.tel["temperature_c"][r].last(t))]
         if temps:
             # One room is judged against the whole building: a heat wave or a cold night shows
@@ -383,7 +383,7 @@ class Snapshots:
             since = self.states.since(a, t)
             if since is not None:
                 out["state_since"] = local_time(since, t, self.tz)
-                refs.append(f"events.jsonl:{a} {out['state']} at {stamp(since)}")
+                refs.append(state_ref(self.ds, a, t))
             if a in self.room_water:
                 total, span = self._night_total(self.room_water[a], t)
                 out["night_water_l"] = total
