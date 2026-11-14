@@ -16,7 +16,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T0 | Data fetched with checksums, CHALLENGE.md, dataset README and DECISION_CONTRACT.md read | S | done | all |
-| T0 | Open questions Q1-Q12 sent to the mentor on Discord | S | todo | all |
+| T0 | Open questions Q1-Q12 for the mentor; not sent, assumptions stated instead (table below) | S | cut | all |
 | T1 | Package skeleton, loader, schema and units, blank = missing, known-at helpers | D | done | Reproducibility 10 |
 | T1 | Data audit for quickstart and dev (`make audit`, `reports/audit/01_data_audit.md`) | D | done | Robustness 7 |
 | T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | done | Reproducibility 10 |
@@ -26,7 +26,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T2 | Room state machine from events (occupied, dirty, cleaning, clean); telemetry cross-check open | D | doing | Constraints 8 |
 | T2 | Staff and robot availability from roster, as known at decision time | D | done | Constraints 8 |
 | T6 | Episodes: one `episode_id` per incident, closed after 48 h quiet; priority fixed per scenario | D/A | done | Prioritisation 8 |
-| T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
+| T6 | Spam and false-alarm counter printed after every run (dev normal stretches); replaced by incidents vs routine on the Year page and "Look-alikes and bad data" in `insights.md` | D | cut | Detection 10 |
 | T7 | Policy layer: target-aware levels (cost = fixed list, no euro amounts; vacant inspection autonomous) | A | done | Safe autonomy 10 |
 | T7 | Violation check over every decision (`plato40 validate`) | A | done | Safe autonomy 10 |
 | T8 | Planner: action chain per episode in the 14-verb vocabulary (`plan.py`) | A | done | Coordination 8 |
@@ -105,41 +105,46 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T12 | Insight: recurring F3 gateway outages (count from the outage episodes) | S | done | Feedback 10 |
 | T12 | CLARA recommendations with evidence and uncertainty | S | done | Feedback 10 |
 | T12 | PLATO design recommendations with evidence and uncertainty | S | done | Feedback 10 |
-| T12 | Target architecture: one diagram plus one page | S | todo | Architecture 5 |
+| T12 | Target architecture: one diagram plus one page | S | done | Architecture 5 |
 | T12 | Limits section | S | done | Limits 5 |
-| T12 | Final regeneration of `insights.md` from the committed dev run (after s08 and the last live LLM run) | S | todo | Feedback 10 |
+| T12 | Final regeneration of `insights.md` from the committed dev run (after s08 and the last live LLM run) | S | done | Feedback 10 |
+| T12 | Energy paragraph (battery plan, simulated) and look-alikes section in `insights.md` | S | done | Trade-offs 6, Robustness 7 |
 
 ## Demo and submission
 
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
-| T11 | Floor-plan twin (4 x 10 rooms) with time scrubber, reading `decisions.jsonl` | F | todo | Demo 8 |
+| T11 | Floor-plan twin (4 x 10 rooms) with time scrubber, reading `decisions.jsonl`: the console's Day view (room tiles per floor, stepped through the day) | F | done | Demo 8 |
 | T11 | Operations console (`plato40 ui`): one HTML page per run; scenario lanes over time, episode list, evidence, risk, decision chain with autonomy rule, verification, mock approve/reject | F | done | Trail 7 |
 | T11 | Run summary, `--trace` and `plato40 explain` (terminal trail; HTML timeline reads the trace) | D | done | Trail 7 |
 | T15 | 3-minute video, end to end | S/F | todo | Demo 8 |
-| T15 | Written submission text and form | S | todo | all |
+| T15 | Written submission text (README, Submission text) and form; team names still to fill | S | doing | all |
 | T15 | Repo moved to the Proximata organisation and made public (needs the go) | S | todo | all |
 
 ## Holdout runbook
 
 The holdout steps live in [HOLDOUT.md](HOLDOUT.md) (`scripts/holdout.sh`). Before the
 release: the final live run on dev with the key, commit the answer cache, regenerate
-`insights.md` (`scripts/insights.py <dev> --out insights.md --llm-cache <cache>`), then tag
+`insights.md` (`scripts/insights.py <dev> --out insights.md --llm-cache <cache> --supervisor
+decisions.supervisor.jsonl`), then tag
 `pre-holdout` (row T14 above).
 
 ## Open questions for the mentor
 
+Not sent to the mentor. Where the code needed an answer, the assumption is stated where it
+applies (README, Assumptions; ADR-002).
+
 | Q | Question | Affects | Status |
 |---|---|---|---|
-| Q1 | Code freeze 14:00 (CHALLENGE.md) or 15:00? | schedule | open |
-| Q2 | When is a cancellation known? ADR-002 assumes the booked arrival time | S01, S05 | open |
-| Q3 | How does the check match a decision to an incident; do routine decisions count as spam? | all | open |
-| Q4 | Holdout: same building, length and season as dev? | T14 | open |
-| Q5 | Are the alarm lag and the 19 unsupported comm-loss alarms intended? | S02, S04 | open |
-| Q6 | Why do occupied rooms fall below setpoint mostly in May, August, September? | S03, Level 3 | open |
-| Q7 | Is HP1 COP meant to be derived (declared metric `cop` never appears)? | S03 | open |
-| Q8 | `inspection_required` never occurs: is a completed cleaning enough to release? | S01 | open |
-| Q9 | May decisions name `MUNICIPAL_SERVICE`, `VENDOR_EXT`, `housekeeping`? | S05, logistics | open |
-| Q10 | May robots carry waste bins? | logistics, S05 | open |
-| Q11 | Is the on-call housekeeper always available, and does calling them need approval? | S05 | open |
-| Q12 | Which attribution string exactly? | README | open |
+| Q1 | Code freeze 14:00 (CHALLENGE.md) or 15:00? | schedule | 14:00, as CHALLENGE.md says |
+| Q2 | When is a cancellation known? ADR-002 assumes the booked arrival time | S01, S05 | assumed: arrival time (ADR-002) |
+| Q3 | How does the check match a decision to an incident; do routine decisions count as spam? | all | not sent |
+| Q4 | Holdout: same building, length and season as dev? | T14 | not sent |
+| Q5 | Are the alarm lag and the 19 unsupported comm-loss alarms intended? | S02, S04 | assumed: alarms corroborate only (`insights.md`) |
+| Q6 | Why do occupied rooms fall below setpoint mostly in May, August, September? | S03, Level 3 | open (`insights.md` floor 1 finding) |
+| Q7 | Is HP1 COP meant to be derived (declared metric `cop` never appears)? | S03 | not sent |
+| Q8 | `inspection_required` never occurs: is a completed cleaning enough to release? | S01 | not sent |
+| Q9 | May decisions name `MUNICIPAL_SERVICE`, `VENDOR_EXT`, `housekeeping`? | S05, logistics | not sent |
+| Q10 | May robots carry waste bins? | logistics, S05 | assumed: yes, floor bins (S07) |
+| Q11 | Is the on-call housekeeper always available, and does calling them need approval? | S05 | not sent |
+| Q12 | Which attribution string exactly? | README | assumed: the CHALLENGE.md string (README) |
