@@ -39,6 +39,7 @@ FOLLOW_UP_KINDS = (
     ("after its setpoint was raised", "room_still_cold"),
     ("Complaint ", "repeat_complaint"),
     ("is not ready at the promised", "ready_time_missed"),
+    ("is ready now", "ready_early"),
 )
 REASON_CLASSES = (
     ("not in the input", "number_or_id_not_in_input"),

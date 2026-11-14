@@ -22,7 +22,7 @@ approvals are guest-desk consent requests (maintenance, cleaning), so the manage
 | Comfort requests (too hot) | 0 | 185 | 378 | 378 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
 | Guest desk | 0 | 1,331 | 1,454 | 1,338 | 0 | 116 | 1,612 of 1,612 guest requests (all lanes) answered before their due time; 116 got a staff action |
 | Waste and vending | 27 | 0 | 31 | 31 | 0 | 0 | 21 of 25 orders came before a real shortage |
-| Data quality | 33 | 0 | 33 | 33 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
+| Data quality | 33 | 0 | 33 | 33 | 0 | 0 | 14 floor outages, 11 of them on GW_F3; 17 rooms with a dead sensor |
 | Ventilation (AHU filter) | 12 | 0 | 20 | 16 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
 | Busy days and event weekends | 14 | 0 | 67 | 53 | 14 | 0 | 5 of 11 days flagged at the morning plan had a waiting guest |
 | Energy (pre-heat, battery plan) | 3 | 613 | 617 | 617 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |

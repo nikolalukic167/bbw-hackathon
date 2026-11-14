@@ -69,7 +69,8 @@ OUTCOMES = {
     "heating_comfort": "{hp_wo} of {hp_eps} heat pump incidents followed by repair of "
     "{hp_asset}; {cold_ok} of {cold_req} cold-room requests answered before their due time",
     "logistics": "{hits} of {orders} orders came before a real shortage",
-    "data_quality": "{outages} floor outages, {top_n} of them on {top_gw}",
+    "data_quality": "{outages} floor outages, {top_n} of them on {top_gw}; {dead} rooms with a "
+    "dead sensor",
     "comfort_hot": "{hotreq_answered} of {hotreq_n} too-hot requests answered, "
     "{hotreq_on_time} before their due time",
     "guest_service": "{req_on_time} of {req_total} guest requests (all lanes) answered before "
@@ -787,6 +788,7 @@ def data_quality(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
         "top_gw": top_gw,
         "top_n": _n(top_n),
         "top_hours": _f(blank_h),
+        "dead": _n(sum(e.signals[0].kind == "sensor_dead" for e in eps)),
         "comm_alarms": _n(len(comm)),
         "unsupported": _n(sum(m.onset is None for m in comm)),
         "alarms": _n(len(raised)),
