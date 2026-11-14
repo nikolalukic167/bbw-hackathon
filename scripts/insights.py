@@ -87,8 +87,13 @@ FILTER_NOTES = {
     "none": "Steward has no filter detector yet.",
 }
 LIMIT_NOTES = {
-    "lanes": "Steward's energy lane pre-heats arrival rooms but has no battery plan yet.",
+    "lanes": "",
     "none": "Steward has no daily energy plan and no filter detector yet.",
+}
+SAVINGS = {
+    "battery": "The data's only costs are electricity prices. The only saving in this report is "
+    "the battery plan's, simulated against no battery; no other saving is claimed.",
+    "none": "The data's only costs are electricity prices, and the report claims no savings.",
 }
 
 NOTES = {
@@ -281,7 +286,7 @@ common-area draw every other day, so daily totals cannot reveal a leak.
   incidents per class; the holdout and real operation must confirm them.
 - The data is a replay: no action changes later readings, so outcomes are matched to work
   orders and events that people wrote after the fact.
-- The data has no costs, so the report claims no savings. {limits_note}
+- {savings_note} {limits_note}
 """
 
 
@@ -308,6 +313,7 @@ def check_templates() -> None:
         *NOTES.values(),
         *FILTER_NOTES.values(),
         *LIMIT_NOTES.values(),
+        *SAVINGS.values(),
     ):
         _check_literal(text)
 
@@ -1064,6 +1070,7 @@ def energy(run: pipeline.Run) -> Facts:
         "bat_base": _median([float(p["baseline_import_kwh"]) for p in plans]),
         "bat_median": _median([float(p["saving_eur"]) for p in plans], 2),
         "backoffs": _n(backoffs),
+        "savings_note": SAVINGS["battery" if plans else "none"],
     }
 
 
