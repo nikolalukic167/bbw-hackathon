@@ -3,6 +3,10 @@
 Usage::
 
     uv run python scripts/insights.py <data_dir> --out <path/insights.md>
+        [--llm-cache <dir>] [--supervisor <out>.supervisor.jsonl]
+
+It runs every registered lane, like ``plato40 run``; with ``--llm-cache`` also the guest
+messages and the supervisor from that cache, so the report describes the committed run.
 
 The script runs the Steward pipeline on ``data_dir`` and computes every figure in the
 report from that run and the dataset tables. The report text holds no digits of its own:
@@ -12,6 +16,8 @@ every template is checked before rendering, so a number typed by hand fails the 
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import statistics
 import textwrap
@@ -25,14 +31,16 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from plato40 import pipeline
+from plato40 import contract, lanes, pipeline
 from plato40.audit import candidates as cand
 from plato40.audit import quality, timing
 from plato40.audit.scenarios import corrective_orders
+from plato40.detect.logistics import _schedule
 from plato40.episodes import Episode
 from plato40.load import derive
 from plato40.load.reader import Dataset, load_dataset
 from plato40.settings import Settings
+from plato40.supervise import DEFAULT_MODEL
 
 Facts = dict[str, str]
 NA = "n/a"
@@ -48,6 +56,9 @@ LANES = {
     "heating_comfort": "Heat pump and comfort",
     "logistics": "Waste and vending",
     "data_quality": "Data quality",
+    "ventilation_maintenance": "Ventilation (AHU filter)",
+    "occupancy_surge": "Busy days and event weekends",
+    "energy_optimization": "Energy (pre-heat)",
 }
 
 OUTCOMES = {
@@ -65,6 +76,19 @@ NOTES = {
     "false alarms, {unmatched_jitter} of them on a meter that jitters after its exchange",
     "all_matched": "",
 }
+
+SUPERVISOR = (
+    "A supervisor LLM ({sv_model}, ADR-003) reviewed the rules' decisions at {sv_reviews} "
+    "review points ({sv_kinds}). It answered at {sv_answered} of them; {sv_none} had no "
+    "answer ({sv_none_why}). The checks rejected {sv_rejected} answers ({sv_rejected_why}). "
+    "It added {sv_added} decisions{sv_levels} and changed or removed none.{sv_examples}"
+)
+NO_SUPERVISOR = (
+    "The supervisor LLM (ADR-003) was not part of this run: it runs only with a cache of its "
+    "answers (`--llm-cache`)."
+)
+EXAMPLE = ' For example, `{event_id}`: "{reason}"'
+EXAMPLE_MORE = ' And `{event_id}`: "{reason}"'
 
 TEMPLATE = """\
 # Steward insights: what a year of PLATO-40 teaches
@@ -84,6 +108,19 @@ every {days_per_approval} days, and {consent} of those also need guest consent.
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|
 {table}
+
+## Guest requests
+
+{req_answered} of the {req_total} guest requests were answered by a decision that cites the
+request, {req_on_time} of them before the request's due time.
+
+| Request type | Requests | Answered | Before due |
+|---|---|---|---|
+{req_table}
+
+## Supervisor review
+
+{supervisor}
 
 ## Operating recommendations for PLATO-40 (next year)
 
@@ -216,7 +253,7 @@ common-area draw every other day, so daily totals cannot reveal a leak.
 
 def _check_literal(text: str) -> None:
     """Raise if a template holds a number of its own: a digit or a number word."""
-    bare = re.sub(r"\{[a-z_]+\}", "", text).replace("PLATO-40", "")
+    bare = re.sub(r"\{[a-z_]+\}|ADR-\d{3}", "", text).replace("PLATO-40", "")
     lines = [
         line for line in bare.splitlines() if re.search(r"\d", line) or NUMBER_WORDS.search(line)
     ]
@@ -226,7 +263,16 @@ def _check_literal(text: str) -> None:
 
 def check_templates() -> None:
     """Raise if any report template holds a number typed by hand."""
-    for text in (TEMPLATE, *OUTCOMES.values(), *LANES.values(), *NOTES.values()):
+    for text in (
+        TEMPLATE,
+        SUPERVISOR,
+        NO_SUPERVISOR,
+        EXAMPLE,
+        EXAMPLE_MORE,
+        *OUTCOMES.values(),
+        *LANES.values(),
+        *NOTES.values(),
+    ):
         _check_literal(text)
 
 
@@ -383,10 +429,11 @@ def turnaround(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
         .drop_duplicates("booking_id")
         .set_index("booking_id")["timestamp_utc"]
     )
+    # The day plan is the planner's (room_turnaround) or, with the s05 lane, occupancy_surge.
     acted = {
         pd.Timestamp(d["timestamp_utc"])
         for d in run.decisions
-        if d["issue_type"] == "room_turnaround"
+        if d["issue_type"] in ("room_turnaround", "occupancy_surge")
     }
     plans = {
         _local_date(s.time, tz): s for s in run.signals if s.kind == "day_plan" and s.time in acted
@@ -407,7 +454,8 @@ def turnaround(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
         t, day = pd.Timestamp(t_raw), _local_date(pd.Timestamp(t_raw), tz)
         earlier = [x for x in by_room.get(str(room), []) if x < t and _local_date(x, tz) == day]
         plan = plans.get(day)
-        if plan is not None and plan.time < t and room in plan.data["arrival_rooms"]:
+        rooms = plan.data.get("arrival_rooms") or list(plan.data.get("keys", {})) if plan else []
+        if plan is not None and plan.time < t and room in rooms:
             earlier.append(plan.time)
         waited = _hours(t, entered[booking]) if booking in entered.index else float("nan")
         if earlier:
@@ -582,10 +630,16 @@ def logistics(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     lead_need: list[float] = []
     hit_need: list[float] = []
     covered: set[Any] = set()
+    services = {
+        a["id"]: a.get("restock") or a.get("pickup") or ""
+        for a in ds.building["building"]["assets"]
+    }
     for ep in eps:
         first = ep.signals[0].time
-        regular = max(s.data["regular"] for s in ep.signals)
-        lead_need.append(_hours(first, first + ep.signals[0].data["lead"]))
+        # The planner's signals carry the lead; the s07 lane's take it from building.json.
+        regular = max(pd.Timestamp(s.data["regular"]) for s in ep.signals)
+        lead = ep.signals[0].data.get("lead") or _schedule(services[ep.assets[0]])[2]
+        lead_need.append(_hours(first, first + pd.Timedelta(lead)))
         rows = shortage.get(ep.assets[0], out.iloc[:0])
         hit = rows.loc[(rows["timestamp_utc"] >= first) & (rows["timestamp_utc"] <= regular)]
         if not hit.empty:
@@ -817,7 +871,96 @@ def water_gap(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
     }
 
 
-def render(ds: Dataset, run: pipeline.Run, settings: Settings) -> str:
+def guest_requests(ds: Dataset, run: pipeline.Run) -> Facts:
+    """Return per request type: requests, answered (cited by a decision), answered by due."""
+    req = ds.table("guest_requests.csv")
+    first: dict[str, pd.Timestamp] = {}
+    for d in run.decisions:
+        t = pd.Timestamp(d["timestamp_utc"])
+        for g in d.get("guest_request_ids", []):
+            first[g] = min(first.get(g, t), t)
+    rows, total, answered, on_time = [], 0, 0, 0
+    for kind, g in sorted(req.groupby("request_type"), key=lambda x: (-len(x[1]), str(x[0]))):
+        ids = g["request_id"].astype(str).tolist()
+        due = dict(zip(ids, g["response_due_utc"], strict=True))
+        hit = [i for i in ids if i in first]
+        ok = [i for i in hit if pd.notna(due[i]) and first[i] <= pd.Timestamp(due[i])]
+        rows.append(f"| {kind} | {_n(len(ids))} | {_n(len(hit))} | {_n(len(ok))} |")
+        total, answered, on_time = total + len(ids), answered + len(hit), on_time + len(ok)
+    return {
+        "req_table": "\n".join(rows),
+        "req_total": _n(total),
+        "req_answered": _n(answered),
+        "req_on_time": _n(on_time),
+    }
+
+
+def _why(text: str) -> str:
+    """Return the class of a supervisor rejection or no-answer reason."""
+    for key, label in (
+        ("not in the input", "with a number or ID not in its input"),
+        ("not copied from refs", "with evidence not copied from its refs"),
+        ("not shown", "naming an asset or decision it was not shown"),
+        ("answer is not", "malformed"),
+        ("call failed", "call failed"),
+        ("no cached answer", "with no cached answer"),
+    ):
+        if key in text:
+            return label
+    return "failing another check"
+
+
+def _counted(reasons: Iterable[str]) -> str:
+    c = Counter(_why(r) for r in reasons)
+    return _and([f"{_n(n)} {label}" for label, n in c.most_common()]) or "none"
+
+
+def supervisor(run: pipeline.Run, log: list[dict[str, Any]]) -> Facts:
+    """Return the supervisor paragraph from its review log and the decisions it added."""
+    if not log:
+        return {"supervisor": NO_SUPERVISOR}
+    added = [i for r in log for i in r.get("added", [])]
+    mine = {d["event_id"]: d for d in run.decisions if d["event_id"] in set(added)}
+    prefix = re.compile(r"^Supervisor review \(([^)]+)\): ")
+    models = sorted({m[1] for d in mine.values() if (m := prefix.match(d["reason"]))})
+    examples = ""
+    rank = {p: n for n, p in enumerate(contract.PRIORITIES)}
+    shown = sorted(
+        mine, key=lambda e: (rank.get(mine[e]["priority"], 9), mine[e]["timestamp_utc"], e)
+    )
+    for eid in shown[:2]:
+        if eid in mine:
+            reason = textwrap.shorten(prefix.sub("", mine[eid]["reason"]), 220, placeholder="...")
+            examples += (EXAMPLE_MORE if examples else EXAMPLE).format(event_id=eid, reason=reason)
+    none = [r for r in log if r["source"] == "none"]
+    rejected = [r for r in log if r["source"] != "none" and r.get("why")]
+    levels = Counter(str(d.get("autonomy")) for d in mine.values())
+    model = os.environ.get("PLATO40_SUPERVISOR_MODEL", DEFAULT_MODEL)
+    facts = {
+        "sv_model": _and(models) if models else model,
+        "sv_reviews": _n(len(log)),
+        "sv_kinds": _and(
+            [f"{_n(n)} {k}" for k, n in sorted(Counter(r["kind"] for r in log).items())]
+        ),
+        "sv_answered": _n(len(log) - len(none)),
+        "sv_none": _n(len(none)),
+        "sv_none_why": _counted(r.get("why", "") for r in none),
+        "sv_rejected": _n(len(rejected)),
+        "sv_rejected_why": _counted(r["why"] for r in rejected),
+        "sv_added": _n(len(added)),
+        "sv_levels": (
+            f" (the policy set {_and([f'{_n(n)} {k}' for k, n in levels.most_common()])})"
+            if mine
+            else ""
+        ),
+        "sv_examples": examples,
+    }
+    return {"supervisor": SUPERVISOR.format(**facts)}
+
+
+def render(
+    ds: Dataset, run: pipeline.Run, settings: Settings, log: list[dict[str, Any]] | None = None
+) -> str:
     """Return the report for one run, every number computed from the run and the data."""
     check_templates()
     for column in EVENT_FIELDS:
@@ -833,6 +976,8 @@ def render(ds: Dataset, run: pipeline.Run, settings: Settings) -> str:
     facts |= comfort(ds, settings)
     facts |= plant(ds)
     facts |= water_gap(ds, run, settings)
+    facts |= guest_requests(ds, run)
+    facts |= supervisor(run, log if log is not None else run.reviews)
     counts = [len(_of(run, i)) for i in ("water_leak", "heating_comfort")]
     facts["small_n"] = _span(counts)
     facts["table"] = lane_table(run, facts)
@@ -844,13 +989,32 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     parser.add_argument("--out", type=Path, required=True, help="insights.md to write")
+    parser.add_argument(
+        "--llm-cache",
+        type=Path,
+        help="as for plato40 run: guest messages and the supervisor from this cache",
+    )
+    parser.add_argument(
+        "--supervisor",
+        type=Path,
+        help="a supervisor log (<out>.supervisor.jsonl) to report instead of this run's reviews",
+    )
     args = parser.parse_args()
     check_templates()
-    settings = Settings(data_root=args.data_dir, out_dir=args.out.parent)
+    settings = Settings(
+        data_root=args.data_dir,
+        out_dir=args.out.parent,
+        llm_cache=args.llm_cache,
+        lanes=tuple(lanes.registry()),
+    )
     ds = load_dataset(args.data_dir)
     run = pipeline.run(ds, settings)
+    log = None
+    if args.supervisor is not None:
+        text = args.supervisor.read_text(encoding="utf-8")
+        log = [json.loads(line) for line in text.splitlines() if line.strip()]
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(render(ds, run, settings), encoding="utf-8")
+    args.out.write_text(render(ds, run, settings, log), encoding="utf-8")
     print(f"wrote {args.out} from {len(run.decisions)} decisions on {ds.profile}")
     return 0
 

@@ -21,7 +21,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T1 | Data audit for quickstart and dev (`make audit`, `reports/audit/01_data_audit.md`) | D | done | Robustness 7 |
 | T1 | `plato40 run <data_dir> --out decisions.jsonl` writes a valid empty file | D | done | Reproducibility 10 |
 | T1 | Contract validator (`plato40 validate`; sample file passes) | D | done | Reproducibility 10 |
-| T1 | Hand-written sample `decisions.jsonl` (one per scenario) handed to F | A | todo | Demo 8 |
+| T1 | Hand-written sample `decisions.jsonl` (one per scenario) handed to F; the real run output replaced it | A | cut | Demo 8 |
 | T1 | Known-at discipline: signals timed when known; roster absences, bookings by `created_utc` | D | done | Robustness 7 |
 | T2 | Room state machine from events (occupied, dirty, cleaning, clean); telemetry cross-check open | D | doing | Constraints 8 |
 | T2 | Staff and robot availability from roster, as known at decision time | D | done | Constraints 8 |
@@ -29,10 +29,10 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T6 | Spam and false-alarm counter printed after every run (dev normal stretches) | D | todo | Detection 10 |
 | T7 | Policy layer: target-aware levels (cost = fixed list, no euro amounts; vacant inspection autonomous) | A | done | Safe autonomy 10 |
 | T7 | Violation check over every decision (`plato40 validate`) | A | done | Safe autonomy 10 |
-| T8 | Planner: action chain per episode in the 14-verb vocabulary | A | todo | Coordination 8 |
-| T8 | Mock executor: effects labelled `simulated`, `expected_outcome`, `verification_plan` | A | todo | Limits and verification 5 |
-| T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002 | S | done | Reproducibility 10 |
-| T13 | README run command and architecture updated once `run` exists | S | todo | Reproducibility 10 |
+| T8 | Planner: action chain per episode in the 14-verb vocabulary (`plan.py`) | A | done | Coordination 8 |
+| T8 | Effects labelled `simulated`, `expected_outcome`, `verification_plan`; closed loop `verify.py` follows up a missed outcome (repair held, room still cold, repeat complaint, ready time missed) | A | done | Limits and verification 5 |
+| T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002, ADR-003 (supervisor LLM) | S | done | Reproducibility 10 |
+| T13 | README run command, architecture, models and LLM settings | S | done | Reproducibility 10 |
 | T14 | Fresh-clone rehearsal with quickstart as the pretend holdout | D | todo | Reproducibility 10 |
 | T14 | Tag `pre-holdout`, push (needs the go to push) | D | todo | Reproducibility 10 |
 | T14 | Holdout run unchanged, commit `decisions_holdout.jsonl` | D | todo | Reproducibility 10 |
@@ -49,7 +49,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T3 | Look-alikes: robot `completed` is not readiness; room ready when guest arrives = no action | D | done | Robustness 7 |
 | T8 | Actions: cleaning at checkout, robot pass, one room offer (approval), on-call (approval), guest notice | A | done | Coordination 8 |
 | T7 | Rule: never `release_room` unless clean (vacant + human cleaning completed) | A | done | Safe autonomy 10 |
-| T10 | Guest message in the guest's language, deadline honoured | A | todo | Guest comms 6 |
+| T10 | Guest message in the guest's language, deadline honoured (`messages.py` under `llm_guard`, cached; template fallback) | A | done | Guest comms 6 |
 
 ### S02 The Hidden Water Leak
 
@@ -71,37 +71,43 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T5 | Comfort deficit as second signal inside HP1 episodes only (May/Aug/Sep deficits raise nothing, Q6) | D | done | Robustness 7 |
 | T5 | Forecast cold snap and price peaks joined by `issued_utc` / `published_utc` | D | done | Trade-offs 6 |
 | T8 | Actions: flag, technician or contractor (approval), comfort-first energy plan, guest notices <= 1 per 12 h | A | done | Trade-offs 6 |
-| T7 | Rule: comfort band never breached for an energy metric (needs the daily energy plan) | A | todo | Safe autonomy 10 |
+| T7 | Rule: comfort band never breached for an energy metric (S06 never lowers an occupied room and backs off while S03 is active) | A | done | Safe autonomy 10 |
 | T8 | Bus lane s03 (`plato40 bus --lane s03`): kinds `cop_low comfort_deficit cold_forecast price_peak` with causes; pre-heat and off-peak plans only while HP1 is degraded | A | done | Trade-offs 6 |
 | T10 | S03 guest messages: one per guest, guest's language, at the request time (before `response_due_utc`); window-open replies ask to close it; `llm_guard` with 6-language templates | A | done | Guest comms 6 |
 | T8 | Arbiter: contract and known-at per proposal, policy flags, TECH_1 ledger with roster as known; S03 quickstart 72 of 72 accepted, 0 violations | A | done | Safe autonomy 10 |
-| T8 | Wire the bus into `plato40 run` (S03 still planned by `plan._heating` there) and tune S03 lane volume on dev | A | todo | Detection 10 |
+| T8 | Lanes run in `plato40 run` through one arbiter call and one ledger (`lanes.py`; `--lanes` to pick); lane rank s02 > s01 > s05 > s03 > s04 > s07 > s06 | A | done | Detection 10 |
 
 ## Level 2: act autonomously (advanced)
 
 | ID | Item | Scenario | Owner | Status | Points |
 |---|---|---|---|---|---|
-| T9 | Filter detector: day-mode dp, fan power as the second signal through gaps (implication 6) | S04 | D | todo | Detection 10 |
-| T9 | Data gap reported as `data_quality`, never as recovery; technician availability known-at | S04 | D/A | todo | Robustness 7 |
-| T9 | Actions: `defer_action` on thin evidence, `order_service` / `dispatch_technician` (approval) | S04 | A | todo | Coordination 8 |
-| T9 | Weekend plan re-run whenever a roster row becomes known (implication 10) | S05 | A | todo | Coordination 8 |
-| T9 | Capacity from present cleaners, on-call 15:30-22:00, two robots; never invented | S05 | A | todo | Constraints 8 |
-| T10 | Staggered check-in times sent to guests | S05 | A | todo | Guest comms 6 |
-| T9 | Daily `optimize_energy`: battery and pre-heat against published prices and PV | Energy | A | todo | Trade-offs 6 |
+| T9 | Lane s04: AHU1 filter cascade; day-mode dp, fan-implied dp through dp gaps, airflow loss | S04 | D | done | Detection 10 |
+| T9 | Data gap told from degradation, never reported as recovery; technician availability known-at | S04 | D/A | done | Robustness 7 |
+| T9 | Actions: flag, `dispatch_technician` (TECH_1 claim) or `order_service` (approval); one dispatching lane per asset (S03 owns HP1) | S04 | A | done | Coordination 8 |
+| T9 | Lane s05: event outlook a week ahead (stand-by cleaner request) and 07:00 day plan in key order; owns the day plan | S05 | A | done | Coordination 8 |
+| T9 | Capacity from the cleaners known on shift; robots shorten a clean but are not counted; extra help only by approval | S05 | A | done | Constraints 8 |
+| T9 | Re-plan on a sick note known after 07:00 and the 15:30 on-call step (dev has none after 07:00) | S05 | A | cut | Coordination 8 |
+| T10 | Delay notice to late arrival guests with no S01 thread; no time promised for a room the plan cannot fit | S05 | A | done | Guest comms 6 |
+| T9 | Lane s06: arrival pre-heat batched per arrival time, S03 back-off, stale tariff/forecast/energy flags | Energy | A | done | Trade-offs 6 |
+| T9 | Battery day-ahead plan (worth about 0-1k EUR/yr over the existing rule, simulated) | Energy | A | todo | Trade-offs 6 |
 | T9 | Waste pickup before the container fills (96 h fill rate vs next Tue/Fri pickup, 24 h lead); floor bins never fill, robots not used (Q10) | Logistics | A | done | Coordination 8 |
 | T9 | Vending restock before stock-out, same forecast against Mon/Thu restock | Logistics | A | done | Coordination 8 |
+| T9 | Lane s07: container projection from planned cleanings, dump hold plus robot bin runs, censor-aware vending rate | Logistics | A | done | Coordination 8 |
+| T9 | Lane s08: guest desk, an answer to every guest request before its due time | Guests | A | doing | Guest comms 6 |
+| T9 | Supervisor LLM (ADR-003): daily and hotspot reviews over the context snapshot, at most 2 checked, cached additions; log `<out>.supervisor.jsonl` | All | A | done | Safe autonomy 10 |
 
 ## Level 3: learn and feed back
 
 | ID | Item | Owner | Status | Points |
 |---|---|---|---|---|
 | T12 | Candidate findings from the audit: July overheating (no cooling), BMS alarm tuning, F3 gateway, May/Aug/Sep comfort deficits, cleaning capacity on surge weekends | S | done | Feedback 10 |
-| T12 | `insights.py`: every number in `insights.md` produced by a script | S | todo | Feedback 10 |
-| T12 | Insight: recurring F3 gateway outages (count from the outage episodes) | S | todo | Feedback 10 |
-| T12 | CLARA recommendations with evidence and uncertainty | S | todo | Feedback 10 |
-| T12 | PLATO design recommendations with evidence and uncertainty | S | todo | Feedback 10 |
+| T12 | `insights.py`: every number in `insights.md` produced by a script; all lanes, guest requests per type, supervisor paragraph | S | done | Feedback 10 |
+| T12 | Insight: recurring F3 gateway outages (count from the outage episodes) | S | done | Feedback 10 |
+| T12 | CLARA recommendations with evidence and uncertainty | S | done | Feedback 10 |
+| T12 | PLATO design recommendations with evidence and uncertainty | S | done | Feedback 10 |
 | T12 | Target architecture: one diagram plus one page | S | todo | Architecture 5 |
-| T12 | Limits section | S | todo | Limits 5 |
+| T12 | Limits section | S | done | Limits 5 |
+| T12 | Final regeneration of `insights.md` from the committed dev run (after s08 and the last live LLM run) | S | todo | Feedback 10 |
 
 ## Demo and submission
 
@@ -113,6 +119,22 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T15 | 3-minute video, end to end | S/F | todo | Demo 8 |
 | T15 | Written submission text and form | S | todo | all |
 | T15 | Repo moved to the Proximata organisation and made public (needs the go) | S | todo | all |
+
+## Holdout runbook (Sat ~11:00 to 14:00)
+
+1. Before the release: final live run on dev (`PLATO40_LLM=on`, key exported), commit the
+   answer cache, regenerate `insights.md` with
+   `uv run python scripts/insights.py <dev> --out insights.md --llm-cache <cache>`,
+   then tag `pre-holdout` (row T14 above).
+2. Fetch the holdout, check its SHA256, unpack it under `data/`.
+3. Live run, once: `PLATO40_LLM=on uv run plato40 run <holdout> --out decisions_holdout.jsonl
+   --llm-cache <cache>`. Keep `decisions_holdout.supervisor.jsonl` next to it.
+4. Rerun with the LLM off (`PLATO40_LLM=off`, same command, other `--out`) and `cmp` the
+   two files: they must be byte-identical.
+5. `uv run plato40 validate decisions_holdout.jsonl <holdout>`: 0 violations.
+6. Commit `decisions_holdout.jsonl` and the cache (passing answers only; never the key).
+7. If the API is down: the same command without the key gives a valid file with template
+   messages and no supervisor additions. Commit that, and say so in the README.
 
 ## Open questions for the mentor
 
