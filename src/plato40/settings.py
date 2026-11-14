@@ -113,9 +113,9 @@ class DetectorSettings:
     ``gap_absolute_l_per_h`` applies."""
 
     gap_baseline_quantile: float = 0.25
-    """Quantile of the past normal nights taken as the baseline. A low quantile keeps the
-    baseline at the normal level when a leak starts early in the run, and one odd night
-    cannot move it."""
+    """Quantile of the past normal nights taken as the baseline, floored at zero (meter noise
+    makes quiet nights slightly negative). A low quantile keeps the baseline at the normal
+    level when a leak starts early in the run, and one odd night cannot move it."""
 
     gap_min_coverage: float = 0.75
     """Share of a night's intervals with the main and every room meter needed for a gap verdict.

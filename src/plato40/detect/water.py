@@ -113,7 +113,9 @@ def gap_limit(normal: list[float], settings: Settings) -> tuple[float, float | N
     recent = normal[-th.gap_baseline_nights :]
     if len(recent) < th.gap_baseline_min_nights:
         return th.gap_absolute_l_per_h, None
-    base = float(pd.Series(recent).quantile(th.gap_baseline_quantile))
+    # Meter noise makes the gap slightly negative on quiet nights; a negative baseline would
+    # put the limit below the fixed net and raise one-night false signals.
+    base = max(0.0, float(pd.Series(recent).quantile(th.gap_baseline_quantile)))
     return min(th.gap_absolute_l_per_h, base + th.gap_night_l_per_h), base
 
 
