@@ -96,14 +96,20 @@ VIEWS.trail = (() => {
       const id = st.ev && BY_EVENT[st.ev] ? st.ev : list.length ? list[0].d.event_id : null;
       if (!id) { el.innerHTML = `<div class="panel empty">No decision to trace in this run.</div>`; return; }
       const { d, e } = BY_EVENT[id];
-      const shown = list.slice(0, 150);
+      // The decision on show is pinned at the top of the list, so a deep link is visible.
+      const pinned = list.find(x => x.d.event_id === id) || { d, e };
+      const shown = [pinned, ...list.filter(x => x !== pinned)].slice(0, 150);
       el.innerHTML = `<style>${CSS}</style><div class="tr-wrap">
         <nav class="panel tr-pick" aria-label="Decisions with a trail"><h3>Decisions with a trail</h3>
           ${shown.map(({ d: x, e: ex }) => `<button type="button" data-ev="${esc(x.event_id)}" aria-current="${x.event_id === id}">
             <span>${act(x)} <small>${esc(ex.assets.join(", "))}</small></span><small>${fmtDay.format(ms(x.timestamp_utc))} · ${esc(x.priority)}</small></button>`).join("")}
-          ${list.length > shown.length ? `<small>${fmtN(list.length - shown.length)} more: open one from the Episode view.</small>` : ""}
+          ${list.length + (list.includes(pinned) ? 0 : 1) > shown.length ? `<small>${fmtN(list.length + (list.includes(pinned) ? 0 : 1) - shown.length)} more: open one from the Episode view.</small>` : ""}
         </nav>
         <section class="panel">${chain(d, e)}</section></div>`;
+      const pick = el.querySelector(".tr-pick");
+      if (pick) pick.scrollTop = 0;
+      const cur = el.querySelector('.tr-pick [aria-current="true"]');
+      if (cur) cur.scrollIntoView({ block: "nearest" });
       el.onclick = ev => {
         if (state.view !== "trail") return;
         const a = ev.target.closest("[data-ev]");
