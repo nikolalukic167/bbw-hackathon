@@ -34,6 +34,11 @@ VIEWS.year = (() => {
   const pct = (a, b) => (b ? `${Math.round((100 * a) / b)} %` : "n/a");
   const pair = p => (p ? `<b>${n(p[0])}</b> of ${n(p[1])}` : "n/a");
   const EXTRA = { comfort_hot: "too-hot replies", routine: "routine" };
+  // Strip rows: the scenario code and one short word, so no label is clipped.
+  const WORD = { water_leak: "leaks", room_turnaround: "turnaround", occupancy_surge: "busy days",
+    heating_comfort: "heating", ventilation_maintenance: "filters", logistics: "logistics",
+    energy_optimization: "energy", guest_service: "guest desk", data_quality: "data" };
+  const rowName = k => (SCEN[k] && WORD[k] ? `${SCEN[k].short} ${WORD[k]}` : label(k));
   const label = k => (SCEN[k] ? SCEN[k].label : EXTRA[k] || k.replace(/_/g, " "));
   const words = obj => Object.entries(obj || {}).map(([k, v]) => `${n(v)} ${k.replace(/_/g, " ")}`).join(", ") || "none";
 
@@ -74,10 +79,10 @@ VIEWS.year = (() => {
   function strip(y) {
     if (!y || !y.days || !y.days.length) return `<div class="panel empty">No year data: write the page with --data.</div>`;
     const lanes = ORDER.filter(l => (y.lanes[l] || []).some(v => v > 0));
-    const rows = [...lanes.map(l => ({ key: l, name: label(l), vals: y.lanes[l] })),
+    const rows = [...lanes.map(l => ({ key: l, name: rowName(l), vals: y.lanes[l] })),
       { key: "routine", name: "routine", vals: y.routine || [] }];
     // A fixed drawing width, so a short run (quickstart) and a year read at the same scale.
-    const D = y.days.length, L = 170, W = 1000, cw = (W - L - 4) / D, ch = 17, top = 24, H = top + rows.length * ch + 16;
+    const D = y.days.length, L = 120, W = 1000, cw = (W - L - 4) / D, ch = 17, top = 24, H = top + rows.length * ch + 16;
     const max = Math.max(1, ...lanes.flatMap(l => y.lanes[l]));
     const shade = v => (v ? 0.18 + 0.82 * Math.log1p(v) / Math.log1p(max) : 0);
     let out = "";
@@ -93,7 +98,7 @@ VIEWS.year = (() => {
     });
     rows.forEach((r, j) => {
       const yy = top + j * ch;
-      out += `<text class="lab" x="0" y="${yy + 12}">${esc(r.name.length > 26 ? r.name.slice(0, 25) + "." : r.name)}</text>`;
+      out += `<text class="lab" x="0" y="${yy + 12}">${esc(r.name.length > 18 ? r.name.slice(0, 17) + "." : r.name)}</text>`;
       r.vals.forEach((v, i) => {
         if (!v) return;
         const a = r.key === "routine" ? 0.12 + 0.2 * Math.min(1, v / 20) : shade(v);

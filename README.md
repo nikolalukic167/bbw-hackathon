@@ -30,8 +30,10 @@ uv sync --locked
   [uv](https://docs.astral.sh/uv/). Dependencies are locked in `uv.lock`:
   `uv sync --locked` installs exactly those versions. Developed and run on Linux.
 - The scored run needs no network and no API key: the rules decide, and LLM answers are
-  read from a committed cache. `uv sync --locked --extra llm` adds the `anthropic` client,
-  needed only to call a model on a cache miss (`PLATO40_LLM=on`).
+  read from a committed cache. `uv sync --locked` does not install the `anthropic` client;
+  `uv sync --locked --extra llm` does, and it is needed only for live calls on a cache miss
+  (`PLATO40_LLM=on`). `scripts/holdout.sh` and `scripts/regenerate.sh` run that sync
+  themselves when an `ANTHROPIC_API_KEY` is set (in the environment or `.env`).
 - Environment variables: see [.env.example](.env.example) (no secrets in it) and
   [Models and LLM settings](#models-and-llm-settings) below. Copy it to `.env`, which is
   gitignored; never commit a key.
@@ -104,7 +106,7 @@ the rules wrote it, and any answer that breaks that keeps the rules' text
 (`src/plato40/llm_guard.py`, `docs/BUS.md`):
 
 ```bash
-uv sync --extra llm                                   # installs anthropic
+uv sync --locked --extra llm                          # installs anthropic (live calls only)
 export ANTHROPIC_API_KEY=...                          # or keep it in .env (gitignored)
 PLATO40_LLM=on uv run plato40 run <data_dir> --out decisions.jsonl --llm-cache <cache_dir>
 uv run plato40 run <data_dir> --out again.jsonl --llm-cache <cache_dir>   # from cache only
