@@ -198,7 +198,7 @@
     const cop = p.cop?.[i];
     const cells = [
       ["HP1", v(p.hp1_status, x => x), p.hp1_status?.[i] && p.hp1_status[i] !== "running"],
-      ["HP1 COP", cop != null ? cop.toFixed(2) : "n/a", false],
+      ["HP1 COP ratio", cop != null ? cop.toFixed(2) : "n/a", cop != null && cop < 0.88],
       ["AHU1 filter dp", v(p.ahu_dp, x => `${x.toFixed(0)} Pa`), false],
       ["BAT1 SOC (plan)", v(p.soc, x => `${x.toFixed(0)} kWh`) + (p.soc_plan?.[i] != null ? ` (${p.soc_plan[i].toFixed(0)})` : ""), false],
       ["Main water flow", v(p.flow, x => `${x.toFixed(0)} L/h`), false],
@@ -397,7 +397,7 @@
     el.querySelectorAll("[data-day]").forEach(b => b.addEventListener("click", () => { stop(); go({ view: "day", day: b.dataset.day }); }));
     el.querySelectorAll("[data-bm]").forEach(g => g.addEventListener("click", () => { stop(); go({ view: "day", day: dayKey, step: +g.dataset.bm }); }));
     el.querySelectorAll("[data-fold]").forEach(f => f.addEventListener("click", () => { cur.open.add(f.dataset.fold); redraw(); }));
-    el.querySelectorAll("[data-trail]").forEach(b => b.addEventListener("click", () => go({ view: "trail", id: b.dataset.trail })));
+    el.querySelectorAll("[data-trail]").forEach(b => b.addEventListener("click", () => go({ view: "trail", ev: b.dataset.trail })));
     el.querySelector("[data-act=temp]")?.addEventListener("change", ev => { cur.showTemp = ev.target.checked; redraw(); });
     el.querySelectorAll("[data-act]").forEach(b => {
       if (b.tagName !== "BUTTON") return;
