@@ -33,6 +33,8 @@ VIEWS.year = (() => {
   const n = x => (x == null ? "n/a" : fmtN(x));
   const pct = (a, b) => (b ? `${Math.round((100 * a) / b)} %` : "n/a");
   const pair = p => (p ? `<b>${n(p[0])}</b> of ${n(p[1])}` : "n/a");
+  // A miss line only when there was something to miss: no "0 of 0".
+  const li = (text, p) => (p && p[1] ? `<li>${text}: ${pair(p)}.</li>` : "");
   const EXTRA = { comfort_hot: "too-hot replies", routine: "routine" };
   // Strip rows: the scenario code and one short word, so no label is clipped.
   const WORD = { water_leak: "leaks", room_turnaround: "turnaround", occupancy_surge: "busy days",
@@ -70,8 +72,8 @@ VIEWS.year = (() => {
     const sv = k.supervisor;
     const fu = Object.values(k.followups || {}).reduce((s, v) => s + v, 0);
     return `<div class="panel yr-row2">
-      <span>Follow-ups fired <b>${n(fu)}</b> (${esc(words(k.followups))})</span>
-      ${sv ? `<span>Supervisor <b>${n(sv.reviews)}</b> reviews, <b>${n((sv.added || []).length)}</b> added, <b>${n(sv.rejected)}</b> rejected by the checks</span>`
+      ${fu ? `<span>Follow-ups fired <b>${n(fu)}</b> (${esc(words(k.followups))})</span>` : `<span>No follow-up needed</span>`}
+      ${sv ? `<span>Supervisor <b>${n(sv.reviews)}</b> reviews, <b>${n((sv.added || []).length)}</b> added${sv.rejected ? `, <b>${n(sv.rejected)}</b> rejected by the checks` : ""}</span>`
            : `<span>Supervisor not part of this run</span>`}
     </div>`;
   }
@@ -126,13 +128,19 @@ VIEWS.year = (() => {
     const sv = k && k.supervisor;
     const why = sv && sv.rejected_why && Object.keys(sv.rejected_why).length ? ` (${esc(words(sv.rejected_why))})` : "";
     const bat = m.battery;
+    const svr = m.supervisor_rejected;
+    const svLine = !svr || !svr[1] ? ""
+      : svr[0] ? `<li>Supervisor answers rejected by the checks: ${pair(svr)}${why}.</li>`
+      : `<li>Supervisor answers: <b>${n(svr[1])}</b> answered, all passed the checks.</li>`;
+    const few = (m.hp_incidents || 0) + (m.leak_incidents || 0);
     return `<section class="panel yr-limits"><h3>Limits and verification</h3>
       <ul>
-        <li>Waiting guests Steward had not acted on that morning: ${pair(m.waits)}.</li>
-        <li>Pre-heated rooms still below the comfort band at check-in: ${pair(m.preheat)}.</li>
-        <li>Extra waste or vending orders that found no shortage: ${pair(m.orders)}.</li>
-        ${m.supervisor_rejected ? `<li>Supervisor answers rejected by the checks: ${pair(m.supervisor_rejected)}${why}.</li>` : ""}
-        <li>The heat pump and leak rules rest on few cases: <b>${n(m.hp_incidents)}</b> heat pump and <b>${n(m.leak_incidents)}</b> leak incidents.</li>
+        ${li("Waiting guests Steward had not acted on that morning", m.waits)}
+        ${li("Waiting guests told a ready time after their arrival", m.waits_promised_late)}
+        ${li("Pre-heated rooms still below the comfort band at check-in", m.preheat)}
+        ${li("Extra waste or vending orders that found no shortage", m.orders)}
+        ${svLine}
+        ${few ? `<li>The heat pump and leak rules rest on few cases: <b>${n(m.hp_incidents)}</b> heat pump and <b>${n(m.leak_incidents)}</b> leak incidents.</li>` : ""}
         ${bat ? `<li>Battery plan on <b>${n(bat.days)}</b> days, median saving EUR <b>${bat.saving_eur_median.toFixed(2)}</b> a day against no battery: simulated.</li>` : ""}
       </ul>
       <ul class="gen">
