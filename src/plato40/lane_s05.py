@@ -509,8 +509,9 @@ class _Lane:
             what = (
                 f"{room} expected ready after {at} local today"
                 if at
-                else f"{room} may not be ready by check-in today; no time is promised until "
-                "the extra cleaning help asked for in this plan is approved"
+                else f"{room} may not be ready by check-in today; no time is promised yet, as "
+                "the plan has no slot for it without the extra cleaning help asked for, and a "
+                "ready time follows once the room is scheduled"
             )
             self.board.propose(
                 eid,
