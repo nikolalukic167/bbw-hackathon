@@ -236,7 +236,7 @@ step and is not in this version.
 
 ## Changes after pre-holdout
 
-None.
+- `docs/BRIEFING.md` (new): team briefing for the live demo. Documentation only; no code, thresholds, prompts or data processing changed.
 
 ## Submission text
 
