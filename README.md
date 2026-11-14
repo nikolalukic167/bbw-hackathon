@@ -53,6 +53,8 @@ uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did n
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
 uv run plato40 bus <data_dir> --lane s03 --out out/  # S03 lane -> bus -> arbiter (docs/BUS.md)
 uv run plato40 snapshot <data_dir> --at 2026-05-09T11:00Z --assets R209 HP1  # supervisor context
+uv run python scripts/rolling_medians.py <data_dir> out/rolling_medians.json  # past-only medians, every room and 15 min
+uv run python scripts/build_r102_check.py <data_dir> out/rolling_medians.json out/r102_day1.json  # one room, one day check
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
