@@ -524,7 +524,8 @@ class _Lane:
             "high",
             f"Protect occupied rooms with reduced heat: hold vacant rooms at setback, pre-heat "
             f"occupied rooms within {self.lo:.0f}-{self.hi:.0f} degC before the {cold}; avoid "
-            f"price peaks ({peaks}) only where comfort holds. Comfort before cost.",
+            f"the dearest hours of the next 24 h ({peaks}) only where comfort holds. Comfort "
+            "before cost.",
             confidence=0.6,
             expected_outcome="Occupied rooms stay in the comfort band (simulated).",
             verification_plan=(
@@ -653,9 +654,9 @@ class _Lane:
             "optimize_energy",
             ["HP1", "BUILDING"],
             "medium",
-            f"Shift HP1 load off the dearest published hours ({named}) only where occupied "
-            f"rooms stay at or above {self.lo:.0f} degC: pre-heat before them; occupied rooms "
-            "in deficit keep full heat. Comfort before cost.",
+            f"Shift HP1 load off the dearest hours of the day just published ({named}) only "
+            f"where occupied rooms stay at or above {self.lo:.0f} degC: pre-heat before them; "
+            "occupied rooms in deficit keep full heat. Comfort before cost.",
             confidence=0.5,
             expected_outcome="Less HP1 load in the dearest hours, comfort held (simulated).",
             verification_plan=(
