@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben festgestellt, dass es in Ihrem Zimmer R203 zu warm ist. Die Ursache ist derzeit unbekannt. Wir kümmern uns darum und melden uns bei Ihnen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001878",
+   "cause": "unknown",
+   "room": "R203"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-15T00:57Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R203"
+  },
+  "t": "2026-07-15T00:57Z",
+  "template": "Danke für Ihre Nachricht zur Wärme in Zimmer {room}. Das Haus hat nur eine Heizung, keine Kühlung und keine Klimaanlage. Nachts, wenn es draußen kühler ist, hilft ein offenes Fenster."
+ },
+ "violations": []
+}

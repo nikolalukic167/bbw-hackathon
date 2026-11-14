@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to let you know that there is a delay affecting your stay in room R403. Our team is working on it, and we will keep you updated. Thank you for your patience.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK003167",
+   "room": "R403"
+  },
+  "hedged": false,
+  "intent": "notify_day_delay",
+  "known_by": "2026-09-26T05:00Z",
+  "lane": "s05",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R403"
+  },
+  "t": "2026-09-26T05:00Z",
+  "template": "Dear guest, your room {room} may not be ready by check-in time today, as several rooms are being prepared. We will message you as soon as it is ready."
+ },
+ "violations": []
+}

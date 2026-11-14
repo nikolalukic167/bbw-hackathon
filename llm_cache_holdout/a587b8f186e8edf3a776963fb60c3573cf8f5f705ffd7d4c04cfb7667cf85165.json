@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta per il deposito bagagli relativa alla camera R101. Il nostro personale si occuperà della sua richiesta il prima possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R101"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-06-16T16:36Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R101"
+  },
+  "t": "2026-06-16T16:36Z",
+  "template": "Grazie per la domanda sul deposito bagagli per la camera {room}. La nostra reception le spiegherà come funziona."
+ },
+ "violations": []
+}

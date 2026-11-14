@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your invoice request for room R108 has been noted. Our front desk will prepare it for you.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "invoice",
+   "room": "R108"
+  },
+  "hedged": false,
+  "intent": "guest_invoice",
+  "known_by": "2026-11-20T19:13Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R108"
+  },
+  "t": "2026-11-20T19:13Z",
+  "template": "Thank you for your invoice request for room {room}. Our reception will prepare it and get back to you."
+ },
+ "violations": []
+}

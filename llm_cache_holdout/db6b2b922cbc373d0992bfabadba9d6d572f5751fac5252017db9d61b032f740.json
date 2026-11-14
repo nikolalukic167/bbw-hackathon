@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Ihr Zimmer R203 wird voraussichtlich um 13:30 Uhr Ortszeit fertig sein.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R203 expected ready at 13:30 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-09-25T11:00Z",
+  "lane": "s01",
+  "language": "de",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R203",
+   "t2": "13:30"
+  },
+  "t": "2026-09-25T11:00Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

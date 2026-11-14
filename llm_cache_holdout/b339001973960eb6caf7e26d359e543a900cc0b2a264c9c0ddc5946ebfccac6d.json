@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, wij hebben uw melding over geluidsoverlast voor kamer R410 ontvangen. Het spijt ons zeer dat u last heeft van het lawaai.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R410"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-04-06T21:27Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R410"
+  },
+  "t": "2026-04-06T21:27Z",
+  "template": "Het spijt ons van het lawaai bij kamer {room}. Ons personeel is op de hoogte en zoekt het uit."
+ },
+ "violations": []
+}

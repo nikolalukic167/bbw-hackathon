@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre demande de serviettes supplémentaires pour la chambre R205.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R205"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-10-15T07:25Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R205"
+  },
+  "t": "2026-10-15T07:25Z",
+  "template": "Merci pour votre demande concernant la chambre {room}. Nous avons demandé au service d'étage d'apporter des serviettes propres."
+ },
+ "violations": []
+}

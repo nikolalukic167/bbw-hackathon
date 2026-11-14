@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to let you know that there is currently a heating issue in room R104. We do not yet know the cause and are looking into it. We will update you as soon as we have more information.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK002076",
+   "cause": "unknown",
+   "room": "R104"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-13T17:06Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R104"
+  },
+  "t": "2026-07-13T17:06Z",
+  "template": "Thank you for your message about the heat in room {room}. The building has heating only, no cooling or air conditioning. We have lowered the room's setpoint, so the heating stays off. Opening the window at night, when it is cooler outside, helps. The window is reported open: please close it in the daytime while it is hotter outside."
+ },
+ "violations": []
+}

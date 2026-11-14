@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your request for extra towels for room R110 has been noted. We will bring them to your room.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R110"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-12-02T21:38Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R110"
+  },
+  "t": "2026-12-02T21:38Z",
+  "template": "Thank you for your request for room {room}. We have asked housekeeping to bring fresh towels."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, ci scusiamo per il disagio nella camera R201. Stiamo lavorando per risolvere il problema e ripristinare il comfort della sua camera.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000298",
+   "cause": "hp_degradation",
+   "room": "R201"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-27T13:00Z",
+  "lane": "s03",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R201"
+  },
+  "t": "2026-01-27T13:00Z",
+  "template": "Gentili ospiti della camera {room}: il nostro riscaldamento funziona al momento a potenza ridotta ed è stata richiesta una riparazione. Diamo la priorità al riscaldamento delle camere occupate. Ci scusiamo per il disagio."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Uw verzoek om schoonmaak voor kamer R304 is ontvangen. Wij proberen dit zo snel mogelijk te regelen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R304"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-12-01T10:55Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R304"
+  },
+  "t": "2026-12-01T10:55Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. We hebben het doorgegeven aan housekeeping, dat contact met u opneemt voordat het de kamer betreedt."
+ },
+ "violations": []
+}

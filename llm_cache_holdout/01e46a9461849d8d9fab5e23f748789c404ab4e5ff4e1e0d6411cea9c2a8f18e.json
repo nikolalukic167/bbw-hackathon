@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta di check-out tardivo per la camera R307 fino alle 13:00. Le facciamo sapere che è disponibile un'offerta di check-out tardivo, in attesa di approvazione. La ringraziamo per la pazienza.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R307"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-08-02T06:58Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R307",
+   "time": "13:00"
+  },
+  "t": "2026-08-02T06:58Z",
+  "template": "Grazie per la richiesta per la camera {room}. Un check-out posticipato fino alle {time} sembra possibile; il nostro personale deciderà e la informerà."
+ },
+ "violations": []
+}

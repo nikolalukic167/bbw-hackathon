@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Le ofrecemos la habitación R106, pendiente de aprobación. De lo contrario, la habitación R201 debería estar lista a las 11:45, hora local.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R106 is offered pending approval; otherwise R201 expected ready at 11:45 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-04-10T08:45Z",
+  "lane": "s01",
+  "language": "es",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R106",
+   "t2": "R201",
+   "t3": "11:45"
+  },
+  "t": "2026-04-10T08:45Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

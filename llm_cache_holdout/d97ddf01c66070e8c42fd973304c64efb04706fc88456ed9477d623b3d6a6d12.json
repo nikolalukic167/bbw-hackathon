@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, le offriamo la camera R102, in attesa di approvazione. In alternativa, la camera R304 dovrebbe essere pronta alle 12:00 (ora locale).\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R102 is offered pending approval; otherwise R304 expected ready at 12:00 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-04-30T09:30Z",
+  "lane": "s01",
+  "language": "it",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R102",
+   "t2": "R304",
+   "t3": "12:00"
+  },
+  "t": "2026-04-30T09:30Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

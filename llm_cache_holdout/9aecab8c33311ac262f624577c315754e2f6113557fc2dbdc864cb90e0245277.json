@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Uw factuur voor kamer R110 is aangevraagd. Wij nemen zo snel mogelijk contact met u op.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "invoice",
+   "room": "R110"
+  },
+  "hedged": false,
+  "intent": "guest_invoice",
+  "known_by": "2026-01-13T07:51Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R110"
+  },
+  "t": "2026-01-13T07:51Z",
+  "template": "Bedankt voor uw factuurverzoek voor kamer {room}. Onze receptie maakt die klaar en komt bij u terug."
+ },
+ "violations": []
+}

@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, la sua camera R307 è pronta per il check-in anticipato. Non possiamo garantire un orario preciso, ma la reception la contatterà appena possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R307"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-08-22T08:04Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R307"
+  },
+  "t": "2026-08-22T08:04Z",
+  "template": "Grazie per la richiesta per la camera {room}. La camera dovrebbe essere pronta; il nostro personale la avviserà se qualcosa cambia."
+ },
+ "violations": [
+  "banned claim 'garanti'"
+ ]
+}

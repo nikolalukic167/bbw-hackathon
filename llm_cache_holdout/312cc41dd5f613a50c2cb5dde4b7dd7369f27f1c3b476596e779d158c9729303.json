@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"We are sorry you are having trouble accessing room R301. We are looking into it and will help you get into your room as soon as possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R301"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-02-18T16:32Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R301"
+  },
+  "t": "2026-02-18T16:32Z",
+  "template": "Sorry about the trouble getting into room {room}. We have asked our staff to help you with access."
+ },
+ "violations": []
+}

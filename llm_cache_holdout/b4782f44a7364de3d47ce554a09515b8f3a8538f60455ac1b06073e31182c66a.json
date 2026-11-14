@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Geduld. Ihr Zimmer R110 wird vorbereitet. Wir melden uns, sobald es bereit ist.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "waiting_for_room",
+   "room": "R110"
+  },
+  "hedged": false,
+  "intent": "guest_waiting",
+  "known_by": "2026-06-24T11:24Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R110"
+  },
+  "t": "2026-06-24T11:24Z",
+  "template": "Entschuldigen Sie die Wartezeit auf Zimmer {room}. Unser Personal prüft es jetzt und schreibt Ihnen, sobald es fertig ist."
+ },
+ "violations": []
+}

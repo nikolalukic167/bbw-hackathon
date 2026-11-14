@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"We can offer you room R103, pending approval. Room R109 is expected to be ready, but we do not yet have a time for it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R103 is offered pending approval; otherwise R109 expected ready at unknown"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2027-01-01T14:00Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R103",
+   "t2": "R109"
+  },
+  "t": "2027-01-01T14:00Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at unknown"
+ },
+ "violations": []
+}

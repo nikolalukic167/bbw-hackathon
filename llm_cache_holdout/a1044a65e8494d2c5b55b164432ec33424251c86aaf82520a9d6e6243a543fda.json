@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, la sua camera R110 è pronta in anticipo. Siamo lieti di poterla accogliere prima dell'orario di check-in previsto. Il personale della reception è a sua disposizione per qualsiasi necessità.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R110"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-10-06T09:57Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R110"
+  },
+  "t": "2026-10-06T09:57Z",
+  "template": "Grazie per la richiesta per la camera {room}. La camera dovrebbe essere pronta; il nostro personale la avviserà se qualcosa cambia."
+ },
+ "violations": []
+}

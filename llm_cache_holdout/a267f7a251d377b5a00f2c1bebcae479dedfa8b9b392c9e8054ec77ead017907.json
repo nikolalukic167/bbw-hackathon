@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your invoice request for room R404 has been noted. We will prepare it for you shortly.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "invoice",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "guest_invoice",
+  "known_by": "2026-04-15T17:00Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R404"
+  },
+  "t": "2026-04-15T17:00Z",
+  "template": "Thank you for your invoice request for room {room}. Our reception will prepare it and get back to you."
+ },
+ "violations": []
+}

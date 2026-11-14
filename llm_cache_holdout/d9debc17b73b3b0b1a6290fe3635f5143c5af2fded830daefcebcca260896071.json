@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your late checkout request for room R208 has been noted. We can offer a late checkout until 13:00 for free, pending approval from the front desk.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R208"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-06-13T07:21Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R208",
+   "time": "13:00"
+  },
+  "t": "2026-06-13T07:21Z",
+  "template": "Thank you for your request for room {room}. A later check-out until {time} looks possible; our staff will decide and let you know."
+ },
+ "violations": []
+}

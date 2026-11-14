@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre demande concernant le Wi-Fi en chambre R406. Notre équipe va vous aider à le rétablir dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-06-10T11:09Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-06-10T11:09Z",
+  "template": "Merci pour votre message concernant le Wi-Fi de la chambre {room}. Notre personnel s'en occupe et reviendra vers vous."
+ },
+ "violations": []
+}

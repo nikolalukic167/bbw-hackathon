@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su solicitud de salida tardía para la habitación R403 hasta las 13:00. Le informamos de que esta solicitud está pendiente de aprobación y, por ahora, solo podemos ofrecerla. Le avisaremos en cuanto tengamos una respuesta.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R403"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-04-08T05:59Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R403",
+   "time": "13:00"
+  },
+  "t": "2026-04-08T05:59Z",
+  "template": "Gracias por su solicitud para la habitación {room}. Salir más tarde, hasta las {time}, parece posible; nuestro personal decidirá y le avisará."
+ },
+ "violations": []
+}

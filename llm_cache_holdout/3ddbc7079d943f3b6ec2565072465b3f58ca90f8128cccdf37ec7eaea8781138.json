@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage für einen späten Check-out aus Zimmer R210 bis 13:00 Uhr erhalten. Wir bieten Ihnen dies gerne an. Bitte bestätigen Sie uns kurz, ob Sie dieses Angebot wünschen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R210"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-10-18T06:44Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R210",
+   "time": "13:00"
+  },
+  "t": "2026-10-18T06:44Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Ein späterer Check-out bis {time} scheint möglich; unser Personal entscheidet und meldet sich bei Ihnen."
+ },
+ "violations": []
+}

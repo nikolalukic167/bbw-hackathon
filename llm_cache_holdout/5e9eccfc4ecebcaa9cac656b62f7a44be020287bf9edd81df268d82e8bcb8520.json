@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, wij hebben uw verzoek om extra handdoeken voor kamer R403 genoteerd.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R403"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-10-12T05:54Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R403"
+  },
+  "t": "2026-10-12T05:54Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. We hebben housekeeping gevraagd verse handdoeken te brengen."
+ },
+ "violations": []
+}

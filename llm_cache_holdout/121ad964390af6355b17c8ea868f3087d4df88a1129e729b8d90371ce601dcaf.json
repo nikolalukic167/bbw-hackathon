@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Zimmer R305 wird Ihnen angeboten, die Zustimmung steht noch aus. Andernfalls wird Zimmer R101 voraussichtlich um 22:15 Uhr bezugsbereit sein.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R305 is offered pending approval; otherwise R101 expected ready at 22:15 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-12-25T20:05Z",
+  "lane": "s01",
+  "language": "de",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R305",
+   "t2": "R101",
+   "t3": "22:15"
+  },
+  "t": "2026-12-25T20:05Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

@@ -1,0 +1,29 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de salida tardía para la habitación R202, con hora de salida a las 13:00. Le confirmaremos los detalles en cuanto sea posible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R202"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-09-07T07:25Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R202",
+   "time": "13:00"
+  },
+  "t": "2026-09-07T07:25Z",
+  "template": "Gracias por su solicitud para la habitación {room}. Salir más tarde, hasta las {time}, parece posible; nuestro personal decidirá y le avisará."
+ },
+ "violations": [
+  "banned claim 'confirm'"
+ ]
+}

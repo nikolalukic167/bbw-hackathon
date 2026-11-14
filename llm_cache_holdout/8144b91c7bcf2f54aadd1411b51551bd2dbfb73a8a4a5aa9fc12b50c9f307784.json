@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su solicitud de ayuda con el Wi-Fi en la habitación R306. Nuestro equipo le ayudará en breve.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R306"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-08-22T17:59Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R306"
+  },
+  "t": "2026-08-22T17:59Z",
+  "template": "Gracias por su mensaje sobre el wifi de la habitación {room}. Nuestro personal lo revisará y le responderá."
+ },
+ "violations": []
+}

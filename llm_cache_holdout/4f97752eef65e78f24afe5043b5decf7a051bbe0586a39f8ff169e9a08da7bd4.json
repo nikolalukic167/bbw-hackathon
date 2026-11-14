@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your cleaning request for room R302. We have noted it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R302"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-01-13T21:38Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R302"
+  },
+  "t": "2026-01-13T21:38Z",
+  "template": "Thank you for your request for room {room}. We have passed it to housekeeping, who will contact you before entering the room."
+ },
+ "violations": []
+}

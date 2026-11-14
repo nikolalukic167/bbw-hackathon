@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Su habitación R408 debería estar lista a las 19:15, hora local. Esta es una estimación y no una garantía.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R408 expected ready at 19:15 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-11-28T16:55Z",
+  "lane": "s01",
+  "language": "es",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R408",
+   "t2": "19:15"
+  },
+  "t": "2026-11-28T16:55Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Room R110 is offered to you, pending approval. Otherwise, room R410 is expected to be ready at 11:30 local time.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R110 is offered pending approval; otherwise R410 expected ready at 11:30 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-02-14T09:30Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R110",
+   "t2": "R410",
+   "t3": "11:30"
+  },
+  "t": "2026-02-14T09:30Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

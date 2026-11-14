@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your late checkout request for room R309. We can offer a late checkout until 13:00. This is an offer pending approval.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R309"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-09-27T07:29Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R309",
+   "time": "13:00"
+  },
+  "t": "2026-09-27T07:29Z",
+  "template": "Thank you for your request for room {room}. A later check-out until {time} looks possible; our staff will decide and let you know."
+ },
+ "violations": []
+}

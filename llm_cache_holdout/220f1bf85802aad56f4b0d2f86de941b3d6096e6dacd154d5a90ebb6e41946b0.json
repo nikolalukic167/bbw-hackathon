@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Good news: your room R402 is ready now, earlier than the promised Sun 29 Nov at 09:00 local time. Self check-in is available.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R402 is ready now, before the promised Sun 29 Nov 09:00 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-11-28T20:30Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R402",
+   "t2": "29 Nov",
+   "t3": "09:00"
+  },
+  "t": "2026-11-28T20:30Z",
+  "template": "{t1} is ready now, before the promised {t2} {t3} local; self check-in works"
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry for the trouble in room R309. We are looking into the cause and will keep you updated. Please let us know if there is anything we can do to make you more comfortable.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001441",
+   "cause": "unknown",
+   "room": "R309"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-05-27T04:14Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R309"
+  },
+  "t": "2026-05-27T04:14Z",
+  "template": "Thank you for your message about room {room}. The window sensor shows an open window; please close it so the room can warm up. We are also checking the heating."
+ },
+ "violations": []
+}

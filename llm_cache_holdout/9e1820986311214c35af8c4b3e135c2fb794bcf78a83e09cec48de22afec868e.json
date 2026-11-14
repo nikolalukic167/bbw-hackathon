@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su solicitud de aparcamiento para la habitación R404. Le informaremos en cuanto tengamos novedades.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "parking",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "guest_parking",
+  "known_by": "2026-07-21T06:45Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R404"
+  },
+  "t": "2026-07-21T06:45Z",
+  "template": "Gracias por su pregunta sobre el aparcamiento para la habitación {room}. Nuestra recepción le responderá con los detalles."
+ },
+ "violations": []
+}

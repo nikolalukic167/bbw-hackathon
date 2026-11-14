@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous avons constaté un problème de chauffage dans votre chambre R204. Nous ignorons pour le moment la cause et nous travaillons à le résoudre. Nous vous prions de nous excuser pour la gêne occasionnée.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK002222",
+   "cause": "unknown",
+   "room": "R204"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-08-18T03:29Z",
+  "lane": "s03",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R204"
+  },
+  "t": "2026-08-18T03:29Z",
+  "template": "Merci pour votre message sur la chaleur dans la chambre {room}. Le bâtiment a seulement un chauffage, sans climatisation. Nous avons abaissé la consigne : le chauffage reste éteint. Ouvrir la fenêtre la nuit, quand il fait plus frais dehors, aide."
+ },
+ "violations": []
+}

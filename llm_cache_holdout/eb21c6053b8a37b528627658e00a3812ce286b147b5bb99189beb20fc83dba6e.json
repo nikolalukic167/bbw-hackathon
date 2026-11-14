@@ -1,0 +1,24 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"La camera R206 è pronta ora. Puoi fare il check-in in autonomia.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R206 is ready now; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-10-17T09:15Z",
+  "lane": "s01",
+  "language": "it",
+  "must_say": [
+   "t1"
+  ],
+  "say": {
+   "t1": "R206"
+  },
+  "t": "2026-10-17T09:15Z",
+  "template": "{t1} is ready now; self check-in works"
+ },
+ "violations": []
+}

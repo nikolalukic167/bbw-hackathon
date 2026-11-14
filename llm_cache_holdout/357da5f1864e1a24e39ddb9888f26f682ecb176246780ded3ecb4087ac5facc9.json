@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your room R407 is expected to be ready at 15:45 local time.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R407 expected ready at 15:45 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-06-24T13:00Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R407",
+   "t2": "15:45"
+  },
+  "t": "2026-06-24T13:00Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

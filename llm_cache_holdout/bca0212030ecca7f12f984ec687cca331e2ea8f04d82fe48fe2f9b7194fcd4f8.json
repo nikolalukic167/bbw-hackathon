@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre demande d'arrivée anticipée pour la chambre R308. Nous vous remercions de patienter ; nous revenons vers vous dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R308"
+  },
+  "hedged": false,
+  "intent": "guest_early_wait",
+  "known_by": "2026-05-30T21:56Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R308"
+  },
+  "t": "2026-05-30T21:56Z",
+  "template": "Merci pour votre demande concernant la chambre {room}. La chambre n'est pas encore prête ; nous vous écrirons dès qu'elle le sera."
+ },
+ "violations": []
+}

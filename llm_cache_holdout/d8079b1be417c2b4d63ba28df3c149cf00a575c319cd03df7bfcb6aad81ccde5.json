@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Nachricht zum WLAN in Zimmer R204. Wir kümmern uns darum und helfen Ihnen so schnell wie möglich.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R204"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-11-25T06:05Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R204"
+  },
+  "t": "2026-11-25T06:05Z",
+  "template": "Danke für Ihre Nachricht zum WLAN in Zimmer {room}. Unser Personal kümmert sich darum und meldet sich bei Ihnen."
+ },
+ "violations": []
+}

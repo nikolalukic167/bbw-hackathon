@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su aviso sobre un problema de mantenimiento en la habitación R307. Lo estamos revisando.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R307"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-04-03T19:59Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R307"
+  },
+  "t": "2026-04-03T19:59Z",
+  "template": "Gracias por avisar de la avería en la habitación {room}. La hemos pasado a nuestro equipo técnico, que le contactará antes de entrar en la habitación."
+ },
+ "violations": []
+}

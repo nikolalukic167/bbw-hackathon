@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, grazie per la pazienza. La sua camera R201 è in preparazione e le chiediamo di attendere ancora un momento.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "waiting_for_room",
+   "room": "R201"
+  },
+  "hedged": false,
+  "intent": "guest_waiting",
+  "known_by": "2026-06-24T16:20Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R201"
+  },
+  "t": "2026-06-24T16:20Z",
+  "template": "Ci scusiamo per l'attesa della camera {room}. Il nostro personale sta controllando e le scriverà quando sarà pronta."
+ },
+ "violations": []
+}

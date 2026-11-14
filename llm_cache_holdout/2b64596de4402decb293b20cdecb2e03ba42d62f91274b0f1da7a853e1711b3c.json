@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben gemerkt dat er iets niet goed werkt in kamer R410. We begrijpen dat dit vervelend is en we werken eraan om het zo snel mogelijk op te lossen. Excuses voor het ongemak.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001109",
+   "cause": "unknown",
+   "room": "R410"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-06-07T12:37Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R410"
+  },
+  "t": "2026-06-07T12:37Z",
+  "template": "Bedankt voor uw bericht over de temperatuur in kamer {room}. We controleren de verwarming nu en nemen contact met u op als een bezoek aan de kamer nodig is."
+ },
+ "violations": []
+}

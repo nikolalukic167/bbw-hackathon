@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben gehoord dat er iets niet in orde is met uw kamer R401. We begrijpen dat dit vervelend is en we werken eraan om het voor u comfortabel te maken. Excuses voor het ongemak.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000043",
+   "cause": "unknown",
+   "room": "R401"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-26T06:52Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R401"
+  },
+  "t": "2026-01-26T06:52Z",
+  "template": "Bedankt voor uw bericht over de temperatuur in kamer {room}. We controleren de verwarming nu en nemen contact met u op als een bezoek aan de kamer nodig is."
+ },
+ "violations": []
+}

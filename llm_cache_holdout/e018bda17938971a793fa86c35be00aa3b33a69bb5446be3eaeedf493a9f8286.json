@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw bericht over uw spaarde late aankomst naar kamer R107. Wij hebben uw melding ontvangen. Het hotel houdt rekening met uw late aankomst. Mocht u nog iets nodig hebben, laat het ons gerust weten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R107"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-06-09T16:17Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R107"
+  },
+  "t": "2026-06-09T16:17Z",
+  "template": "Bedankt dat u ons op de hoogte brengt van uw late aankomst voor kamer {room}. We hebben het genoteerd en onze receptie geïnformeerd."
+ },
+ "violations": []
+}

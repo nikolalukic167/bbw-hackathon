@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta di check-out tardivo per la camera R301 fino alle 13:00. Le faremo sapere appena possibile se è disponibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R301"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-08-11T07:02Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R301",
+   "time": "13:00"
+  },
+  "t": "2026-08-11T07:02Z",
+  "template": "Grazie per la richiesta per la camera {room}. Un check-out posticipato fino alle {time} sembra possibile; il nostro personale deciderà e la informerà."
+ },
+ "violations": []
+}

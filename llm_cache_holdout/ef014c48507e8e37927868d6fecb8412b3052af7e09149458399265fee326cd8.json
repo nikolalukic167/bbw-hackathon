@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about the water issue in room R107. We are looking into it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "water_issue",
+   "room": "R107"
+  },
+  "hedged": false,
+  "intent": "guest_water",
+  "known_by": "2026-06-17T22:39Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R107"
+  },
+  "t": "2026-06-17T22:39Z",
+  "template": "Thank you for your message about the water in room {room}. We have asked our staff to check it and will contact you before entering the room."
+ },
+ "violations": []
+}

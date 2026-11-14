@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben uw verzoek voor late uitcheck voor kamer R306 genoteerd. Een late uitcheck tot 13:00 wordt aangeboden, onder voorbehoud van goedkeuring. We laten u zo spoedig mogelijk weten of dit kan.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R306"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-10-15T06:32Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R306",
+   "time": "13:00"
+  },
+  "t": "2026-10-15T06:32Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. Een latere check-out tot {time} lijkt mogelijk; ons personeel beslist en laat het u weten."
+ },
+ "violations": []
+}

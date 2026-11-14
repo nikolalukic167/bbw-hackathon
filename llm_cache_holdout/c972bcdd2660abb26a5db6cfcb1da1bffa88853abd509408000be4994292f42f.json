@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, grazie per averci avvisato del ritardo del Suo arrivo nella camera R210. Il nostro team è stato informato e La aspetta. Buon viaggio!\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R210"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-06-13T19:43Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R210"
+  },
+  "t": "2026-06-13T19:43Z",
+  "template": "Grazie per averci avvisato del suo arrivo in ritardo per la camera {room}. Lo abbiamo annotato e informato la nostra reception."
+ },
+ "violations": []
+}

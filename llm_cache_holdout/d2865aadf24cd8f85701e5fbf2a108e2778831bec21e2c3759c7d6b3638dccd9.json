@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Het spijt ons dat u geen toegang heeft tot uw kamer R107. Wij helpen u er zo snel mogelijk mee. Kunt u bij de receptie langskomen, dan zoeken we samen naar een oplossing.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R107"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-06-06T14:50Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R107"
+  },
+  "t": "2026-06-06T14:50Z",
+  "template": "Excuses voor het probleem met de toegang tot kamer {room}. We hebben ons personeel gevraagd u te helpen om binnen te komen."
+ },
+ "violations": []
+}

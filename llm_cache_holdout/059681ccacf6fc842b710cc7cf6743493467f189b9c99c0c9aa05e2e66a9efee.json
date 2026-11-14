@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Wir haben Ihre Anfrage für zusätzliche Handtücher für Zimmer R205 erhalten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R205"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-03-04T18:50Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R205"
+  },
+  "t": "2026-03-04T18:50Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Wir haben das Housekeeping gebeten, frische Handtücher zu bringen."
+ },
+ "violations": []
+}

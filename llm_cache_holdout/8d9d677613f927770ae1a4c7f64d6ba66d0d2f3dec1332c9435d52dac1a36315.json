@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about the access problem in room R405. We are sorry for the trouble and are looking into it now. Please let us know if you have any further details.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-12-23T16:06Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-12-23T16:06Z",
+  "template": "Sorry about the trouble getting into room {room}. We have asked our staff to help you with access."
+ },
+ "violations": []
+}

@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw verzoek om vroeg in te checken voor kamer R203. Wij hebben uw verzoek genoteerd. Een vroege incheck is nog niet bevestigd; wij laten u zo snel mogelijk weten of het mogelijk is. Tot die tijd kunt u alvast bij de receptie terecht.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R203"
+  },
+  "hedged": false,
+  "intent": "guest_early_wait",
+  "known_by": "2026-05-14T03:19Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R203"
+  },
+  "t": "2026-05-14T03:19Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. De kamer is nog niet klaar; we sturen u een bericht zodra die klaar is."
+ },
+ "violations": [
+  "banned claim 'bevestig'"
+ ]
+}

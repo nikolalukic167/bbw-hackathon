@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw melding over kamer R301. We hebben het technische probleem genoteerd en er wordt zo snel mogelijk naar gekeken.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R301"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-05-29T19:05Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R301"
+  },
+  "t": "2026-05-29T19:05Z",
+  "template": "Bedankt voor het melden van de storing in kamer {room}. We hebben dit doorgegeven aan ons technisch team, dat contact met u opneemt voordat het de kamer betreedt."
+ },
+ "violations": []
+}

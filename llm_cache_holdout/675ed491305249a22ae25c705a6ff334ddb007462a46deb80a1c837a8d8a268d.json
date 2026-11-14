@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, wij hebben uw melding over een technisch probleem in kamer R310 ontvangen. Wij gaan er zo snel mogelijk mee aan de slag. Excuses voor het ongemak.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R310"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-05-19T12:48Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R310"
+  },
+  "t": "2026-05-19T12:48Z",
+  "template": "Bedankt voor het melden van de storing in kamer {room}. We hebben dit doorgegeven aan ons technisch team, dat contact met u opneemt voordat het de kamer betreedt."
+ },
+ "violations": []
+}

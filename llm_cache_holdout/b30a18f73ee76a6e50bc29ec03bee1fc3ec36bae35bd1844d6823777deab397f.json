@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest in room R409, we are sorry to let you know that your day is running behind schedule. Thank you for your patience, and please contact the front desk if you need anything.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000399",
+   "room": "R409"
+  },
+  "hedged": false,
+  "intent": "notify_day_delay",
+  "known_by": "2026-07-13T05:00Z",
+  "lane": "s05",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R409"
+  },
+  "t": "2026-07-13T05:00Z",
+  "template": "Dear guest, your room {room} may not be ready by check-in time today, as several rooms are being prepared. We will message you as soon as it is ready."
+ },
+ "violations": []
+}

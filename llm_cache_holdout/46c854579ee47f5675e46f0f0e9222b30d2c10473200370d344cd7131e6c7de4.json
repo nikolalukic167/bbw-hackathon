@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons constaté un problème de chauffage dans votre chambre R403. Nous ne connaissons pas encore la cause et nous faisons notre possible pour le résoudre au plus vite. Nous vous prions de nous excuser pour la gêne occasionnée.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001695",
+   "cause": "unknown",
+   "room": "R403"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-18T21:45Z",
+  "lane": "s03",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R403"
+  },
+  "t": "2026-07-18T21:45Z",
+  "template": "Merci pour votre message sur la chaleur dans la chambre {room}. Le bâtiment a seulement un chauffage, sans climatisation. Nous avons abaissé la consigne : le chauffage reste éteint. Ouvrir la fenêtre la nuit, quand il fait plus frais dehors, aide."
+ },
+ "violations": []
+}

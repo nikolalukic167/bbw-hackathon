@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Ihr Zimmer R405 ist bereits jetzt fertig, also vor dem zugesagten Termin am 29.11. um 08:00 Uhr. Sie können jetzt selbst einchecken.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R405 is ready now, before the promised Sun 29 Nov 08:00 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-11-28T17:30Z",
+  "lane": "s01",
+  "language": "de",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R405",
+   "t2": "29.11.",
+   "t3": "08:00"
+  },
+  "t": "2026-11-28T17:30Z",
+  "template": "{t1} is ready now, before the promised {t2} {t3} local; self check-in works"
+ },
+ "violations": []
+}

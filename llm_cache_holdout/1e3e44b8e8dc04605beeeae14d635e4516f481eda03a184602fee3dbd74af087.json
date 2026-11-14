@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your late checkout request for room R105. Your request for a checkout at 13:00 is noted and has been passed on for review. We will let you know once a decision has been made.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R105"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-03-21T07:12Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R105",
+   "time": "13:00"
+  },
+  "t": "2026-03-21T07:12Z",
+  "template": "Thank you for your request for room {room}. A later check-out until {time} looks possible; our staff will decide and let you know."
+ },
+ "violations": []
+}

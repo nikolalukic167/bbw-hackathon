@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Sehr geehrte Gäste, wir möchten Sie darüber informieren, dass es in Ihrem Zimmer R409 zu einer Beeinträchtigung der Ausstattung gekommen ist. Wir bedauern dies sehr und kümmern uns darum, Ihren Aufenthalt so angenehm wie möglich zu gestalten. Bei Fragen wenden Sie sich bitte jederzeit an die Rezeption.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK003791",
+   "cause": "hp_degradation",
+   "room": "R409"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-12-09T02:37Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R409"
+  },
+  "t": "2026-12-09T02:37Z",
+  "template": "Danke für Ihre Nachricht zu Zimmer {room}. Der Fenstersensor meldet ein offenes Fenster; bitte schließen Sie es, damit das Zimmer warm werden kann. Wir prüfen zusätzlich die Heizung."
+ },
+ "violations": []
+}

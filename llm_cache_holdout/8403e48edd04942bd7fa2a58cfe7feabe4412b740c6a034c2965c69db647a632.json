@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su consulta sobre el aparcamiento para la habitación R306. Le responderemos en breve.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "parking",
+   "room": "R306"
+  },
+  "hedged": false,
+  "intent": "guest_parking",
+  "known_by": "2026-08-23T14:04Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R306"
+  },
+  "t": "2026-08-23T14:04Z",
+  "template": "Gracias por su pregunta sobre el aparcamiento para la habitación {room}. Nuestra recepción le responderá con los detalles."
+ },
+ "violations": []
+}

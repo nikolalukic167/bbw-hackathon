@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta di check-in anticipato per la camera R406. Al momento non possiamo confermarla: le comunicheremo appena avremo un aggiornamento. Grazie per la pazienza.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_early_wait",
+  "known_by": "2026-09-29T03:45Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-09-29T03:45Z",
+  "template": "Grazie per la richiesta per la camera {room}. La camera non è ancora pronta; le scriveremo quando sarà pronta."
+ },
+ "violations": []
+}

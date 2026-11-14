@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, ci scusiamo per il disagio nella camera R406. Stiamo verificando la causa e vi terremo aggiornati.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001235",
+   "cause": "unknown",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-04-13T09:42Z",
+  "lane": "s03",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-04-13T09:42Z",
+  "template": "Grazie per il messaggio sulla temperatura della camera {room}. Stiamo controllando ora il riscaldamento e la contatteremo se sarà necessario un intervento in camera."
+ },
+ "violations": []
+}

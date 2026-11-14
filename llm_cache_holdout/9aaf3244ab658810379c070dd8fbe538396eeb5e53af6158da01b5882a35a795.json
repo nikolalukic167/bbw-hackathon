@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, concernant votre demande de parking pour la chambre R207, nous avons bien reçu votre message. Nous revenons vers vous dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "parking",
+   "room": "R207"
+  },
+  "hedged": false,
+  "intent": "guest_parking",
+  "known_by": "2026-03-11T21:23Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R207"
+  },
+  "t": "2026-03-11T21:23Z",
+  "template": "Merci pour votre question sur le stationnement pour la chambre {room}. Notre réception reviendra vers vous avec les détails."
+ },
+ "violations": []
+}

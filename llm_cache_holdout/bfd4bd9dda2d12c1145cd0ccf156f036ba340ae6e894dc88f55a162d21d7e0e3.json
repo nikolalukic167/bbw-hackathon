@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Ihre Reinigungsanfrage für Zimmer R403 haben wir erhalten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R403"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-02-01T09:16Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R403"
+  },
+  "t": "2026-02-01T09:16Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Wir haben sie an das Housekeeping weitergegeben; es meldet sich bei Ihnen, bevor es das Zimmer betritt."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien pris note de votre problème technique dans la chambre R202. Notre équipe de maintenance va s'en occuper dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R202"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-11-04T08:22Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R202"
+  },
+  "t": "2026-11-04T08:22Z",
+  "template": "Merci d'avoir signalé le problème dans la chambre {room}. Nous l'avons transmis à notre équipe technique, qui vous contactera avant d'entrer dans la chambre."
+ },
+ "violations": []
+}

@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien reçu votre demande de départ tardif pour la chambre R402, avec une heure de départ à 13:00. Nous vous recontacterons prochainement.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R402"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-01-08T08:17Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R402",
+   "time": "13:00"
+  },
+  "t": "2026-01-08T08:17Z",
+  "template": "Merci pour votre demande concernant la chambre {room}. Un départ tardif jusqu'à {time} semble possible ; notre personnel décidera et vous répondra."
+ },
+ "violations": []
+}

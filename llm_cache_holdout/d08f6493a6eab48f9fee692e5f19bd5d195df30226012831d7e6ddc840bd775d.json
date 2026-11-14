@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Kamer R302 wordt u aangeboden, in afwachting van goedkeuring. Anders wordt kamer R310 naar verwachting om 12:45 uur klaar.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R302 is offered pending approval; otherwise R310 expected ready at 12:45 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-04-24T10:13Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R302",
+   "t2": "R310",
+   "t3": "12:45"
+  },
+  "t": "2026-04-24T10:13Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

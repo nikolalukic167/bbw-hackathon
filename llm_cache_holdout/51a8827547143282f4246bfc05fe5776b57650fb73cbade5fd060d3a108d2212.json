@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag! Zu Ihrem Wunsch nach einem späteren Check-out für Zimmer R404 bis 13:00 Uhr: Wir haben Ihre Anfrage erhalten. Eine Zusage können wir Ihnen derzeit nicht geben; wir bieten Ihnen einen späteren Check-out bis 13:00 Uhr an, der noch genehmigt werden muss. Wir melden uns bei Ihnen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-05-04T05:35Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R404",
+   "time": "13:00"
+  },
+  "t": "2026-05-04T05:35Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Ein späterer Check-out bis {time} scheint möglich; unser Personal entscheidet und meldet sich bei Ihnen."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw bericht over de wifi in kamer R405. Wij helpen u graag. Kunt u ons laten weten welk apparaat u gebruikt en wat er precies gebeurt wanneer u verbinding probeert te maken? Dan kunnen wij u gericht verder helpen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-10-10T08:15Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-10-10T08:15Z",
+  "template": "Bedankt voor uw bericht over de wifi in kamer {room}. Ons personeel zoekt het uit en komt bij u terug."
+ },
+ "violations": []
+}

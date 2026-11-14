@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your early check-in request for room R309 has been noted. We are ready for you. We can only offer this, and it is not yet approved.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R309"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-12-11T09:24Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R309"
+  },
+  "t": "2026-12-11T09:24Z",
+  "template": "Thank you for your request for room {room}. The room should be ready for you; our staff will message you if anything changes."
+ },
+ "violations": []
+}
