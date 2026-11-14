@@ -19,6 +19,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from plato40 import verify
 from plato40.detect.grid import stamp
 from plato40.detect.logistics import _schedule
 from plato40.episodes import Episode
@@ -208,6 +209,11 @@ def waits(ds: Dataset, run: Run, settings: Settings) -> list[dict[str, Any]]:
     for d in run.decisions:
         for asset in d["affected_assets"]:
             by_room[str(asset)].append(pd.Timestamp(d["timestamp_utc"]))
+    promises: dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]] = defaultdict(list)
+    for d in run.decisions:
+        found = verify.promised_at(d, tz)
+        if found is not None:
+            promises[found[0]].append((pd.Timestamp(d["timestamp_utc"]), found[1]))
     req = ds.table("guest_requests.csv")
     early = req.loc[req["request_type"] == "early_checkin"]
     out = []
@@ -222,6 +228,7 @@ def waits(ds: Dataset, run: Run, settings: Settings) -> list[dict[str, Any]]:
             earlier.append(plan.time)
         waited = _hours(t, entered[booking]) if booking in entered.index else float("nan")
         asked = early.loc[(early["booking_id"] == booking) & (early["timestamp_utc"] <= t)]
+        said = [p for t0, p in promises.get(str(room), []) if t0 < t and _local_date(t0, tz) == day]
         out.append(
             {
                 "t": t,
@@ -229,6 +236,8 @@ def waits(ds: Dataset, run: Run, settings: Settings) -> list[dict[str, Any]]:
                 "room": str(room),
                 "booking": str(booking),
                 "anticipated": bool(earlier),
+                # The last ready time told before the wait already lay after the arrival.
+                "promised_late": bool(said) and said[-1] > t,
                 "lead_h": _hours(min(earlier), t) if earlier else None,
                 "waited_h": waited,
                 "requested": not asked.empty,
@@ -477,6 +486,8 @@ def year(ds: Dataset, run: Run, settings: Settings) -> dict[str, dict[str, Any]]
     for w in waits(ds, run, settings):
         if not w["anticipated"]:
             missed[str(w["day"])]["wait_not_anticipated"] += 1
+        elif w["promised_late"]:
+            missed[str(w["day"])]["wait_promised_late"] += 1
     for day, n in preheat(ds, run, tz)["below_days"].items():
         missed[day]["cold_checkin"] += n
     ev = ds.events
@@ -542,11 +553,13 @@ def misses(ds: Dataset, run: Run, settings: Settings, log: Log | None = None) ->
         for e in acted(run)
         if e.issue_type == "heating_comfort" and any(s.kind == "cop_low" for s in e.signals)
     ]
-    # A guest-facing miss (a wait not anticipated, a stock-out, a full container) marks its
+    # A guest-facing miss (a wait not anticipated or told a ready time after the arrival, a
+    # stock-out, a full container) marks its
     # day; a pre-heated room below the band falls on most winter days, so it is counted
     # apart and left off the default markers.
     by_kind = {
         "wait_not_anticipated": {str(x["day"]) for x in w if not x["anticipated"]},
+        "wait_promised_late": {str(x["day"]) for x in w if x["anticipated"] and x["promised_late"]},
         "cold_checkin": set(heat["below_days"]),
     }
     ev = ds.events
@@ -558,6 +571,7 @@ def misses(ds: Dataset, run: Run, settings: Settings, log: Log | None = None) ->
     days = set().union(*(v for k, v in by_kind.items() if k != "cold_checkin"))
     return {
         "waits": [sum(not x["anticipated"] for x in w), len(w)],
+        "waits_promised_late": [sum(x["anticipated"] and x["promised_late"] for x in w), len(w)],
         "preheat": [heat["rooms"] - heat["at_band"], heat["rooms"]],
         "orders": [sum(not x["hit"] for x in o["orders"]), len(o["orders"])],
         "supervisor_rejected": [sv["rejected"], sv["answered"]] if sv else None,

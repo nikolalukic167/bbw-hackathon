@@ -252,6 +252,20 @@ def _repeats(ds: Dataset, decisions: list[Decision], out: _Out) -> None:
         )
 
 
+def promised_at(d: Decision, tz: str) -> tuple[str, pd.Timestamp, str] | None:
+    """Return the room, the UTC ready time and the language of a room-turnaround promise."""
+    m = PROMISE.match(d["reason"]) if d["issue_type"] == "room_turnaround" else None
+    if m is None:
+        return None
+    t0 = pd.Timestamp(d["timestamp_utc"])
+    local = t0.tz_convert(tz)
+    day = f"{local.year}-{m['mon']}-{m['day']}" if m["day"] else f"{local:%Y-%m-%d}"
+    promised = pd.Timestamp(f"{day} {m['time']}", tz=tz).tz_convert("UTC")
+    if promised < t0:
+        promised += pd.DateOffset(years=1)
+    return str(m["room"]), promised, str(m["lang"])
+
+
 def _promises(decisions: list[Decision], states: RoomStates, settings: Settings, out: _Out) -> None:
     tz = settings.local_tz
     grace = pd.Timedelta(minutes=settings.detect.promise_grace_min)
@@ -261,16 +275,12 @@ def _promises(decisions: list[Decision], states: RoomStates, settings: Settings,
             for a in d["affected_assets"]:
                 said.setdefault(a, []).append(pd.Timestamp(d["timestamp_utc"]))
     for d in decisions:
-        m = PROMISE.match(d["reason"]) if d["issue_type"] == "room_turnaround" else None
-        if m is None:
+        found = promised_at(d, tz)
+        if found is None:
             continue
         t0 = pd.Timestamp(d["timestamp_utc"])
-        local = t0.tz_convert(tz)
-        day = f"{local.year}-{m['mon']}-{m['day']}" if m["day"] else f"{local:%Y-%m-%d}"
-        promised = pd.Timestamp(f"{day} {m['time']}", tz=tz).tz_convert("UTC")
-        if promised < t0:
-            promised += pd.DateOffset(years=1)
-        t, room = promised + grace, m["room"]
+        room, promised, lang = found
+        t = promised + grace
         if states.at(room, t) in ("clean", "occupied"):
             continue
         if any(t0 < s <= t for s in said.get(room, [])):
@@ -281,7 +291,7 @@ def _promises(decisions: list[Decision], states: RoomStates, settings: Settings,
             "notify_guest",
             "high",
             [room],
-            f"Tell the guest ({m['lang']}): {room} is not ready at the promised "
+            f"Tell the guest ({lang}): {room} is not ready at the promised "
             f"{local_time(promised, t, tz)}; staff are on it and a new ready time follows" + SUFFIX,
             [f"events.jsonl:{room} {states.at(room, t)} at {stamp(t)}"],
             "Guest gets the new ready time; escalate if the guest waits.",
