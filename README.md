@@ -1,13 +1,15 @@
 # Steward for PLATO-40
 
 Steward is a deterministic operations pipeline for PLATO-40, the fictional 40-room
-self-check-in hotel of the proximata Hackathon '26 Rhomberg track ("PLATO · CLARA
+self-check-in hotel of the Proximata Hackathon '26 Rhomberg track ("PLATO · CLARA
 Future: The Autonomous Building"). It reads one dataset directory, detects operational
 risks with evidence, and writes decisions under the challenge's decision contract.
 
-Current state: S01 room turnaround, S02 water leaks and S03 heat pump degradation are
-detected and acted on, with data-quality flags; both datasets validate with no
-violations. `plato40 ui` writes the operations console as one HTML page; progress is in
+Current state: Level 1 (S01 room turnaround, S02 water leaks, S03 heating and comfort) and
+Level 2 (S04 filter cascade, S05 busy days, energy pre-heat, cleaning and logistics, a guest
+desk) run as rule lanes through one arbiter, with closed-loop follow-ups and data-quality
+flags; a supervisor LLM may add a few checked decisions (ADR-003). Both datasets validate
+with no violations. `plato40 ui` writes the operations console as one HTML page; progress is in
 [docs/PROGRESS.md](docs/PROGRESS.md).
 
 PLATO-40 is a fictional reference property. PLATO and CLARA are names of Rhomberg
@@ -43,18 +45,21 @@ Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ```bash
 uv run plato40 run <data_dir> --out decisions.jsonl --trace decisions.trace.jsonl
-                              # bus lanes (src/plato40/lanes.py) replace the planner for their
-                              # issue type; --lanes s03 ... to pick, --lanes alone for none
+                              # bus lanes s03-s08 (src/plato40/lanes.py) replace the planner for
+                              # their issue type; --lanes s03 ... to pick, --lanes alone for none
                               # follow-ups from verify.py; --no-follow-ups to skip them
+                              # --llm-cache <dir>: guest messages and the supervisor (below);
+                              # --no-supervisor to skip the supervisor
 uv run plato40 validate decisions.jsonl <data_dir>      # contract + autonomy policy
 uv run plato40 arbiter <data_dir> <lane.bus.jsonl>... --out decisions.jsonl --verdicts v.jsonl
                                                         # merge lane proposals (docs/BUS.md)
 uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did not
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
-uv run plato40 bus <data_dir> --lane s03 --out out/  # S03 lane -> bus -> arbiter (docs/BUS.md)
+uv run plato40 bus <data_dir> --lane s03 --out out/  # one lane (s03-s08) -> bus -> arbiter (docs/BUS.md)
 uv run plato40 snapshot <data_dir> --at 2026-05-09T11:00Z --assets R209 HP1  # supervisor context
 uv run python scripts/rolling_medians.py <data_dir> out/rolling_medians.json  # past-only medians, every room and 15 min
 uv run python scripts/build_r102_check.py <data_dir> out/rolling_medians.json out/r102_day1.json  # one room, one day check
+uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache <cache_dir>  # Level 3 report
 make audit DATA=data          # regenerate reports/audit/01_data_audit.md and figures
 make check                    # ruff, mypy --strict
 ```
@@ -110,8 +115,8 @@ src/plato40/
                   plausibility bounds, known_at, reader, derive (derived series)
   state.py        room state over time from lifecycle events
   staff.py        roster as known at a given time
-  detect/         one module per scenario (turnaround, water, heating, data_quality);
-                  each returns signals timed when their evidence existed
+  detect/         one module per scenario (turnaround, water, heating, logistics,
+                  data_quality); each returns signals timed when their evidence existed
   episodes.py     signals grouped into one episode per incident
   plan.py         action chains per episode; S01 shares one cleaner ledger
   policy.py       autonomy levels, approval and consent flags, forbidden actions
@@ -120,7 +125,11 @@ src/plato40/
   bus.py          trigger bus contract: signal, proposal and verdict rows (docs/BUS.md)
   lanes.py        registry of the bus lanes plato40 run runs (lane_s03.py, ...)
   lane_s03.py     S03 trigger lane: heating and comfort signals and proposals on the bus
+  lane_s04.py     S04 lane: AHU1 filter cascade, fan-implied pressure through gaps, data gaps
+  lane_s05.py     S05 lane: event outlook a week ahead, 07:00 day plan, delay notices
   lane_s06.py     S06 energy lane: arrival pre-heat, S03 back-off, stale energy inputs
+  lane_s07.py     S07 lane: vending restock, container projection, dump hold, robot bin runs
+  lane_s08.py     S08 guest desk: one answer to every guest request no other lane answers
   arbiter.py      judges lane proposals on one shared ledger and merges them with the
                   pipeline's decisions (contract, known-at, roster, policy, message guard)
   llm_guard.py    contract around every LLM call; messages.py phrases guest messages
@@ -134,7 +143,9 @@ src/plato40/
   cli.py          plato40 run | arbiter | bus | validate | explain | ui | snapshot | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
 docs/adr/         architecture decision records
-scripts/          fetch_data.sh
+scripts/          fetch_data.sh, holdout.sh (docs/HOLDOUT.md), insights.py (insights.md),
+                  check_bus.py, export_examples.py, demo_llm_guard.py, rolling_medians.py,
+                  build_r102_check.py
 ```
 
 Decisions that shape the code are recorded as ADRs:

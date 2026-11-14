@@ -33,7 +33,7 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T8 | Effects labelled `simulated`, `expected_outcome`, `verification_plan`; closed loop `verify.py` follows up a missed outcome (repair held, room still cold, repeat complaint, ready time missed) | A | done | Limits and verification 5 |
 | T13 | README, LICENSE, `.env.example`, `fetch_data.sh`, ADR-001, ADR-002, ADR-003 (supervisor LLM) | S | done | Reproducibility 10 |
 | T13 | README run command, architecture, models and LLM settings | S | done | Reproducibility 10 |
-| T14 | Fresh-clone rehearsal with quickstart as the pretend holdout | D | todo | Reproducibility 10 |
+| T14 | Rehearsal with quickstart as the pretend holdout (`scripts/holdout.sh`, docs/HOLDOUT.md) | D | done | Reproducibility 10 |
 | T14 | Tag `pre-holdout`, push (needs the go to push) | D | todo | Reproducibility 10 |
 | T14 | Holdout run unchanged, commit `decisions_holdout.jsonl` | D | todo | Reproducibility 10 |
 
@@ -89,11 +89,11 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T9 | Re-plan on a sick note known after 07:00 and the 15:30 on-call step (dev has none after 07:00) | S05 | A | cut | Coordination 8 |
 | T10 | Delay notice to late arrival guests with no S01 thread; no time promised for a room the plan cannot fit | S05 | A | done | Guest comms 6 |
 | T9 | Lane s06: arrival pre-heat batched per arrival time, S03 back-off, stale tariff/forecast/energy flags | Energy | A | done | Trade-offs 6 |
-| T9 | Battery day-ahead plan (worth about 0-1k EUR/yr over the existing rule, simulated) | Energy | A | todo | Trade-offs 6 |
+| T9 | Battery day-ahead plan (worth about 0-1k EUR/yr over the existing rule, simulated) | Energy | A | doing | Trade-offs 6 |
 | T9 | Waste pickup before the container fills (96 h fill rate vs next Tue/Fri pickup, 24 h lead); floor bins never fill, robots not used (Q10) | Logistics | A | done | Coordination 8 |
 | T9 | Vending restock before stock-out, same forecast against Mon/Thu restock | Logistics | A | done | Coordination 8 |
 | T9 | Lane s07: container projection from planned cleanings, dump hold plus robot bin runs, censor-aware vending rate | Logistics | A | done | Coordination 8 |
-| T9 | Lane s08: guest desk, an answer to every guest request before its due time | Guests | A | doing | Guest comms 6 |
+| T9 | Lane s08: guest desk, an answer to every guest request before its due time (dev 1,612 of 1,612; no request answered twice) | Guests | A | done | Guest comms 6 |
 | T9 | Supervisor LLM (ADR-003): daily and hotspot reviews over the context snapshot, at most 2 checked, cached additions; log `<out>.supervisor.jsonl` | All | A | done | Safe autonomy 10 |
 
 ## Level 3: learn and feed back
@@ -120,21 +120,12 @@ Feature freeze Sat 11:00 CET · holdout release Sat ~11:00 · code freeze Sat 14
 | T15 | Written submission text and form | S | todo | all |
 | T15 | Repo moved to the Proximata organisation and made public (needs the go) | S | todo | all |
 
-## Holdout runbook (Sat ~11:00 to 14:00)
+## Holdout runbook
 
-1. Before the release: final live run on dev (`PLATO40_LLM=on`, key exported), commit the
-   answer cache, regenerate `insights.md` with
-   `uv run python scripts/insights.py <dev> --out insights.md --llm-cache <cache>`,
-   then tag `pre-holdout` (row T14 above).
-2. Fetch the holdout, check its SHA256, unpack it under `data/`.
-3. Live run, once: `PLATO40_LLM=on uv run plato40 run <holdout> --out decisions_holdout.jsonl
-   --llm-cache <cache>`. Keep `decisions_holdout.supervisor.jsonl` next to it.
-4. Rerun with the LLM off (`PLATO40_LLM=off`, same command, other `--out`) and `cmp` the
-   two files: they must be byte-identical.
-5. `uv run plato40 validate decisions_holdout.jsonl <holdout>`: 0 violations.
-6. Commit `decisions_holdout.jsonl` and the cache (passing answers only; never the key).
-7. If the API is down: the same command without the key gives a valid file with template
-   messages and no supervisor additions. Commit that, and say so in the README.
+The holdout steps live in [HOLDOUT.md](HOLDOUT.md) (`scripts/holdout.sh`). Before the
+release: the final live run on dev with the key, commit the answer cache, regenerate
+`insights.md` (`scripts/insights.py <dev> --out insights.md --llm-cache <cache>`), then tag
+`pre-holdout` (row T14 above).
 
 ## Open questions for the mentor
 

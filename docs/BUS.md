@@ -1,9 +1,10 @@
-# Trigger bus v1: how S01–S03 triggers talk to the arbiter
+# Trigger bus v1: how the S01–S08 triggers talk to the arbiter
 
 One append-only JSONL file (`bus.jsonl`). Triggers write **signals** and **proposals** to their
 own lane, the arbiter writes **verdicts**, and only the arbiter writes `decisions.jsonl`.
 Contract code: `src/plato40/bus.py`. LLM contract: `src/plato40/llm_guard.py`.
-Arbiter: `src/plato40/arbiter.py`. First native trigger lane: `src/plato40/lane_s03.py`.
+Arbiter: `src/plato40/arbiter.py`. Native trigger lanes: `src/plato40/lane_s03.py` to
+`lane_s08.py`, registered in `src/plato40/lanes.py`.
 Golden examples, all generated from a real quickstart run: `examples/bus/s01.bus.jsonl`
 (copy this one), `s02.bus.jsonl`, `s03.bus.jsonl` and the matching `*.decisions.jsonl`.
 S01 and S02 are exported from the pipeline (`scripts/export_examples.py`); S03 is written
@@ -50,7 +51,9 @@ A claim may not start before the proposal's `t`. A staffed action (`schedule_cle
 `dispatch_robot`, `dispatch_technician`) with a `resource_id` but no claim on it still holds
 that resource from `t` for the settings' duration. `needs` lists proposal IDs this one depends
 on (a promised ready time needs its cleaning): if any of them was not accepted before it, it
-is rejected too. A `message` is checked like an LLM answer against the proposal's own
+is rejected too. An accepted proposal's `needs` become its decision's `dependencies`, so the
+link is in `decisions.jsonl` (e.g. an S05 delay notice depends on the day plan's cleaning
+order and its extra-help approval). A `message` is checked like an LLM answer against the proposal's own
 `reason`: every number, date and ID in it must appear in the reason, no banned claim, an
 "expected" in the reason keeps a hedge word, and the language must match every guest
 request in `guest_request_ids`.
@@ -69,7 +72,24 @@ IDs: `<lane>-<episode without EP->-sigNN`, `-propNN`, and `<proposal id>-v` for 
 | **s01** | `room_turnaround` | `request checkin_due overstay checkout ready day_plan` | `clean_first robot_prepass promise_ready_time notify_ready_now notify_day_delay offer_alternative_room withdraw_offer escalate_waiting_guest request_extra_cleaning` | `schedule_cleaning dispatch_robot notify_guest reassign_room request_human_approval release_room defer_action` | none |
 | **s02** | `water_leak` | `night_flow burst burst_flow night_gap night_blank` | `flag_suspected_leak inspect_room inspect_pipes ask_entry_consent block_room dispatch_plumber escalate_plumber release_repaired_room` *`flag_meter_artefact watch_next_night`* | `request_inspection dispatch_technician order_service block_room release_room notify_guest flag_anomaly request_human_approval defer_action` | *`room_leak pipe_leak guest_use cleaning_use meter_artefact meter_exchange unknown`* |
 | **s03** | `heating_comfort` | `cop_low comfort_deficit comfort_excess cold_forecast price_peak` | `flag_hp_degradation protect_occupied_rooms service_heat_pump escalate_contractor notify_guest_comfort preheat_before_cold shift_load_off_peak boost_room_setpoint flag_room_heating cool_room_setpoint notify_guest_heat` *`flag_sensor_gap`* | `adjust_room_setpoint optimize_energy dispatch_technician order_service notify_guest flag_anomaly request_human_approval defer_action` | `hp_degradation cold_snap sensor_gap unknown` |
+| **s04** | `ventilation_maintenance` | `dp_due dp_fast_rise airflow_loss sensor_gap sensor_fault work_order_missed bms_unmatched` | `plan_filter_change change_filter flag_filter_clogging service_filter escalate_contractor flag_airflow_loss flag_sensor_gap inspect_dp_sensor flag_sensor_fault flag_missed_work_order defer_to_work_order flag_unconfirmed_alarm` | `flag_anomaly request_inspection dispatch_technician order_service defer_action` | `filter_loading filter_clogging sensor_gap sensor_fault work_order_postponed bms_unconfirmed unknown` |
+| **s05** | `occupancy_surge` | `surge_forecast day_plan` | `request_standby_cleaner clean_first robot_prepass notify_day_delay request_extra_cleaning` | `schedule_cleaning dispatch_robot notify_guest request_human_approval` | `event_weekend sick_cleaner turnover_peak` |
 | **s06** | `energy_optimization` | `arrival_due s03_active input_stale` | `preheat_arrival back_off_for_comfort flag_energy_data_gap` | `adjust_room_setpoint optimize_energy flag_anomaly defer_action` | `arrival s03_backoff stale_input unknown` |
+| **s07** | `logistics` | `drinks_low snacks_low container_overflow_risk event_weekend_window sensor_gap sensor_jump` | `order_restock order_pickup hold_floor_dump robot_bin_run flag_logistics_data` | `order_service dispatch_robot defer_action flag_anomaly` | `demand_peak post_stockout turnover_peak event_weekend sensor_gap sensor_jump unknown` |
+| **s08** | `guest_service` | `access_issue maintenance_issue water_issue air_quality cleaning_request late_checkout early_checkin noise_complaint wifi_help parking invoice luggage_storage extra_towels arrival_delay waiting_for_room` | `answer_request inspect_room order_repair clean_room` | `notify_guest request_inspection order_service schedule_cleaning` | `guest_request unknown` |
+
+Lane code and rank (the arbiter's order at one minute, lowest first):
+
+| lane | scenario | code | rank |
+|---|---|---|---|
+| s01 | S01 room turnaround (planner, exported) | `plan.py`, `detect/turnaround.py` | 1 |
+| s02 | S02 water leaks (planner, exported) | `plan.py`, `detect/water.py` | 0 |
+| s03 | S03 heating and comfort | `lane_s03.py` | 2 |
+| s04 | S04 AHU1 filter cascade, equipment data gaps | `lane_s04.py` | 3 |
+| s05 | S05 busy days: event outlook, 07:00 day plan | `lane_s05.py` | 1.5 |
+| s06 | Energy: arrival pre-heat, S03 back-off, stale inputs | `lane_s06.py` | 5 |
+| s07 | Cleaning and logistics: vending, container, floor bins | `lane_s07.py` | 4 |
+| s08 | Guest desk: one answer to every guest request | `lane_s08.py` | 9 (default: not in `LANE_RANK`) |
 
 `cause` is how S02 and S03 tell a real fault from a look-alike (guest bath, cleaning, meter
 swap, cold snap). A proposal with `cause: meter_artefact` should be `flag_anomaly`, never a
@@ -162,14 +182,15 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
 | rerun with the LLM off | same text, from the cache |
 | facts known at 14:00Z for a 13:41Z decision | raises |
 
-## How to add your trigger (S02, S03)
+## How to add your trigger (any lane)
 
 1. Emit `signal` rows: your lane, a `kind` from the table, `facts` with everything the planner
    and the message need, and evidence refs.
 2. Emit `proposal` rows: one per action, `signal_ids` set, `intent` and `action` from your lane,
    and `claims` if you need staff, a robot or TECH_1. For `notify_guest`, use one proposal per
    guest, with the language from `guest_requests.csv` for that booking (known at `t`).
-3. Never write `decisions.jsonl`, `autonomy` or the approval flags.
+3. Never write `decisions.jsonl`, `autonomy` or the approval flags. Link dependent proposals
+   with `needs` (they become `dependencies`).
 4. Check: `python scripts/check_bus.py <data_dir> <your.bus.jsonl> <decisions.jsonl>` → 0 violations.
 5. Merge with the arbiter (`src/plato40/arbiter.py`):
    ```bash
@@ -183,6 +204,10 @@ The LLM **phrases**; the rules **decide**, and they also **render every number**
    forbids it, or when the decision breaks the contract. `--replace` drops the pipeline's own
    decisions for those lanes; without it, accepted proposals are added next to them.
    One file per lane, committed by its owner: nobody writes another lane's file.
+6. Register a native lane: a module `lane_sNN.py` with `rows(ds, settings, cache, call)`, its
+   enums in `bus.LANES`, its rank in `arbiter.LANE_RANK` and one line in `lanes.py`, all in
+   one commit. `plato40 bus <data_dir> --lane sNN --out <dir>` then runs it alone, and
+   `plato40 run` runs it with the others.
 
 ## S03 lane: what it writes (`src/plato40/lane_s03.py`)
 
@@ -232,10 +257,13 @@ Real lines from `examples/bus/s03.bus.jsonl` (shortened with `…`):
 
 ## The arbiter (`src/plato40/arbiter.py`)
 
-`plato40 run` runs the pipeline, then the s03 lane through the arbiter (replacing the
-planner's S03), then the closed-loop follow-ups (`src/plato40/verify.py`). `plato40 arbiter`
-does the same for any lane files. Proposals are judged in time order, within one minute by
-priority, then lane (s02 safety, s01 turnaround, s03 comfort), using only rows known at `t`.
+`plato40 run` runs the pipeline, then every registered lane (s03-s08, or the ones given with
+`--lanes`) through one arbiter call on one shared ledger, replacing the planner's decisions of
+each lane's issue type; then the closed-loop follow-ups (`src/plato40/verify.py`) and, with
+`--llm-cache`, the supervisor (`src/plato40/supervise.py`, ADR-003). `plato40 arbiter` does
+the same for any lane files. Proposals are judged in time order, within one minute by
+priority, then lane rank (table above: s02 safety first, s06 energy last), using only rows
+known at `t`.
 A proposal is rejected, with the reason in its verdict, when:
 
 1. it breaks the bus contract or known-at, or `needs` a proposal that was not accepted;
@@ -253,8 +281,9 @@ policy then sets `autonomy` and both flags. Example rejection: `TECH_1 not on sh
 
 ## Known gaps in the examples (not the target)
 
-- S01 `notify_day_delay` is one English line for many rooms. The target is one proposal per
-  guest, in the guest's language, before the request's `response_due_utc` (S03 does this).
+- The exported S01 example still shows the planner's day plan, where `notify_day_delay` is one
+  English line for many rooms. In `plato40 run` the s05 lane owns the day plan and sends one
+  notice per late guest.
 - The S02 example episode (R104 burst) has no guest message; R305 (from 20 Jan) shows `ask_entry_consent`.
 - S01 and S02 still have no native lane: their examples are exported from the planner.
 - S03 `flag_sensor_gap` is not emitted; a blank room gets `cause: sensor_gap` on its reply.
