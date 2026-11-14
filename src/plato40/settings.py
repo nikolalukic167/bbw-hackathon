@@ -117,6 +117,10 @@ class DetectorSettings:
     outage_min_intervals: int = 2
     """Consecutive blank intervals (count) on a whole floor that make a telemetry outage."""
 
+    sensor_dead_h: float = 6.0
+    """Hours one room's temperature is blank while its floor reports, for a dead sensor; dev
+    has 19 such runs of 1 h or more and 18 of them last 6 h or more."""
+
     episode_quiet_h: float = 48.0
     """Hours without a new signal after which an episode is closed."""
 

@@ -1,4 +1,4 @@
-"""Data quality: floor-wide telemetry outages and jittering water meters.
+"""Data quality: floor-wide telemetry outages, dead room sensors and jittering water meters.
 
 A floor outage (one gateway per floor, audit section 2) is every room of a floor blank in
 room telemetry for at least ``outage_min_intervals`` consecutive intervals. It is
@@ -24,7 +24,7 @@ ISSUE = "data_quality"
 
 def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     """Return one signal per floor-wide outage run and per jittering meter night."""
-    return _outages(ds, settings) + _jitter(ds, settings)
+    return _outages(ds, settings) + _dead(ds, settings) + _jitter(ds, settings)
 
 
 def _outages(ds: Dataset, settings: Settings) -> list[Signal]:
@@ -52,6 +52,38 @@ def _outages(ds: Dataset, settings: Settings) -> list[Signal]:
                         f"since {stamp(start)}",
                     )
                 )
+    return out
+
+
+def _dead(ds: Dataset, settings: Settings) -> list[Signal]:
+    """One signal per run of one room's temperature blank while its floor still reports."""
+    idx = grid(ds, settings)
+    temp = telemetry_wide(ds, "temperature_c").reindex(idx)
+    need = int(settings.detect.sensor_dead_h * 60 // settings.interval_minutes)
+    out: list[Signal] = []
+    rooms = ds.building["building"]["rooms"]
+    for gw in ds.building["building"]["gateways"]:
+        floor = [str(r["id"]) for r in rooms if r["floor"] == gw["floor"] and r["id"] in temp]
+        down = temp[floor].isna().all(axis=1).to_numpy()
+        for room in floor:
+            blank = temp[room].isna().to_numpy() & ~down
+            run = 0
+            for i, is_blank in enumerate(blank):
+                run = run + 1 if is_blank else 0
+                if run == need:
+                    start, now = idx[i - run + 1], idx[i]
+                    ref = f"room_telemetry.csv:{room} temperature_c:{stamp(start)}..{stamp(now)}"
+                    out.append(
+                        Signal(
+                            now,
+                            ISSUE,
+                            "sensor_dead",
+                            (room,),
+                            (ref,),
+                            f"{room} temperature blank since {stamp(start)} while the rest of "
+                            f"floor {gw['floor']} reports",
+                        )
+                    )
     return out
 
 
