@@ -455,8 +455,21 @@ def _turnaround_step(
     oncall = ledger.oncall(d) if d["waiting"] else None
     if oncall is not None and cleaner is not None and cleaner[0] <= oncall[0]:
         oncall = None
+    # A waiting guest overrides a later plan when the on-call housekeeper is sooner.
+    recall = (
+        oncall is not None
+        and d["vacant"]
+        and not d["in_progress"]
+        and guest.planned
+        and guest.committed is not None
+        and oncall[0] + ledger.clean < guest.committed
+    )
+    planned_for = guest.committed
     if d["in_progress"]:
         promise: pd.Timestamp | None = d["ready_prio"]
+    elif recall:
+        assert oncall is not None
+        promise = oncall[0] + ledger.clean
     elif guest.committed is not None:
         promise = guest.committed if guest.committed > s.time else s.time + ledger.clean
     elif oncall is not None:
@@ -469,6 +482,22 @@ def _turnaround_step(
     verify = f"{room} shows cleaning_completed by {ready}; if not, update the guest and escalate."
     if d["in_progress"] and not guest.planned:
         guest.planned, guest.committed = True, promise
+    if recall:
+        assert oncall is not None
+        begin, who = oncall
+        chain.add(
+            s,
+            "schedule_cleaning",
+            prio,
+            f"The guest is waiting and {room} was planned only for "
+            f"{_local(planned_for, s.time, settings)}; call the on-call housekeeper now: "
+            f"{s.detail}.",
+            resource_id=who,
+            expected_outcome=f"{room} clean by {ready} (simulated).",
+            verification_plan=verify,
+            confidence=0.6,
+        )
+        guest.committed = ledger.book(begin, who)
     if d["vacant"] and not guest.planned:
         if oncall is not None:
             begin, who = oncall
