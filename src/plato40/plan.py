@@ -35,6 +35,7 @@ WHAT = {
     "night_gap": "unmetered night flow outside the rooms",
     "floor_outage": "Telemetry outage",
     "sensor_dead": "Room temperature sensor dead",
+    "undeclared_id": "Undeclared ID",
     "meter_jitter": "Water meter jitter",
 }
 OUTAGE: dict[str, Any] = {
@@ -46,6 +47,11 @@ DEAD: dict[str, Any] = {
     "expected_outcome": "The room gets no comfort verdict or pre-heat while blank.",
     "verification_plan": "Readings from the room resume; inspect the sensor if not within 24 h.",
     "confidence": 0.8,
+}
+UNDECLARED: dict[str, Any] = {
+    "expected_outcome": "Staff add the ID to building.json or correct the data.",
+    "verification_plan": "The ID is declared or its rows stop.",
+    "confidence": 0.9,
 }
 JITTER: dict[str, Any] = {
     "expected_outcome": "Leak checks on this meter use hourly volumes while it jitters.",
@@ -778,7 +784,9 @@ def _logistics(ep: Episode, settings: Settings) -> list[Decision]:
 def _data_quality(ep: Episode) -> list[Decision]:
     chain = _Chain(ep)
     s = ep.signals[0]
-    texts = OUTAGE if s.kind == "floor_outage" else DEAD if s.kind == "sensor_dead" else JITTER
+    texts = {"floor_outage": OUTAGE, "sensor_dead": DEAD, "undeclared_id": UNDECLARED}.get(
+        s.kind, JITTER
+    )
     chain.add(s, "flag_anomaly", "low", f"{WHAT[s.kind]}: {s.detail}.", **texts)
     return chain.out
 

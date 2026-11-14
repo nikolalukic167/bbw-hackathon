@@ -1,4 +1,4 @@
-"""Data quality: floor-wide telemetry outages, dead room sensors and jittering water meters.
+"""Data quality: floor outages, dead room sensors, jittering meters and undeclared IDs.
 
 A floor outage (one gateway per floor, audit section 2) is every room of a floor blank in
 room telemetry for at least ``outage_min_intervals`` consecutive intervals. It is
@@ -24,7 +24,7 @@ ISSUE = "data_quality"
 
 def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     """Return one signal per floor-wide outage run and per jittering meter night."""
-    return _outages(ds, settings) + _dead(ds, settings) + _jitter(ds, settings)
+    return _outages(ds, settings) + _dead(ds, settings) + _jitter(ds, settings) + _undeclared(ds)
 
 
 def _outages(ds: Dataset, settings: Settings) -> list[Signal]:
@@ -107,3 +107,41 @@ def _jitter(ds: Dataset, settings: Settings) -> list[Signal]:
                 )
             )
     return out
+
+
+UNDECLARED = (
+    ("room_telemetry.csv", "room_id", "room"),
+    ("room_water.csv", "room_id", "room"),
+    ("bookings.csv", "room_id", "room"),
+    ("equipment.csv", "asset_id", "asset"),
+    ("logistics.csv", "asset_id", "asset"),
+)
+
+
+def _undeclared(ds: Dataset) -> list[Signal]:
+    """One signal per room or asset ID in the data that building.json does not declare."""
+    known = {"room": set(ds.room_ids()), "asset": set(ds.asset_ids())}
+    first: dict[tuple[str, str], tuple[pd.Timestamp, str]] = {}
+    for file, col, what in UNDECLARED:
+        tab = ds.table(file)
+        if tab.empty:
+            continue
+        when = "created_utc" if file == "bookings.csv" else "timestamp_utc"
+        for key, t in tab.groupby(col, sort=True)[when].min().items():
+            if str(key) in known[what] or pd.isna(t):
+                continue
+            seen = first.get((what, str(key)))
+            if seen is None or pd.Timestamp(t) < seen[0]:
+                first[(what, str(key))] = (pd.Timestamp(t), file)
+    return [
+        Signal(
+            t,
+            ISSUE,
+            "undeclared_id",
+            ("BUILDING",),
+            (f"{file}:{key} first row {stamp(t)}", "building.json:building"),
+            f"{what} {key} appears in {file} but not in building.json; Steward makes no "
+            "decision on it",
+        )
+        for (what, key), (t, file) in sorted(first.items(), key=lambda x: (x[1][0], x[0]))
+    ]
