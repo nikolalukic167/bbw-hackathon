@@ -2,9 +2,9 @@
 
 Steward ran over the `dev` dataset (1 Jan 2026 to 31 Dec 2026, 365 days, 40 rooms) with 0
 contract or autonomy violations. Every number below is computed from that run and the dataset
-tables by `uv run python scripts/insights.py <data_dir> --out insights.md`. PLATO-40 is
-fictional and the data synthetic: these are findings about the replay, and every effect of an
-action is simulated.
+tables by `uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache llm_cache
+--supervisor decisions.supervisor.jsonl`. PLATO-40 is fictional and the data synthetic: these
+are findings about the replay, and every effect of an action is simulated.
 
 ## The year at a glance
 
@@ -14,18 +14,18 @@ approve 172, on average every 2.1 days, and 127 of those also need guest consent
 approvals are guest-desk consent requests (maintenance, cleaning), so the manager's own load is
 56.
 
-| Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
-|---|---|---|---|---|---|---|
-| Room turnaround | 53 | 224 | 209 | 15 | 0 | 21 of 24 waiting guests had a decision on their room earlier that day |
-| Water leaks | 5 | 23 | 11 | 8 | 4 | 5 of 5 followed by a repair work order |
-| Heat pump and comfort | 31 | 112 | 101 | 4 | 7 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
-| Comfort requests (too hot) | 185 | 377 | 377 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
-| Guest desk | 1,331 | 1,454 | 1,338 | 0 | 116 | 1,612 of 1,612 guest requests (all lanes) answered before their due time; 116 got a staff action |
-| Waste and vending | 27 | 31 | 31 | 0 | 0 | 21 of 25 orders came before a real shortage |
-| Data quality | 16 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
-| Ventilation (AHU filter) | 12 | 19 | 15 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
-| Busy days and event weekends | 14 | 67 | 53 | 14 | 0 | 5 of 11 days flagged at the morning plan had a waiting guest |
-| Energy (pre-heat, battery plan) | 616 | 619 | 619 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |
+| Lane | Incidents | Routine | Decisions | Autonomous | Approval | Approval and consent | Outcome |
+|---|---|---|---|---|---|---|---|
+| Room turnaround | 53 | 0 | 224 | 209 | 15 | 0 | 21 of 24 waiting guests had a decision on their room earlier that day |
+| Water leaks | 5 | 0 | 23 | 11 | 8 | 4 | 5 of 5 followed by a repair work order |
+| Heat pump and comfort | 31 | 0 | 112 | 101 | 4 | 7 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
+| Comfort requests (too hot) | 0 | 185 | 377 | 377 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
+| Guest desk | 0 | 1,331 | 1,454 | 1,338 | 0 | 116 | 1,612 of 1,612 guest requests (all lanes) answered before their due time; 116 got a staff action |
+| Waste and vending | 27 | 0 | 31 | 31 | 0 | 0 | 21 of 25 orders came before a real shortage |
+| Data quality | 16 | 0 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
+| Ventilation (AHU filter) | 12 | 0 | 19 | 15 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
+| Busy days and event weekends | 14 | 0 | 67 | 53 | 14 | 0 | 5 of 11 days flagged at the morning plan had a waiting guest |
+| Energy (pre-heat, battery plan) | 5 | 611 | 619 | 619 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |
 
 ## Guest requests
 
@@ -106,6 +106,18 @@ July (6). *Recommendation:* in those months, add a restock between the regular v
 Thu). *Uncertainty:* a replayed order changes no later stock, so a hit shows need, not
 prevention.
 
+**Energy: plan the battery on the day-ahead prices, pre-heat by booked arrival, and back off
+while the heat pump is weak.** On 358 days Steward planned BAT1 when the next day's prices were
+published, against forecast PV and the recent load: a median 408.8 kWh of grid import per plan
+against 427.9 kWh with no battery, and a median saving of EUR 17.68 per plan against no battery,
+simulated at the published prices. Pre-heat raised the setpoint of vacant arrival rooms only,
+never of an occupied room; 1,253 of the 1,716 pre-heated rooms were at or above 20 degC at
+check-in. While HP1 was degraded, the energy lane paused load shifting and pre-heat 2 times and
+left the comfort lane in charge. *Recommendation:* keep the battery on the price plan, and look
+at the 463 pre-heated rooms that missed the band before lengthening the pre-heat lead.
+*Uncertainty:* the saving is simulated against no battery with the replay's own load and PV;
+plans overlap in time, so the savings per plan are not added up into a year.
+
 **Alarms and data: use BMS alarms to corroborate, never to trigger.** The BMS raised 464 alarms
 in the year; matched against telemetry, they trail their condition by a median 0.75 h. It raised
 159 comm-loss alarms, 19 of them with no gap behind them, against 14 floor-wide outages that
@@ -119,6 +131,21 @@ apart, yet the filters clogged 2 times and were replaced unplanned by EXTERNAL_H
 days after the previous change; FILTER_DP_HIGH was raised 10 times. *Recommendation:* trigger
 the change on day-mode filter pressure. *Uncertainty:* 2 events. Steward's filter lane made 19
 decisions on AHU1 this year.
+
+## Look-alikes and bad data
+
+Steward acts on persistence and on what was known at the time, never on a single odd reading.
+
+- **Water:** 2 water episodes got no decision: 2 of them because the night flow did not last 2
+  nights in a row, 2 of them on the jittering meter. Meter WM_R105 jitters after its exchange
+  (180 nights stepping backwards); on those nights leaks are judged on hourly volumes.
+- **Comfort:** none of the 29 "too cold" requests came from a room with its window reported open
+  or inside the comfort band. The 201 "too hot" requests were answered as routine and never
+  opened a heat pump incident.
+- **Alarms:** 19 of the 159 comm-loss alarms had no gap behind them. Steward's outage flag reads
+  the telemetry, not the alarms: it found 14 floor-wide outages and none behind those alarms.
+- **Blank data:** blank stays blank, never zero; while a floor is blank, no room on it gets a
+  leak or comfort verdict.
 
 ## Design recommendations for the next building (feedback to PLATO)
 
@@ -157,13 +184,40 @@ reveal a leak. *Recommendation:* submeters on the circulation loop and the commo
 
 ## Target architecture
 
+```
+  data, every row with the time it became known (bookings, telemetry, meters, prices,
+  forecasts, roster, work orders, guest requests, BMS alarms)
+        |
+        v
+  a lane per domain: turnaround, water, heating, filters, busy days, energy,
+  logistics, guest desk, data quality      -> signals and proposals on the trigger bus
+        |
+        v
+  arbiter on a shared ledger: decision contract, known-at, roster, autonomy policy
+        ^                                   supervisor model: may add at most 2
+        |                                   checked flags or requests per review
+        +-----------------------------------+
+        |
+        +--> autonomous: executor (mock today; robots, BMS setpoints, battery, orders)
+        +--> approval inbox: manager, guest consent where a room is entered
+        |
+        v
+  closed loop: checks each outcome when due and follows up a miss
+        |
+        v
+  decisions.jsonl and console (audit trail) -> this report -> CLARA (operating rules)
+                                                            -> PLATO (next building)
+```
+
 - **Data:** the files Steward reads today, plus a measured COP (heat meter and electricity
   submeter on the heat pump), submeters on common-area water, leak sensors under washbasins,
   logged room exits, inspection events, and an on-call and contractor calendar. Every record
   carries the time it became known.
 - **Agents:** a deterministic lane for each domain (turnaround, water, heating and energy,
   logistics, data quality) feeding a single policy gate that sets the autonomy level. A language
-  model only words guest messages; every room, time and ID stays as the rules wrote them.
+  model words guest messages, and every room, time and ID stays as the rules wrote them. A
+  supervisor model may add at most 2 checked flags or requests per review; it never changes or
+  removes a rule's decision.
 - **Robots:** floor robots clean before the human clean and carry floor bins; they never certify
   or release a room. Repairs and entering occupied rooms stay with people.
 - **Interfaces:** the decision contract as the action log, an approval inbox with consent
@@ -172,9 +226,9 @@ reveal a leak. *Recommendation:* submeters on the circulation loop and the commo
 
 ## Limits
 
-- The data is a single synthetic year. The leak and heat pump rules rest on 5 to 216 incidents
-  per class; the holdout and real operation must confirm them.
+- The data is a single synthetic year. The leak and heat pump rules rest on 2 to 5 incidents per
+  class; the holdout and real operation must confirm them.
 - The data is a replay: no action changes later readings, so outcomes are matched to work orders
   and events that people wrote after the fact.
-- The data has no costs, so the report claims no savings. Steward's energy lane pre-heats
-  arrival rooms but has no battery plan yet.
+- The data's only costs are electricity prices. The only saving in this report is the battery
+  plan's, simulated against no battery; no other saving is claimed.
