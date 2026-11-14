@@ -220,13 +220,13 @@ VIEWS.episode = (() => {
   function shell(el) {
     const dec = EPS.flatMap(e => e.decisions);
     const n = k => dec.filter(d => d.autonomy === k).length;
-    const stats = [[EPS.filter(e => !e.routine).length, "incidents"], [EPS.filter(e => e.routine).length, "routine episodes"], [dec.length, "decisions"],
+    const stats = [[EPS.filter(e => !e.routine && e.decisions.length).length, "incidents"], [EPS.filter(e => e.routine).length, "routine episodes"], [dec.length, "decisions"],
       [n("autonomous"), "autonomous"], [n("human_approval"), "need approval"], [n("approval_and_consent"), "need consent"]];
     el.innerHTML = `
       <div class="stats">${stats.map(([v, l]) => `<div class="stat"><b>${fmtN(v)}</b><span>${l}</span></div>`).join("")}</div>
       <section class="panel filters" aria-label="Filters">
         <div id="chips" style="display:flex;flex-wrap:wrap;gap:6px">${ORDER.filter(k => EPS.some(e => e.issue === k)).map(k =>
-          `<button class="chip" type="button" data-k="${k}" aria-pressed="${f.on.has(k)}" style="--c:${SCEN[k].c}"><i></i>${esc(SCEN[k].label)}<small>${EPS.filter(e => e.issue === k && !e.routine).length}</small></button>`).join("")}</div>
+          `<button class="chip" type="button" data-k="${k}" aria-pressed="${f.on.has(k)}" style="--c:${SCEN[k].c}"><i></i>${esc(SCEN[k].label)}<small>${EPS.filter(e => e.issue === k && !e.routine && e.decisions.length).length}</small></button>`).join("")}</div>
         <select id="prio" aria-label="Minimum priority"><option value="low">all priorities</option><option value="medium">medium and up</option><option value="high">high and up</option><option value="critical">critical only</option></select>
         <label class="toggle"><input type="checkbox" id="approval"> needs a human</label>
         <label class="toggle"><input type="checkbox" id="routine"> show routine</label>

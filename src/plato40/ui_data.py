@@ -177,7 +177,8 @@ def _bookmarks(run: pipeline.Run, routine: set[str], day: str, tz: str) -> list[
                     "episode_id": e.episode_id,
                 }
             )
-    return sorted(out, key=lambda b: (b["t"], b["kind"], str(b["event_id"])))
+    order = {"signal": 0, "decision": 1, "followup": 2, "supervisor": 3}
+    return sorted(out, key=lambda b: (b["t"], order[b["kind"]], str(b["event_id"])))
 
 
 def day_extract(
