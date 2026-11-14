@@ -193,6 +193,19 @@ service. {covered} of the year's {shortages} shortages had an order before them.
 the regular visits ({restock_days}). *Uncertainty:* a replayed order changes no later stock,
 so a hit shows need, not prevention.
 
+**Energy: plan the battery on the day-ahead prices, pre-heat by booked arrival, and back off
+while the heat pump is weak.** On {bat_days} days Steward planned {bat_asset} when the next
+day's prices were published, against forecast PV and the recent load: a median {bat_import}
+kWh of grid import per plan against {bat_base} kWh with no battery, and a median saving of EUR
+{bat_median} per plan against no battery, simulated at the published prices. Pre-heat raised
+the setpoint of vacant arrival rooms only, never of an occupied room; {pre_ok} of the {pre_n}
+pre-heated rooms were at or above {band_lo} degC at check-in. While {hp_asset} was degraded,
+the energy lane paused load shifting and pre-heat {backoffs} times and left the comfort lane
+in charge. *Recommendation:* keep the battery on the price plan, and look at the {pre_miss}
+pre-heated rooms that missed the band before lengthening the pre-heat lead. *Uncertainty:* the
+saving is simulated against no battery with the replay's own load and PV; plans overlap in
+time, so the savings per plan are not added up into a year.
+
 **Alarms and data: use BMS alarms to corroborate, never to trigger.** The BMS raised
 {alarms} alarms in the year; matched against telemetry, they trail their condition by a
 median {alarm_lag} h. It raised {comm_alarms} comm-loss alarms, {unsupported} of them with no
@@ -1024,8 +1037,33 @@ def level2(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
         "band_lo": _n(lo),
         "pre_n": _n(pre_n),
         "pre_ok": _n(pre_ok),
+        "pre_miss": _n(pre_n - pre_ok),
         "filter_note": note,
         "limits_note": LIMIT_NOTES["lanes" if s06 and s04 else "none"],
+    }
+
+
+def energy(run: pipeline.Run) -> Facts:
+    """Return the battery plans (simulated), the pre-heat misses and the S03 back-offs."""
+    plans = [
+        s.data
+        for s in run.signals
+        if s.issue_type == "energy_optimization"
+        and s.kind == "tariff_published"
+        and "saving_eur" in s.data
+    ]
+    backoffs = sum(
+        d["issue_type"] == "energy_optimization" and d["action"] == "defer_action"
+        for d in run.decisions
+    )
+    asset = next((a for s in run.signals if s.kind == "tariff_published" for a in s.assets), "BAT1")
+    return {
+        "bat_days": _n(len(plans)),
+        "bat_asset": asset,
+        "bat_import": _median([float(p["planned_import_kwh"]) for p in plans]),
+        "bat_base": _median([float(p["baseline_import_kwh"]) for p in plans]),
+        "bat_median": _median([float(p["saving_eur"]) for p in plans], 2),
+        "backoffs": _n(backoffs),
     }
 
 
@@ -1049,6 +1087,7 @@ def render(
     facts |= water_gap(ds, run, settings)
     facts |= guest_requests(ds, run)
     facts |= level2(ds, run, settings)
+    facts |= energy(run)
     facts |= supervisor(run, log if log is not None else run.reviews)
     hp = [e for e in _of(run, "heating_comfort") if any(s.kind == "cop_low" for s in e.signals)]
     facts["small_n"] = _span([len(_of(run, "water_leak")), len(hp)])
