@@ -38,8 +38,8 @@ computed when the page is written, so this script quotes none: read them off the
 | 14 | `#view=day&day=2026-05-09&step=1` | **Day C, 9 May.** Sold out, and a cleaner called in sick at dawn. Whose room first? A week ahead Steward had already asked for a stand-by cleaner. | The 07:00 day plan signal. |
 | 15 | `#view=trail&ev=s05-occupancy_surge-BUILDING-20260501T0500Z-prop01` | That request, made a week before. Nobody is planned until a manager says yes. | The stand-by approval. |
 | 16 | `#view=day&day=2026-05-09&step=2` to `step=10` | At 07:00: arrival rooms first in the cleaning order, extra help asked for by name of the late rooms, and an honest notice to each late guest with no time promised. | Approval amber; guest notices. |
-| 17 | `step=11` to `step=14` | 12:09: the guest of R209 asks to check in early. Steward cleans R209 first, sends the robot ahead and promises a time, in Italian, the language the guest wrote in. | Clean, robot, promise. |
-| 18 | `step=18` | The promise slips; the closed loop tells the guest at once instead of letting the time pass. | The follow-up notice. |
+| 17 | `step=13` to `step=16` | 12:09: the guest of R209 asks to check in early. Steward cleans R209 first, sends the robot ahead and promises a time, in Italian, the language the guest wrote in. | Clean, robot, promise. |
+| 18 | `step=20` | The promise slips; the closed loop tells the guest at once instead of letting the time pass. | The follow-up notice. |
 | 19 | `#view=trail&ev=EP-room_turnaround-R209-20260509T1009Z-03` | Limit, said plainly: the data shows the guest still waited. The morning plan cannot know who arrives early; the Limits panel counts these misses. | Outcome: arrival_waiting_room. |
 | 20 | `#view=year` | The Limits panel: what Steward missed, as numbers, and what the replay cannot show. | The Limits panel. |
 | 21 | `insights.md` (second tab) | The learning loop: feedback to CLARA and to PLATO, every number from a script. | The recommendations. |
