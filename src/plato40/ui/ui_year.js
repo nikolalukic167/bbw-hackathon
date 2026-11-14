@@ -57,7 +57,7 @@ VIEWS.year = (() => {
     return `<div class="yr-tiles">
       <div class="yr-tile"><span class="cap">Guest requests answered before due</span>
         <b>${n(req.on_time)} <small>of ${n(req.total)}</small></b><span class="sub">${n(req.answered)} answered in all</span></div>
-      <div class="yr-tile"><span class="cap">Decisions, Steward alone</span>
+      <div class="yr-tile"><span class="cap">Decisions, OSAM alone</span>
         <b>${pct(auto, dec.total)}</b><span class="sub">${n(auto)} of ${n(dec.total)} decisions autonomous</span></div>
       <div class="yr-tile"><span class="cap">Manager approvals per week</span>
         <b>${perWeek}</b><span class="sub">${n(ap.manager)} in the run, plus ${n(ap.guest_desk)} guest-consent requests from the guest desk</span></div>
@@ -124,7 +124,7 @@ VIEWS.year = (() => {
   }
 
   function limits(m, k) {
-    if (!m) return `<section class="panel yr-limits"><h3>Limits and verification</h3><p class="muted">Write the page with --data to see what Steward missed.</p></section>`;
+    if (!m) return `<section class="panel yr-limits"><h3>Limits and verification</h3><p class="muted">Write the page with --data to see what OSAM missed.</p></section>`;
     const sv = k && k.supervisor;
     const why = sv && sv.rejected_why && Object.keys(sv.rejected_why).length ? ` (${esc(words(sv.rejected_why))})` : "";
     const bat = m.battery;
@@ -135,7 +135,7 @@ VIEWS.year = (() => {
     const few = (m.hp_incidents || 0) + (m.leak_incidents || 0);
     return `<section class="panel yr-limits"><h3>Limits and verification</h3>
       <ul>
-        ${li("Waiting guests Steward had not acted on that morning", m.waits)}
+        ${li("Waiting guests OSAM had not acted on that morning", m.waits)}
         ${li("Waiting guests told a ready time after their arrival", m.waits_promised_late)}
         ${li("Pre-heated rooms still below the comfort band at check-in", m.preheat)}
         ${li("Extra waste or vending orders that found no shortage", m.orders)}
@@ -145,7 +145,7 @@ VIEWS.year = (() => {
       </ul>
       <ul class="gen">
         <li>The data is a replay: no decision changes later readings, so every effect is simulated and outcomes are read from what people logged.</li>
-        <li>The data has no costs beyond tariff prices: Steward claims no savings except the simulated battery figure.</li>
+        <li>The data has no costs beyond tariff prices: OSAM claims no savings except the simulated battery figure.</li>
         <li>Guest messages are proposals; delivery and replies are not in the data.</li>
       </ul></section>`;
   }

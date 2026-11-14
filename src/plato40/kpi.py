@@ -5,7 +5,7 @@ read the same functions, so they can never disagree. Each function takes the dat
 run and the settings, plus the supervisor log or the rerun record where it needs them.
 
 "Routine" work is a guest-desk reply, a reply to a "too hot" request, or an arrival
-pre-heat batch; every other episode Steward acted on is an incident.
+pre-heat batch; every other episode OSAM acted on is an incident.
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def _local_date(t: pd.Timestamp, tz: str) -> date:
 
 
 def acted(run: Run) -> list[Episode]:
-    """Return the episodes Steward made at least one decision on."""
+    """Return the episodes OSAM made at least one decision on."""
     decided = {d["episode_id"] for d in run.decisions}
     return [e for e in run.episodes if e.episode_id in decided]
 

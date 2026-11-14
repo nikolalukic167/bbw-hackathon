@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Steward Console</title>
+<title>OSAM Console</title>
 <style>
 /* Shell: header with the dataset badge and the view tabs, then one view at a time.
    Views live in ui_*.js (year, day, trail) and in this file (episode). Look: ISA-101 grey
@@ -117,7 +117,7 @@ footer { font-size: 0.8rem; color: var(--muted); }
 <div class="wrap">
   <header class="top">
     <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-      <h1>Steward operations console</h1>
+      <h1>OSAM operations console</h1>
       <span class="badge"><b id="dataset"></b><span id="period"></span><span class="mono" id="source"></span></span>
     </div>
     <nav class="tabs" id="tabs" aria-label="Views"></nav>
@@ -143,7 +143,7 @@ const localDay = t => { const p = new Intl.DateTimeFormat("en-CA", { timeZone: T
 const fmtN = n => (n ?? 0).toLocaleString("en-GB");
 
 const store = {
-  key: id => `steward:${DATA.source}:${id}`,
+  key: id => `osam:${DATA.source}:${id}`,
   get(id) { try { return localStorage.getItem(this.key(id)); } catch { return null; } },
   set(id, v) { try { v ? localStorage.setItem(this.key(id), v) : localStorage.removeItem(this.key(id)); } catch {} },
 };

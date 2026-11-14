@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"en\", \"text\": \"Thank you for your early check-in request for room R302. We have noted it. Please wait for our confirmation of the arrival time, as we cannot yet say whether an early check-in is possible.\"}",
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your early check-in request for room R302. We have noted it. Your early arrival is only offered for now and is pending approval, so please wait for our confirmation before you plan your arrival.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {

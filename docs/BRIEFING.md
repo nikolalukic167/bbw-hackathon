@@ -1,10 +1,10 @@
-# Team briefing: how Steward works, for the live demo
+# Team briefing: how OSAM works, for the live demo
 
 Read this once before the demo. Each section is written so that any of us can say it aloud
 in two minutes. Numbers are from the committed dev run (`decisions.jsonl`, 2,989 decisions,
 0 violations) unless marked quickstart. The demo click path is `docs/DEMO.md`.
 
-Words we use: **Steward** is the product. **PLATO-40** is the building. PLATO and CLARA are
+Words we use: **OSAM** is the product. **PLATO-40** is the building. PLATO and CLARA are
 only named as the two targets of the feedback report. A **signal** is a fact a detector found
 in the data. An **episode** is one incident, all its signals grouped. A **proposal** is what a
 lane wants to do. A **decision** is a proposal the arbiter accepted and the policy stamped.
@@ -109,7 +109,7 @@ what the supervisor adds; the committed run and its cache are the thing we repro
 
 ## 3. Trigger catalogue
 
-Every trigger Steward reacts to, lane by lane. A trigger is a **signal**: a condition on the
+Every trigger OSAM reacts to, lane by lane. A trigger is a **signal**: a condition on the
 data, checked only with what was known at that moment. Signals that belong to one incident
 form an **episode**, and the episode gets an ordered chain of **decisions**.
 
@@ -118,7 +118,7 @@ How to read the tables:
 - **Condition**: when the signal fires. Each threshold is followed by its name in
   `src/plato40/settings.py` (`DetectorSettings`), or by the file it comes from.
 - **Evidence**: what the signal cites, in the form `file:reference`.
-- **What Steward does**: the decision chain in the order it is written.
+- **What OSAM does**: the decision chain in the order it is written.
 - **Autonomy**: is set by the policy (`src/plato40/policy.py`), never by the lane. The policy
   has five rules:
   1. Entering an occupied room (cleaning, inspection, technician or contractor) needs
@@ -150,9 +150,9 @@ out of the chains below.
 Times are local (Europe/Vienna). Check-in is 15:00 and check-out 11:00 (`building.json`
 operations).
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
-| `request` | **When:** a guest asks for early check-in or says they are waiting (a request, or an `arrival_waiting_room` event).<br>**Check:** the room's predicted ready time is later than the wanted time. The wanted time is the first time written in the request, else now. A room is ready `clean_room_min` = 60 min after a cleaner can start on it. | The guest request, the booking, the event that set the room's state. | Clean this room first, with a robot floor pass before the human clean, and tell the guest a ready time. The most common chain is reply, clean, robot, reply (27 of 46 episodes). If another clean room is free for the whole stay, offer it (`reassign_room`). If the guest is waiting, Steward calls the on-call housekeeper (on call 15:30-22:00 local, about `oncall_travel_min` = 45 min to arrive) when that beats the plan. If the room is only ready on a later day and nothing can be offered, Steward asks a manager. | Clean, robot and reply are autonomous by default. A room move is `reassign_room always needs approval` (8). A manager request is `request_human_approval always needs approval` (4). The on-call call is "costly": approval. | "No waiting_for_room request from the guest; escalate on one." Follow-ups: `ready_time_missed`, `ready_early`. | A request whose room will be ready in time gets an answer from S08 instead. The planner owns only real conflicts. | 70 signals, 46 episodes |
+| `request` | **When:** a guest asks for early check-in or says they are waiting (a request, or an `arrival_waiting_room` event).<br>**Check:** the room's predicted ready time is later than the wanted time. The wanted time is the first time written in the request, else now. A room is ready `clean_room_min` = 60 min after a cleaner can start on it. | The guest request, the booking, the event that set the room's state. | Clean this room first, with a robot floor pass before the human clean, and tell the guest a ready time. The most common chain is reply, clean, robot, reply (27 of 46 episodes). If another clean room is free for the whole stay, offer it (`reassign_room`). If the guest is waiting, OSAM calls the on-call housekeeper (on call 15:30-22:00 local, about `oncall_travel_min` = 45 min to arrive) when that beats the plan. If the room is only ready on a later day and nothing can be offered, OSAM asks a manager. | Clean, robot and reply are autonomous by default. A room move is `reassign_room always needs approval` (8). A manager request is `request_human_approval always needs approval` (4). The on-call call is "costly": approval. | "No waiting_for_room request from the guest; escalate on one." Follow-ups: `ready_time_missed`, `ready_early`. | A request whose room will be ready in time gets an answer from S08 instead. The planner owns only real conflicts. | 70 signals, 46 episodes |
 | `checkout` | The room a guest asked for is checked out within `checkout_follow_h` = 24 h of the request. Cleaning can be planned from this moment. | The checkout event. | Re-plans the clean from the actual checkout, then updates the guest. | As for `request`. | As for `request`. | A room still occupied at request time: it gets a plan only once the guest leaves. | 35 signals, 0 episodes (always inside a request episode) |
 | `checkin_due` | **When:** a booked arrival reaches check-in time.<br>**Check:** its room cannot be clean the same day. No request is needed. | The booking, the event that set the room's state. | Clean the room at the first possible shift, offer a free clean room if there is one, and tell the guest the ready time. If the guest then waits, the steps of `request` apply. | Clean and reply are autonomous. A room move needs approval (2). A manager request needs approval (1). | "<room> shows cleaning_completed by <time>; if not, update the guest and escalate." Follow-ups as for `request`. | Every arrival whose room is clean in time: no signal. | 3 signals, 3 episodes |
 | `ready` | A waiting guest's room has just become clean. | The waiting event, the event that set the room's state. | Tell the waiting guest the room is ready and self check-in works. | Autonomous by default. | "A check-in to <room> follows; escalate if the guest waits on." | A clean room with nobody waiting: no message. | 4 signals, 4 episodes |
@@ -161,7 +161,7 @@ operations).
 
 The night is 01:00-05:00 local (`NightWindow`).
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `night_flow` | **When:** every 15-min interval of a room's night has at least `leak_floor_l_per_15min` = 0.2 L. A running toilet draws 0.9-1.1 L.<br>**Then:** night `leak_persist_nights` = 2 in a row: flag and inspect. Night `leak_technician_nights` = 3: repair. `leak_contractor_nights` = 2 more nights: an external plumber. | `room_water.csv:<room>:<night range>` | **Night 2:** flag (`flag_anomaly`), ask the guest for consent to enter (if occupied), inspect.<br>**Night 3:** the technician if on shift within `technician_horizon_h` = 24 h, else an external plumber (`order_service`).<br>**Later:** a plumber if the leak persists. | Flag and consent message are autonomous. Inspection and technician in an occupied room: "enters occupied <room>", approval and consent. Plumber: "contractor service", approval. | "Night minimum of the meter returns to 0 L after repair; escalate if flow continues another night or the night volume rises." Follow-ups: `repair_not_held` or `room_released`. | One night of flow is not a leak (R105 twice on dev: 2 episodes, no decision). A jittering meter is judged on hourly volumes, see `meter_jitter`. | 19 signals, 4 episodes (2 acted on) |
 | `burst_flow` | A room draws at least `burst_flow_l_per_15min` = 10 L in each of `burst_flow_intervals` = 12 consecutive intervals (3 h), at any hour. | `room_water.csv:<room>:<range>` | Critical flag, block the room (out of sale), consent if occupied, inspect, repair. The technician only if on shift now, else a plumber. | Flag and inspection autonomous (vacant room). `block_room always needs approval`. Plumber: "contractor service", approval. | "Room stays blocked until the repair work order completes." Follow-up: `room_released`. | Heavy guest use holds at most 6 such intervals (dev). | 2 signals, 2 episodes |
@@ -170,7 +170,7 @@ The night is 01:00-05:00 local (`NightWindow`).
 
 ### S03 Heating and comfort, including too hot (lane `lane_s03.py`, detector `detect/heating.py`)
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `cop_low` | **Check:** every hour, HP1's COP over the last `cop_window_h` = 24 h is divided by the reference COP at that window's mean outdoor temperature. The reference is `cop_ref_intercept` = 2.78 + `cop_ref_slope` = 0.068 per °C, a fixed fit that is never refitted.<br>**Fires:** the ratio is below `cop_ratio_low` = 0.88 with at least `cop_min_coverage` = 0.8 of the window present. | `equipment.csv:HP1 heat_output_kw,electric_kw:<24 h>`, `weather.csv:outdoor_c:<24 h>` | Flag, then the in-house technician if on shift within `technician_horizon_h` = 24 h (else a contractor). Then a comfort-first energy plan: vacant rooms at setback, occupied rooms pre-heated within 20-23 °C, price peaks avoided only where comfort holds.<br>Each guest in a cold room is told once per episode, with notices at least `notice_gap_h` = 12 h apart. A contractor is ordered when the COP is still low `contractor_after_h` = 24 h after the technician's start.<br>Each of the 2 dev episodes had 1 flag, 1 technician, 1 contractor and 6 energy plans; the guest notices were 4 and 6. | Technician: `dispatch_technician always needs approval`. Contractor: "contractor service". The rest autonomous. | "COP ratio back above 0.88 within 24 h of the technician's start; a contractor is ordered if not." Follow-up: `service_not_restored`. | A cold snap alone: the reference already lowers the expected COP with the outdoor temperature. Normal hours stay above 0.95. | 126 signals, 2 episodes |
 | `comfort_deficit` | **During a `cop_low` check:** an occupied room was in deficit in the last hour (at least `comfort_deficit_k` = 1.5 K below its setpoint, below 20 °C, window not reported open).<br>**Or:** a guest's cold complaint (`temperature_cold`). | The guest request, `room_telemetry.csv:<room> temperature_c,setpoint_c,window_open:<last hour>`, the booking | **Cold complaint:** raise the setpoint to the top of the band (23 °C) if the room is below the band and the window is not reported open, flag the room's heating if it is also below its setpoint, and reply to the guest. The chain is boost, flag, reply in 19 of 29 episodes, and boost, reply in 9. With the window open, the reply asks to close it.<br>**During a `cop_low` check:** a guest notice in the HP1 episode. | Autonomous by default. | "<room> at or above 20 degC within 2 h; otherwise inspect the room's heating (approval, guest consent)." (`room_heat_verify_h` = 2 h.) Follow-ups: `room_still_cold`, `repeat_complaint`. | A guest who chose a cool setpoint: the deficit counts only below their own setpoint. | 37 signals, 29 episodes |
@@ -184,7 +184,7 @@ The loading rate is the day median filter dp of the last 24 h minus that of the 
 before (`ahu_window_h` = 24). Day mode is 06:00-22:00 local by the clock
 (`ahu_day_start_hour`, `ahu_day_end_hour`).
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `dp_fast_rise` | **Check:** the loading rate reaches `ahu_rate_fast_pa_per_day` = 10 Pa per 24 h, which means the filter is clogging.<br>**When dp is blank:** the fan-implied dp is used instead, dp = `ahu_fan_dp_slope_pa_per_kw` = 119.2 × fan kW + `ahu_fan_dp_offset_pa` = -295.9. | `equipment.csv:AHU1 filter_dp_pa,fan_kw,airflow_m3h:<48 h>` | Flag, then a filter change. TECH_1 does it if a shift starts within `ahu_tech_horizon_h` = 24 h and S03 has no HP1 fault in the last `ahu_s03_guard_h` = 48 h; otherwise the contractor (`order_service`). An open AHU1 work order defers instead. The contractor follows `ahu_escalate_after_h` = 24 h after TECH_1's start with no reset. On dev both went to the contractor. | Flag autonomous. Contractor: "contractor service", approval. | "Day median dp below 120 Pa and fan at most 3.4 kW within 3 h of the service start; otherwise the contractor is ordered." (`ahu_reset_dp_pa`, `ahu_reset_fan_kw`, `ahu_reset_window_h`) | Normal loading is at most 3.6 Pa/day on dp; a sensor gap is not loading. | 2 signals, 2 episodes |
 | `airflow_loss` | For a full day-mode hour the fan is at its ceiling (`ahu_fan_ceiling_kw` = 5.3 kW) and airflow is below `ahu_airflow_low_m3h` = 3900 m3/h. | Equipment window, AHU1 BMS alarms | A flag in the open loading episode; it opens one, with its service, if none is open. | Autonomous by default. | "Day airflow back above 3900 m3/h within 3 h of the service." | The normal day minimum is 4099 m3/h. | 2 signals, 0 episodes (inside clog episodes) |
@@ -201,7 +201,7 @@ Two kinds are defined in `lane_s04.py` but do not fire on dev:
 S01 owns one room's conflict and S05 owns the whole day. Bookings count from their creation
 time, and cancelled bookings stay in, because the data has no cancellation time.
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `surge_forecast` | **When:** at `day_plan_hour` = 7 local, for the day `surge_lookahead_d` = 7 days ahead.<br>**Event day:** at least `surge_occupancy` = 36 rooms booked for the night, and at least `surge_early_arrivals` = 11 arrivals booked `surge_early_days` = 14 days or more ahead.<br>**Fires:** that day, planned with one cleaner fewer than rostered, leaves an arrival room unready at check-in. | Bookings summary, `staff_roster.csv` cleaner shifts as known then | One manager request per weekend for a stand-by cleaner. Nobody is planned until it is approved. | `request_human_approval always needs approval`. | "Approval answered before <day>; on the day, every arrival room cleaning_completed before check-in." | A busy day booked late is not an event; event weekends are booked early. The two thresholds flag exactly the 3 dev event weekends. | 5 signals, 3 episodes |
 | `day_plan` | **When:** at `day_plan_hour` = 7 local.<br>**Fires:** an arrival room is predicted ready after its due time (an early check-in time if one was asked, else 15:00). The plan cleans arrival rooms first, at `clean_room_min` = 60 min each, on the cleaner shifts known then, starting from `checkout_estimate_local` = 09:45 for rooms not yet free. | `staff_roster.csv` cleaner shifts, each arrival booking, the event that set each room's state | A cleaning order (arrival rooms first) and robot pre-passes for vacant arrival rooms. A manager request for extra cleaning help when an arrival room is not ready by check-in. One delay notice per late arrival guest who has no open request with S01. Over 11 episodes: 11 cleaning orders, 3 robot passes, 11 help requests, 39 guest notices. | Cleaning order, robots and notices autonomous. The help request: `request_human_approval always needs approval`. | "cleaning_completed in each arrival room by its predicted ready time + 30 min"; notices: "No arrival_waiting_room for <room> before check-in; escalate on one." | Robots shorten a clean but are not counted as capacity: no capacity is invented. | 11 signals, 11 episodes |
@@ -210,7 +210,7 @@ time, and cancelled bookings stay in, because the data has no cancellation time.
 
 S06 claims no staff and no rooms and never messages guests.
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `tariff_published` | Tomorrow's prices are first published and at least `battery_min_history_d` = 7 days of energy history exist. | `tariff.csv:<publication>`, `energy.csv:<now>`, `building.json:BAT1` | One battery day plan (`optimize_energy`): charge and discharge windows to the end of the published prices. It is a dynamic programme over BAT1's state of charge in `battery_soc_step_kwh` = 1 kWh steps. It works within the `building.json` limits: 10-95 kWh, 40 kW, round-trip efficiency 0.9. The PV and load forecast is the same-time-of-day mean of the last `battery_history_d` = 14 days. The saving is against no battery, simulated. | Autonomous by default. | "SOC follows the plan within 10 kWh at each window boundary; replan if import exceeds the plan by 20 %." These two values are written in the lane's text, not in `settings.py`. | Kept running while S03 handles a heat pump fault: the back-off pauses pre-heat and load shifting, not the battery. | 358 signals, 358 episodes |
 | `arrival_due` | **Check:** `preheat_lead_h` = 3 h before a booked arrival.<br>**Fires:** the room is vacant, has a reading, its window is closed, it is below 20 °C, and HP1 is running. | Each arrival booking, the room readings, HP1 status | Raise the setpoint to `preheat_setpoint_c` = 21 °C. Rooms due at the same time share one decision. | Autonomous by default. | "Each room at or above 20 degC at check-in and no temperature_cold request in the first 2 h of the stay." | Skipped while S03 is active (`s03_backoff_h` = 24 h), so pre-heat never competes with a degraded heat pump. | 256 signals, 256 episodes |
@@ -228,7 +228,7 @@ Service times come from `building.json`:
 - the waste pickup is Tue and Fri 07:00 local;
 - an extra service has about 24 h lead time.
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `drinks_low` | **Projection:** the use rate over the last `logistics_rate_h` = 96 h projects the drinks running out before the next regular restock. Hours at zero stock and at the cap are left out of the rate.<br>**Fires:** an extra restock ordered now still arrives first, and the run-out is at most lead + `logistics_buffer_h` = 12 h away (`logistics_event_buffer_h` = 18 h on an event weekend). | `logistics.csv:VEND1/stock_drinks:<96 h>` | Order one extra restock per window (`order_service`). | Autonomous: a vending restock is named autonomous in the challenge, so the contractor rule does not apply. | "A vending_restocked event by <time> and no vending_out_of_stock before it; otherwise escalate." | A stock-out the regular restock covers in time: no order. The setting's note: on dev, 21 of 23 shortages ordered 20 h or more ahead, 1 false order. | 24 signals, 24 episodes |
 | `container_overflow_risk` | The central container, simulated to the next regular pickup, reaches `logistics_cap_pct` = 100 % at the daily floor bin dump (`logistics_dump_local_h` = 14.5, i.e. 14:30 local). It fills in steps at the dump, not linearly. | `logistics.csv:WASTE_MAIN/fill_pct,WASTE_F1..F4/fill_pct:<24 h>`, departures known then | First choice: at `logistics_hold_local_h` = 13:30 local on the overflow day, hold the dump of the floor bins that would overflow it. Then, after the pickup, a robot carries them (from `logistics_robot_start_local_h` = 07:15, `logistics_bin_run_min` = 20 min per bin). If a held bin would pass `logistics_held_max_pct` = 90 %, the hold is unsafe and an extra pickup is ordered instead. Dev: hold and robot runs twice, extra pickup once. | Autonomous: waste pickup is named autonomous; robots enter no room. | "Held bins stay below 90 %, WASTE_MAIN stays below 100 % until the pickup, and the bins drop to 0 after the bin-run." | Floor bins are emptied daily and never overflow; only the central container is watched. | 3 signals, 3 episodes |
@@ -253,7 +253,7 @@ request from the booking before it is due". A staff action's plan is "A staff vi
 order for the room before the due time". A cleaning outside the cleaner shifts says it
 happens "in the first cleaner shift".
 
-| Request type | What Steward does | Autonomy and why | Dev count |
+| Request type | What OSAM does | Autonomy and why | Dev count |
 |---|---|---|---|
 | `early_checkin` | Reply. "Should be ready" only if the room is clean now, no departure from it is still due before the arrival, and S05 has not told the guest it may be late. Otherwise "a message follows". No time is quoted that the rules did not plan. | Autonomous by default. | 311 |
 | `late_checkout` | Reply. Offered pending staff approval if the room has no arrival that day; otherwise luggage storage is offered. Never a promise. | Autonomous by default. | 271 |
@@ -279,12 +279,12 @@ and the requests the planner already cites.
 
 ### DQ Data quality (`detect/data_quality.py`, planned in `plan.py`)
 
-| Signal | Condition | Evidence | What Steward does | Autonomy and why | Verified by | Not confused with | Dev count |
+| Signal | Condition | Evidence | What OSAM does | Autonomy and why | Verified by | Not confused with | Dev count |
 |---|---|---|---|---|---|---|---|
 | `floor_outage` | All rooms of one floor are blank in room telemetry for `outage_min_intervals` = 2 consecutive intervals (the floor's gateway). | `room_telemetry.csv:<gateway> rooms:<range>` | Low flag: "Telemetry outage". The floor's rooms get no leak or comfort verdict while blank. | Autonomous by default. | "Readings from the floor resume; escalate if blank for 24 h." | One room blank: see `sensor_dead`. | 14 signals, 14 episodes |
 | `sensor_dead` | One room's temperature is blank for `sensor_dead_h` = 6 h while the rest of its floor reports. | `room_telemetry.csv:<room> temperature_c:<range>` | Low flag: "Room temperature sensor dead". The room gets no comfort verdict or pre-heat while blank. | Autonomous by default. | "Readings from the room resume; inspect the sensor if not within 24 h." | A floor outage (all rooms blank). Short dropouts: dev has 19 one-room blank runs of 1 h or more, and 18 of them last 6 h or more. | 18 signals, 17 episodes |
 | `meter_jitter` | A room water meter steps back (a negative step) in a night window, which happens after a meter exchange. Readings that drop by more than `meter_reset_drop_l` = 1000 L are resets, not jitter. | `room_water.csv:<room>:<night>` | Low flag: "Water meter jitter", once per run of jittering nights. Leak checks on that meter use hourly volumes while it jitters. | Autonomous by default. | "Meter readings rise monotonically again; check the meter if not." | A slow leak: the jitter cancels within an hour, so the hourly volume shows whether water really flows. | 192 signals, 2 episodes |
-| `undeclared_id` | A room or asset ID appears in the data but not in `building.json`. | `<file>:<id> first row <time>`, `building.json:building` | Low flag on BUILDING: Steward makes no decision on that ID. | Autonomous by default. | "The ID is declared or its rows stop." | | 0 (none in dev or quickstart) |
+| `undeclared_id` | A room or asset ID appears in the data but not in `building.json`. | `<file>:<id> first row <time>`, `building.json:building` | Low flag on BUILDING: OSAM makes no decision on that ID. | Autonomous by default. | "The ID is declared or its rows stop." | | 0 (none in dev or quickstart) |
 
 ### Follow-ups (`verify.py`)
 
@@ -292,7 +292,7 @@ A follow-up is a new decision made when a decision's check becomes possible. It 
 data known then, and depends on the decision it checks. The kind names are those of
 `kpi.FOLLOW_UP_KINDS`.
 
-| Follow-up | When it fires | What Steward does | Autonomy | Dev count |
+| Follow-up | When it fires | What OSAM does | Autonomy | Dev count |
 |---|---|---|---|---|
 | `ready_early` | A guest holds a ready time, and the room's first `cleaning_completed` after that promise arrives. The guest has not checked in and has been told nothing since. | Tell the guest the room is ready now, "before the promised <time>" if it is `promise_grace_min` = 15 min or more early. | Autonomous by default. | 30 |
 | `ready_time_missed` | `promise_grace_min` = 15 min after a promised ready time, the room is neither clean nor occupied, and nothing was said to it since. | Tell the guest the room is late; staff are on it and a new time follows. | Autonomous by default. | 12 |
@@ -478,9 +478,9 @@ the organisers' automated check counts that, and we say so when asked.
    chain. The dev year has 178 incidents against 2,129 routine episodes (guest replies,
    pre-heats, battery plans), and the console separates them. 42 decisions in the year are
    critical. The supervisor added 9 decisions in 492 reviews.
-6. **False alarms?** Steward acts on persistence and known-at. In dev: 2 water episodes got no
+6. **False alarms?** OSAM acts on persistence and known-at. In dev: 2 water episodes got no
    decision (one night of flow, on the meter that jitters after its exchange); 19 of 159
-   comm-loss alarms had no gap behind them, and Steward raised no outage for them. Leaks: 5 of
+   comm-loss alarms had no gap behind them, and OSAM raised no outage for them. Leaks: 5 of
    5 incidents were followed by a repair work order.
 7. **What did you get wrong?** From the Limits panel: 3 of 24 waiting guests were not
    anticipated that morning; 7 of 24 were told a ready time after they had arrived; 463 of
@@ -491,7 +491,7 @@ the organisers' automated check counts that, and we say so when asked.
    connect the executor to the real systems one action at a time (BMS setpoints, robot tasks,
    orders), keep the approval inbox for anything with cost or a person entering a room, and
    regenerate the insights each season. The target architecture is in `insights.md`.
-9. **The autonomy rules, by example?** From Day B: on its own, Steward flags the burst and sends
+9. **The autonomy rules, by example?** From Day B: on its own, OSAM flags the burst and sends
    an inspection into the empty room. Blocking R201 needs a manager (always), and so does the
    plumber (a contractor). Inspecting an occupied room needs approval and the guest's consent
    (Day A, R103). Never allowed: a robot into an occupied room, releasing a room that is not
@@ -532,7 +532,7 @@ the organisers' automated check counts that, and we say so when asked.
     gaps the report names), the real executor behind the approval inbox, and a season in
     shadow mode to tune thresholds on real data.
 20. **Is any of this a real PLATO building?** No. PLATO-40 is the challenge's fictional
-    property and the data is synthetic; Steward is our product, not a Rhomberg one.
+    property and the data is synthetic; OSAM is our product, not a Rhomberg one.
 
 ## 8. Roles and rehearsal
 

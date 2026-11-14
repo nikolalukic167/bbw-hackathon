@@ -140,7 +140,7 @@ def _undeclared(ds: Dataset) -> list[Signal]:
             "undeclared_id",
             ("BUILDING",),
             (f"{file}:{key} first row {stamp(t)}", "building.json:building"),
-            f"{what} {key} appears in {file} but not in building.json; Steward makes no "
+            f"{what} {key} appears in {file} but not in building.json; OSAM makes no "
             "decision on it",
         )
         for (what, key), (t, file) in sorted(first.items(), key=lambda x: (x[1][0], x[0]))

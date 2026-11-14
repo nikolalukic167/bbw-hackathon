@@ -1,7 +1,7 @@
 // Day view: one day replayed in 15-min steps. Floor plan of recorded room states (left),
-// the curated timeline of what Steward saw and proposed up to the cursor (right), plant and
+// the curated timeline of what OSAM saw and proposed up to the cursor (right), plant and
 // shift strip, and three sparklines from the hourly series. Recorded data fills the tiles;
-// Steward's proposals are outlines and badges only, because the replay never applies them.
+// OSAM's proposals are outlines and badges only, because the replay never applies them.
 (() => {
   const STEP_MS = 15 * 60 * 1000;
   const PLAY_MS = 120; // one 15-min step per tick: a day in about 12 s
@@ -102,7 +102,7 @@
   const isRoutine = e => !!e && (e.routine || ROUTINE().has(e.id));
   const short = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 
-  // Everything Steward saw or proposed on one day, in time order, from the episodes.
+  // Everything OSAM saw or proposed on one day, in time order, from the episodes.
   function items(dayKey, D) {
     if (cache[dayKey]) return cache[dayKey];
     const t0 = D.t[0], t1 = D.t[D.t.length - 1] + STEP_MS;
@@ -135,7 +135,7 @@
 
   function roomName(code, D) { return (D.states || [])[code] ?? "unknown"; }
 
-  // Rooms Steward proposed to block and has not released by time t: an overlay, never a state.
+  // Rooms OSAM proposed to block and has not released by time t: an overlay, never a state.
   function proposals(list, t) {
     const blocked = new Set(), recent = new Map(), open = new Map();
     for (const x of list) {
@@ -190,7 +190,7 @@
     });
     svg += `</svg>`;
     const legend = Object.entries(STATE_STYLE).map(([, v]) => `<span><i style="background:${v.fill}"></i>${v.label}</span>`).join("")
-      + `<span><i class="prop"></i>Steward proposal (simulated, not applied in the replay)</span>`
+      + `<span><i class="prop"></i>OSAM proposal (simulated, not applied in the replay)</span>`
       + `<span>letter = incident active in the last 6 h${BAND() ? `; blue / orange = occupied room below / above ${BAND()[0]}-${BAND()[1]} degC` : ""}</span>`;
     return `${svg}<div class="dv-legend">${legend}</div>`;
   }
@@ -229,7 +229,7 @@
         <div class="what"><span class="act">${esc(d.action.replaceAll("_", " "))}</span>
           <span class="pill p-${esc(d.priority)}">${esc(d.priority)}</span>
           <span class="pill a-${esc(d.autonomy)}">${esc(AUTONOMY[d.autonomy] ?? d.autonomy)}</span>
-          ${human ? `<span class="beat">Steward did not act alone</span>` : ""}</div>
+          ${human ? `<span class="beat">OSAM did not act alone</span>` : ""}</div>
         <div class="why">${esc(short(d.reason, 260))}</div>
         <div class="sub">${esc((d.affected_assets || []).join(", "))} &middot; rule: ${esc(short(d.rule, 120))}${d.verification_plan ? ` &middot; verify: ${esc(short(d.verification_plan, 120))}` : ""}
           ${next ? `<br>${next}` : ""} &middot; <button class="lnk" type="button" data-trail="${esc(d.event_id)}">trail</button></div></div>`;
@@ -288,7 +288,7 @@
       <line x1="${X(Math.min(t, t1))}" x2="${X(Math.min(t, t1))}" y1="0" y2="${H}" stroke="var(--focus)" stroke-width="1" vector-effect="non-scaling-stroke"/></svg></figure>`;
   }
 
-  // Recorded BAT1 SOC (solid) against Steward's plan (dashed), on the day's 15-min grid.
+  // Recorded BAT1 SOC (solid) against OSAM's plan (dashed), on the day's 15-min grid.
   function socSpark(D, t) {
     const rec = D.plant?.soc, plan = D.plant?.soc_plan;
     if (!rec || !plan || !plan.some(v => v != null)) return "";
@@ -303,7 +303,7 @@
       return d;
     };
     const ci = indexAt(D, t);
-    return `<figure><figcaption><span>BAT1 SOC: recorded vs Steward plan (dashed, simulated)</span><span>${rec[ci] != null ? `<b>${rec[ci].toFixed(0)} kWh</b>` : ""}${plan[ci] != null ? ` plan ${plan[ci].toFixed(0)}` : ""}</span></figcaption>
+    return `<figure><figcaption><span>BAT1 SOC: recorded vs OSAM plan (dashed, simulated)</span><span>${rec[ci] != null ? `<b>${rec[ci].toFixed(0)} kWh</b>` : ""}${plan[ci] != null ? ` plan ${plan[ci].toFixed(0)}` : ""}</span></figcaption>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="BAT1 state of charge, recorded and planned">
       <path d="${line(plan, n)}" fill="none" stroke="var(--focus)" stroke-width="1.6" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>
       <path d="${line(rec, ci)}" fill="none" stroke="var(--fg)" stroke-width="2" vector-effect="non-scaling-stroke"/>
@@ -311,7 +311,7 @@
   }
 
   function sparks(D, list, t) {
-    // Lanes ranked by the highest priority Steward gave them that day: the leak beats a cold room.
+    // Lanes ranked by the highest priority OSAM gave them that day: the leak beats a cold room.
     const score = {};
     for (const x of list) if (x.d && !isRoutine(x.e)) score[x.e.issue] = Math.max(score[x.e.issue] ?? -1, RANK[x.d.priority] ?? 0);
     const best = k => Math.max(-1, ...SERIES[k].lanes.map(l => score[l] ?? -1));
@@ -369,7 +369,7 @@
     const days = Object.keys(DATA.days || {}).sort();
     el.innerHTML = `<div class="dv">
       <section class="panel dv-head">
-        <div class="ttl"><h2>${esc(fmtDate.format(D.t[0]))}</h2><span class="muted">PLATO-40 replay, 15-min steps. Tiles are recorded data; Steward's proposals are dashed outlines (simulated).</span></div>
+        <div class="ttl"><h2>${esc(fmtDate.format(D.t[0]))}</h2><span class="muted">PLATO-40 replay, 15-min steps. Tiles are recorded data; OSAM's proposals are dashed outlines (simulated).</span></div>
         <div class="now" aria-live="polite">${hhmm(D.t[cur.i])}</div>
         <div class="dv-days">${(D.synthetic ? [...days, dayKey] : days).map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format((DATA.days[k] || D).t[0]))}</button>`).join("")}</div>
       </section>
@@ -387,7 +387,7 @@
         <section class="panel dv-plan" aria-label="Building">${D.synthetic
           ? `<div class="dv-empty">Room tiles and the plant strip are extracted only for the replay days of this page: ${days.map(k => esc(fmtDate.format(DATA.days[k].t[0]))).join(", ")}. The timeline and the hourly series below are complete for this day.</div>`
           : floorPlan(D, cur.i, list) + plant(D, cur.i)}</section>
-        <section class="panel dv-tl" aria-label="What Steward saw and proposed">${timeline(list, t, flashId)}</section>
+        <section class="panel dv-tl" aria-label="What OSAM saw and proposed">${timeline(list, t, flashId)}</section>
       </div>
       <section class="panel dv-spark" aria-label="Day series">${sparks(D, list, t)}</section>
     </div>`;

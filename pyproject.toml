@@ -1,7 +1,7 @@
 [project]
 name = "plato40"
 version = "0.1.0"
-description = "Steward: deterministic operations pipeline for the fictional PLATO-40 hotel (proximata Hackathon '26, Rhomberg track)."
+description = "OSAM: deterministic operations pipeline for the fictional PLATO-40 hotel (proximata Hackathon '26, Rhomberg track)."
 readme = "README.md"
 license = "MIT"
 authors = [

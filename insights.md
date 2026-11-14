@@ -1,14 +1,14 @@
-# Steward insights: what a year of PLATO-40 teaches
+# OSAM insights: what a year of PLATO-40 teaches
 
-Steward ran over the `dev` dataset (1 Jan 2026 to 31 Dec 2026, 365 days, 40 rooms) with 0
-contract or autonomy violations. Every number below is computed from that run and the dataset
-tables by `uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache llm_cache
+OSAM ran over the `dev` dataset (1 Jan 2026 to 31 Dec 2026, 365 days, 40 rooms) with 0 contract
+or autonomy violations. Every number below is computed from that run and the dataset tables by
+`uv run python scripts/insights.py <data_dir> --out insights.md --llm-cache llm_cache
 --supervisor decisions.supervisor.jsonl`. PLATO-40 is fictional and the data synthetic: these
 are findings about the replay, and every effect of an action is simulated.
 
 ## The year at a glance
 
-Steward turned 2,746 detector signals into 178 incidents, 2,129 routine guest replies, pre-heats
+OSAM turned 2,746 detector signals into 178 incidents, 2,129 routine guest replies, pre-heats
 and battery plans, and 2,989 decisions. 2,817 decisions were autonomous. A person was asked to
 approve 172, on average every 2.1 days, and 127 of those also need guest consent. 116 of the
 approvals are guest-desk consent requests (maintenance, cleaning), so the manager's own load is
@@ -55,7 +55,7 @@ them before the request's due time.
 ## Supervisor review
 
 A supervisor LLM (claude-sonnet-5-5, ADR-003) reviewed the rules' decisions at 492 review points
-(364 daily and 128 hotspot). It answered at 482 of them; 10 had no answer, all because the call
+(364 daily and 128 hotspot). It answered at 491 of them; 1 had no answer, all because the call
 failed. The checks rejected 0 answers. It added 9 decisions (the policy set 9 autonomous) and
 changed or removed none. By action: 8 flag_anomaly and 1 request_inspection; by lane: 6 guest
 desk, 1 heat pump and comfort, 1 energy (pre-heat, battery plan) and 1 ventilation (ahu filter).
@@ -69,46 +69,44 @@ it. R304 and R308 are on the same floor, and R303 on that..."
 ## Operating recommendations for PLATO-40 next year (feedback to CLARA)
 
 **Turnovers: act at the morning plan, and move on-call help to the hours when guests wait.** 24
-guests waited for a room, on 16 days. For 21 of them Steward had already decided on that room
+guests waited for a room, on 16 days. For 21 of them OSAM had already decided on that room
 earlier the same day, a median 6.5 h before the wait. The 11 days that the 07:00 plan flagged as
 at risk carried 13 of the waits, and 3 of those days were short-staffed, with fewer than the
 usual 2 cleaners on shift. The year had 15 short-staffed days, from 24 cleaner shifts lost to
 absence. 22 of the 24 waits began before the on-call window opens at 15:30, so on-call help
 arrives too late. *Recommendation:* when a sick note leaves a day short-staffed, book
 replacement cleaning at the morning plan, and move the on-call window to the hours before
-check-in. *Uncertainty:* Steward did not anticipate 3 waits; they came on days the plan judged
-safe, and 1 of them followed an early check-in request that Steward predicted would be met.
-Their median wait was 0.50 h, against 1.00 h for the anticipated ones.
+check-in. *Uncertainty:* OSAM did not anticipate 3 waits; they came on days the plan judged
+safe, and 1 of them followed an early check-in request that OSAM predicted would be met. Their
+median wait was 0.50 h, against 1.00 h for the anticipated ones.
 
 **Leaks: dispatch on persistence and on the night gap; do not wait for a guest report.** 5 of
-Steward's 5 leak incidents were followed by a corrective work order on the same asset. Steward
-flagged the bursts a median 21.0 h before the repair order, and the slow leaks (running toilets,
-a pipe in the technical room) 6 to 7 days before it. Night-flow alarms raised by the BMS all
-year: 1, during 1 of the incidents and 2.5 h after Steward's flag; none for the slow leaks.
+OSAM's 5 leak incidents were followed by a corrective work order on the same asset. OSAM flagged
+the bursts a median 21.0 h before the repair order, and the slow leaks (running toilets, a pipe
+in the technical room) 6 to 7 days before it. Night-flow alarms raised by the BMS all year: 1,
+during 1 of the incidents and 2.5 h after OSAM's flag; none for the slow leaks.
 *Recommendation:* keep flow in every night interval on 2 nights and the main-minus-rooms night
 gap as triggers, send the technician after 3 nights, and use the night-flow alarm only as
 corroboration. *Uncertainty:* 5 incidents in the year.
 
 **Heat pump: judge HP1 against a fixed COP curve, and check the refrigerant before the cold
-months.** A Theil-Sen fit over 365 days gives COP = 2.78 + 0.068 x outdoor degC. Outside
-Steward's incidents the daily COP never fell below 0.96 of that curve; inside them it fell to
-0.81. The incidents ended in the repair "Heat pump service: refrigerant leak sealed and
-recharged", 46 to 48 h after Steward's first flag, in January and December, 315 days apart.
-*Recommendation:* keep the ratio threshold at 0.88, which leaves a margin on either side, and
-add a refrigerant check to the autumn service. *Uncertainty:* 2 incidents, and the curve will
-drift as the unit ages.
+months.** A Theil-Sen fit over 365 days gives COP = 2.78 + 0.068 x outdoor degC. Outside OSAM's
+incidents the daily COP never fell below 0.96 of that curve; inside them it fell to 0.81. The
+incidents ended in the repair "Heat pump service: refrigerant leak sealed and recharged", 46 to
+48 h after OSAM's first flag, in January and December, 315 days apart. *Recommendation:* keep
+the ratio threshold at 0.88, which leaves a margin on either side, and add a refrigerant check
+to the autumn service. *Uncertainty:* 2 incidents, and the curve will drift as the unit ages.
 
-**Logistics: keep ordering on the 96 h use rate, and add a summer drinks restock.** Steward
-ordered 25 extra services (24 for VEND1, 1 for WASTE_MAIN). 21 came before a real stock-out or
-full container, a median 31.8 h ahead, 21 of them at least the 24 h order lead time ahead; 4
-found no shortage before the regular service. 21 of the year's 23 shortages had an order before
-them. The 20 vending stock-outs (20 of them drinks) fell between April and September, most in
-July (6). *Recommendation:* in those months, add a restock between the regular visits (Mon and
-Thu). *Uncertainty:* a replayed order changes no later stock, so a hit shows need, not
-prevention.
+**Logistics: keep ordering on the 96 h use rate, and add a summer drinks restock.** OSAM ordered
+25 extra services (24 for VEND1, 1 for WASTE_MAIN). 21 came before a real stock-out or full
+container, a median 31.8 h ahead, 21 of them at least the 24 h order lead time ahead; 4 found no
+shortage before the regular service. 21 of the year's 23 shortages had an order before them. The
+20 vending stock-outs (20 of them drinks) fell between April and September, most in July (6).
+*Recommendation:* in those months, add a restock between the regular visits (Mon and Thu).
+*Uncertainty:* a replayed order changes no later stock, so a hit shows need, not prevention.
 
 **Energy: plan the battery on the day-ahead prices, pre-heat by booked arrival, and back off
-while the heat pump is weak.** On 358 days Steward planned BAT1 when the next day's prices were
+while the heat pump is weak.** On 358 days OSAM planned BAT1 when the next day's prices were
 published, against forecast PV and the recent load: a median 408.8 kWh of grid import per plan
 against 427.9 kWh with no battery, and a median saving of EUR 17.68 per plan against no battery,
 simulated at the published prices. Pre-heat raised the setpoint of vacant arrival rooms only,
@@ -122,20 +120,20 @@ plans overlap in time, so the savings per plan are not added up into a year.
 **Alarms and data: use BMS alarms to corroborate, never to trigger.** The BMS raised 464 alarms
 in the year; matched against telemetry, they trail their condition by a median 0.75 h. It raised
 159 comm-loss alarms, 19 of them with no gap behind them, against 14 floor-wide outages that
-Steward found. No alarm watches HP1 efficiency (0 alarms on HP1 all year). After meter WM_R105
-was exchanged, its readings stepped backwards on 180 nights. *Recommendation:* keep alarms as
-evidence beside Steward's rules, and check every exchanged meter for backward steps.
-*Uncertainty:* the alarm rules are reconstructed from the values the alarms report.
+OSAM found. No alarm watches HP1 efficiency (0 alarms on HP1 all year). After meter WM_R105 was
+exchanged, its readings stepped backwards on 180 nights. *Recommendation:* keep alarms as
+evidence beside OSAM's rules, and check every exchanged meter for backward steps. *Uncertainty:*
+the alarm rules are reconstructed from the values the alarms report.
 
 **Filters: change AHU1 filters on pressure, not on the calendar.** Planned changes ran 97 days
 apart, yet the filters clogged 2 times and were replaced unplanned by EXTERNAL_HVAC, 43 to 87
 days after the previous change; FILTER_DP_HIGH was raised 10 times. *Recommendation:* trigger
-the change on day-mode filter pressure. *Uncertainty:* 2 events. Steward's filter lane made 20
+the change on day-mode filter pressure. *Uncertainty:* 2 events. OSAM's filter lane made 20
 decisions on AHU1 this year.
 
 ## Look-alikes and bad data
 
-Steward acts on persistence and on what was known at the time, never on a single odd reading.
+OSAM acts on persistence and on what was known at the time, never on a single odd reading.
 
 - **Water:** 2 water episodes got no decision: 2 of them because the night flow did not last 2
   nights in a row, 2 of them on the jittering meter. Meter WM_R105 jitters after its exchange
@@ -143,7 +141,7 @@ Steward acts on persistence and on what was known at the time, never on a single
 - **Comfort:** none of the 29 "too cold" requests came from a room with its window reported open
   or inside the comfort band. The 201 "too hot" requests were answered as routine and never
   opened a heat pump incident.
-- **Alarms:** 19 of the 159 comm-loss alarms had no gap behind them. Steward's outage flag reads
+- **Alarms:** 19 of the 159 comm-loss alarms had no gap behind them. OSAM's outage flag reads
   the telemetry, not the alarms: it found 14 floor-wide outages and none behind those alarms.
 - **Blank data:** blank stays blank, never zero; while a floor is blank, no room on it gets a
   leak or comfort verdict.
@@ -210,10 +208,10 @@ reveal a leak. *Recommendation:* submeters on the circulation loop and the commo
                                                             -> PLATO (next building)
 ```
 
-- **Data:** the files Steward reads today, plus a measured COP (heat meter and electricity
-  submeter on the heat pump), submeters on common-area water, leak sensors under washbasins,
-  logged room exits, inspection events, and an on-call and contractor calendar. Every record
-  carries the time it became known.
+- **Data:** the files OSAM reads today, plus a measured COP (heat meter and electricity submeter
+  on the heat pump), submeters on common-area water, leak sensors under washbasins, logged room
+  exits, inspection events, and an on-call and contractor calendar. Every record carries the
+  time it became known.
 - **Agents:** a deterministic lane for each domain (turnaround, water, heating and energy,
   logistics, data quality) feeding a single policy gate that sets the autonomy level. A language
   model words guest messages, and every room, time and ID stays as the rules wrote them. A

@@ -1,4 +1,4 @@
-"""Write the Level 3 feedback report (``insights.md``) from one dataset and one Steward run.
+"""Write the Level 3 feedback report (``insights.md``) from one dataset and one OSAM run.
 
 Usage::
 
@@ -8,7 +8,7 @@ Usage::
 It runs every registered lane, like ``plato40 run``; with ``--llm-cache`` also the guest
 messages and the supervisor from that cache, so the report describes the committed run.
 
-The script runs the Steward pipeline on ``data_dir`` and computes every figure in the
+The script runs the OSAM pipeline on ``data_dir`` and computes every figure in the
 report from that run and the dataset tables. The report text holds no digits of its own:
 every template is checked before rendering, so a number typed by hand fails the run.
 """
@@ -98,12 +98,12 @@ LOOKALIKE_COLD = {
 }
 
 FILTER_NOTES = {
-    "lane": "Steward's filter lane made {filter_rows} decisions on {ahu} this year.",
-    "none": "Steward has no filter detector yet.",
+    "lane": "OSAM's filter lane made {filter_rows} decisions on {ahu} this year.",
+    "none": "OSAM has no filter detector yet.",
 }
 LIMIT_NOTES = {
     "lanes": "",
-    "none": "Steward has no daily energy plan and no filter detector yet.",
+    "none": "OSAM has no daily energy plan and no filter detector yet.",
 }
 SAVINGS = {
     "battery": "The data's only costs are electricity prices. The only saving in this report is "
@@ -131,9 +131,9 @@ EXAMPLE = ' For example, `{event_id}`: "{reason}"'
 EXAMPLE_MORE = ' And `{event_id}`: "{reason}"'
 
 TEMPLATE = """\
-# Steward insights: what a year of PLATO-40 teaches
+# OSAM insights: what a year of PLATO-40 teaches
 
-Steward ran over the `{profile}` dataset ({start} to {end}, {days} days, {rooms} rooms) with
+OSAM ran over the `{profile}` dataset ({start} to {end}, {days} days, {rooms} rooms) with
 {violations} contract or autonomy violations. Every number below is computed from that run
 and the dataset tables by `uv run python scripts/insights.py <data_dir> --out insights.md
 --llm-cache llm_cache --supervisor decisions.supervisor.jsonl`.
@@ -142,7 +142,7 @@ effect of an action is simulated.
 
 ## The year at a glance
 
-Steward turned {signals} detector signals into {episodes} incidents, {routine} routine guest
+OSAM turned {signals} detector signals into {episodes} incidents, {routine} routine guest
 replies, pre-heats and battery plans, and {decisions} decisions. {autonomous} decisions were
 autonomous. A person was asked to approve {approvals}, on average every {days_per_approval}
 days, and {consent} of those also need guest consent. {desk_approvals} of the approvals are
@@ -169,7 +169,7 @@ request, {req_on_time} of them before the request's due time.
 ## Operating recommendations for PLATO-40 next year (feedback to CLARA)
 
 **Turnovers: act at the morning plan, and move on-call help to the hours when guests wait.**
-{waits} guests waited for a room, on {wait_days} days. For {anticipated} of them Steward had
+{waits} guests waited for a room, on {wait_days} days. For {anticipated} of them OSAM had
 already decided on that room earlier the same day, a median {lead_h} h before the wait. The
 {at_risk} days that the {plan_hour} plan flagged as at risk carried {waits_at_risk} of the
 waits, and {short_at_risk} of those days were short-staffed, with fewer than the usual
@@ -178,18 +178,18 @@ waits, and {short_at_risk} of those days were short-staffed, with fewer than the
 on-call window opens at {oncall_start}, so on-call help arrives too late.
 *Recommendation:* when a sick note leaves a day short-staffed, book replacement cleaning at
 the morning plan, and move the on-call window to the hours before check-in.
-*Uncertainty:* Steward did not anticipate {missed} waits; they came on days the plan judged
-safe, and {missed_requested} of them followed an early check-in request that Steward
+*Uncertainty:* OSAM did not anticipate {missed} waits; they came on days the plan judged
+safe, and {missed_requested} of them followed an early check-in request that OSAM
 predicted would be met. Their median wait was {missed_wait} h, against {anticipated_wait} h
 for the anticipated ones.
 
 **Leaks: dispatch on persistence and on the night gap; do not wait for a guest report.**
-{leak_wo} of Steward's {leak_eps} leak incidents were followed by a corrective work order on
-the same asset{leak_note}. Steward flagged the bursts a median {burst_lead} h before the
+{leak_wo} of OSAM's {leak_eps} leak incidents were followed by a corrective work order on
+the same asset{leak_note}. OSAM flagged the bursts a median {burst_lead} h before the
 repair order,
 and the slow leaks (running toilets, a pipe in the technical room) {slow_lead} days before
 it. Night-flow alarms raised by the BMS all year: {wnf_alarms}, during {wnf_eps} of the
-incidents and {wnf_after} h after Steward's flag; none for the slow leaks.
+incidents and {wnf_after} h after OSAM's flag; none for the slow leaks.
 *Recommendation:* keep flow in every night interval on {persist} nights and the
 main-minus-rooms night gap as triggers, send the technician after {tech_nights} nights, and
 use the night-flow alarm only as corroboration. *Uncertainty:* {leak_eps} incidents in the
@@ -197,15 +197,15 @@ year.
 
 **Heat pump: judge {hp_asset} against a fixed COP curve, and check the refrigerant before
 the cold months.** A Theil-Sen fit over {fit_days} days gives COP = {fit_icpt} +
-{fit_slope} x outdoor degC. Outside Steward's incidents the daily COP never fell below
+{fit_slope} x outdoor degC. Outside OSAM's incidents the daily COP never fell below
 {normal_min} of that curve; inside them it fell to {fault_min}. The incidents ended in the
-repair "{hp_summary}", {hp_lead} h after Steward's first flag, in {hp_months}, {hp_gap}
+repair "{hp_summary}", {hp_lead} h after OSAM's first flag, in {hp_months}, {hp_gap}
 days apart. *Recommendation:* keep the ratio threshold at {cop_low}, which leaves a margin
 on either side, and add a refrigerant check to the autumn service. *Uncertainty:* {hp_eps}
 incidents, and the curve will drift as the unit ages.
 
 **Logistics: keep ordering on the {rate_h} h use rate, and add a summer drinks restock.**
-Steward ordered {orders} extra services ({orders_detail}). {hits} came before a real
+OSAM ordered {orders} extra services ({orders_detail}). {hits} came before a real
 stock-out or full container, a median {log_lead} h ahead, {in_time} of them at least the
 {lead_need} h order lead time ahead; {false_orders} found no shortage before the regular
 service. {covered} of the year's {shortages} shortages had an order before them. The
@@ -215,7 +215,7 @@ the regular visits ({restock_days}). *Uncertainty:* a replayed order changes no 
 so a hit shows need, not prevention.
 
 **Energy: plan the battery on the day-ahead prices, pre-heat by booked arrival, and back off
-while the heat pump is weak.** On {bat_days} days Steward planned {bat_asset} when the next
+while the heat pump is weak.** On {bat_days} days OSAM planned {bat_asset} when the next
 day's prices were published, against forecast PV and the recent load: a median {bat_import}
 kWh of grid import per plan against {bat_base} kWh with no battery, and a median saving of EUR
 {bat_median} per plan against no battery, simulated at the published prices. Pre-heat raised
@@ -230,10 +230,10 @@ time, so the savings per plan are not added up into a year.
 **Alarms and data: use BMS alarms to corroborate, never to trigger.** The BMS raised
 {alarms} alarms in the year; matched against telemetry, they trail their condition by a
 median {alarm_lag} h. It raised {comm_alarms} comm-loss alarms, {unsupported} of them with no
-gap behind them, against {outages} floor-wide outages that Steward found. No alarm watches
+gap behind them, against {outages} floor-wide outages that OSAM found. No alarm watches
 {hp_asset} efficiency ({hp_alarms} alarms on {hp_asset} all year). After meter {jit_meter}
 was exchanged, its readings stepped backwards on {jit_nights} nights. *Recommendation:*
-keep alarms as evidence beside Steward's rules, and check every exchanged meter for backward
+keep alarms as evidence beside OSAM's rules, and check every exchanged meter for backward
 steps. *Uncertainty:* the alarm rules are reconstructed from the values the alarms report.
 
 **Filters: change {ahu} filters on pressure, not on the calendar.** Planned changes ran
@@ -244,14 +244,14 @@ day-mode filter pressure. *Uncertainty:* {unplanned_n} events. {filter_note}
 
 ## Look-alikes and bad data
 
-Steward acts on persistence and on what was known at the time, never on a single odd reading.
+OSAM acts on persistence and on what was known at the time, never on a single odd reading.
 
 - **Water:** {lk_water_text} Meter {jit_meter} jitters after its exchange ({jit_nights} nights
   stepping backwards); on those nights leaks are judged on hourly volumes.
 - **Comfort:** {lk_cold_text} The {hot_req} "too hot" requests were answered as routine and
   never opened a heat pump incident.
 - **Alarms:** {unsupported} of the {comm_alarms} comm-loss alarms had no gap behind them.
-  Steward's outage flag reads the telemetry, not the alarms: it found {outages} floor-wide
+  OSAM's outage flag reads the telemetry, not the alarms: it found {outages} floor-wide
   outages and none behind those alarms.
 - **Blank data:** blank stays blank, never zero; while a floor is blank, no room on it gets a
   leak or comfort verdict.
@@ -321,7 +321,7 @@ common-area draw every other day, so daily totals cannot reveal a leak.
                                                             -> PLATO (next building)
 ```
 
-- **Data:** the files Steward reads today, plus a measured COP (heat meter and electricity
+- **Data:** the files OSAM reads today, plus a measured COP (heat meter and electricity
   submeter on the heat pump), submeters on common-area water, leak sensors under washbasins,
   logged room exits, inspection events, and an on-call and contractor calendar. Every record
   carries the time it became known.
@@ -450,7 +450,7 @@ def reflow(markdown: str, width: int = 96) -> str:
 
 
 def _acted(run: pipeline.Run) -> list[Episode]:
-    """Return the episodes Steward made at least one decision on (``kpi.acted``)."""
+    """Return the episodes OSAM made at least one decision on (``kpi.acted``)."""
     return kpi.acted(run)
 
 
@@ -1134,7 +1134,7 @@ def energy(run: pipeline.Run) -> Facts:
 
 
 def lookalikes(run: pipeline.Run, settings: Settings) -> Facts:
-    """Return what Steward saw and did not act on: short or jittery water, benign cold rooms."""
+    """Return what OSAM saw and did not act on: short or jittery water, benign cold rooms."""
     acted = {e.episode_id for e in _acted(run)}
     quiet = [e for e in run.episodes if e.issue_type == "water_leak" and e.episode_id not in acted]
     persist = settings.detect.leak_persist_nights
@@ -1203,7 +1203,7 @@ def render(
 
 
 def main() -> int:
-    """Run Steward on one dataset and write the insights report."""
+    """Run OSAM on one dataset and write the insights report."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     parser.add_argument("--out", type=Path, required=True, help="insights.md to write")
