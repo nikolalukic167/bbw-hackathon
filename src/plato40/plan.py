@@ -447,6 +447,11 @@ def _turnaround_step(
     urgent = lead <= pd.Timedelta(hours=th.urgent_lead_h)
     prio = "critical" if d["waiting"] else "high" if urgent else "medium"
     cleaner = ledger.cleaner(d)
+    queue = d.get("ready_now")
+    # The room's own queue beats the first free slot (e.g. the slot is tomorrow): book nothing.
+    slow = cleaner is not None and queue is not None and cleaner[0] + ledger.clean > queue
+    if slow:
+        cleaner = None
     oncall = ledger.oncall(d) if d["waiting"] else None
     if oncall is not None and cleaner is not None and cleaner[0] <= oncall[0]:
         oncall = None
@@ -456,6 +461,8 @@ def _turnaround_step(
         promise = guest.committed if guest.committed > s.time else s.time + ledger.clean
     elif oncall is not None:
         promise = oncall[0] + ledger.clean
+    elif slow:
+        promise = queue
     else:
         promise = None if cleaner is None else cleaner[0] + ledger.clean
     ready = _local(promise, s.time, settings)
@@ -491,6 +498,8 @@ def _turnaround_step(
                 confidence=0.7,
             )
             guest.committed = ledger.book(begin, who)
+        elif slow:
+            guest.committed = promise
         else:
             chain.add(
                 s,
