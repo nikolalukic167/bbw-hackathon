@@ -198,7 +198,7 @@
     const cop = p.cop?.[i];
     const cells = [
       ["HP1", v(p.hp1_status, x => x), p.hp1_status?.[i] && p.hp1_status[i] !== "running"],
-      ["HP1 COP ratio", cop != null ? cop.toFixed(2) : "n/a", cop != null && cop < 0.88],
+      ["HP1 COP ratio", cop != null ? cop.toFixed(2) : "n/a", false],
       ["AHU1 filter dp", v(p.ahu_dp, x => `${x.toFixed(0)} Pa`), false],
       ["BAT1 SOC (plan)", v(p.soc, x => `${x.toFixed(0)} kWh`) + (p.soc_plan?.[i] != null ? ` (${p.soc_plan[i].toFixed(0)})` : ""), false],
       ["Main water flow", v(p.flow, x => `${x.toFixed(0)} L/h`), false],
