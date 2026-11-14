@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to inform you that there is a delay in your room R304. We apologize for the inconvenience and will keep you updated.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000094",
+   "room": "R304"
+  },
+  "hedged": false,
+  "intent": "notify_day_delay",
+  "known_by": "2026-01-24T06:00Z",
+  "lane": "s05",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R304"
+  },
+  "t": "2026-01-24T06:00Z",
+  "template": "Dear guest, your room {room} may not be ready by check-in time today, as several rooms are being prepared. We will message you as soon as it is ready."
+ },
+ "violations": []
+}

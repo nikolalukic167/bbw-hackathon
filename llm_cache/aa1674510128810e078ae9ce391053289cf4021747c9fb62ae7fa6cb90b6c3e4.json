@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, ci scusiamo per il disagio nella camera R404. Stiamo verificando la causa del problema e ci occuperemo di risolverlo il prima possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000200",
+   "cause": "unknown",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-23T11:43Z",
+  "lane": "s03",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R404"
+  },
+  "t": "2026-01-23T11:43Z",
+  "template": "Grazie per il messaggio sulla temperatura della camera {room}. Stiamo controllando ora il riscaldamento e la contatteremo se sarà necessario un intervento in camera."
+ },
+ "violations": []
+}

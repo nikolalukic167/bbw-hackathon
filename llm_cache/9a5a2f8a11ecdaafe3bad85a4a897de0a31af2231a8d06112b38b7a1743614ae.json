@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Estimado huésped, lamentamos las molestias en la habitación R208. Estamos investigando la causa y le mantendremos informado.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001138",
+   "cause": "unknown",
+   "room": "R208"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-04-05T13:11Z",
+  "lane": "s03",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R208"
+  },
+  "t": "2026-04-05T13:11Z",
+  "template": "Gracias por su mensaje sobre la temperatura de la habitación {room}. Estamos revisando la calefacción y le contactaremos si es necesario entrar en la habitación."
+ },
+ "violations": []
+}

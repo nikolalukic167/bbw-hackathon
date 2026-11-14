@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, het spijt ons dat u ongemak ervaart in kamer R110. We zijn bezig met het onderzoeken van de oorzaak en we laten het u zo snel mogelijk weten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000139",
+   "cause": "unknown",
+   "room": "R110"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-25T03:49Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R110"
+  },
+  "t": "2026-01-25T03:49Z",
+  "template": "Bedankt voor uw bericht over kamer {room}. De sensor meldt een open raam; sluit het alstublieft zodat de kamer kan opwarmen. We controleren ook de verwarming."
+ },
+ "violations": []
+}

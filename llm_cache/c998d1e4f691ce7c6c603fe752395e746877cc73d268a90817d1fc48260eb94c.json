@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien reçu votre demande de facture pour la chambre R405. Nous revenons vers vous dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "invoice",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_invoice",
+  "known_by": "2026-01-26T14:23Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-01-26T14:23Z",
+  "template": "Merci pour votre demande de facture pour la chambre {room}. Notre réception la préparera et reviendra vers vous."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about the access issue in room R406. We are looking into it and will get back to you as soon as possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-09-19T13:43Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-09-19T13:43Z",
+  "template": "Sorry about the trouble getting into room {room}. We have asked our staff to help you with access."
+ },
+ "violations": []
+}

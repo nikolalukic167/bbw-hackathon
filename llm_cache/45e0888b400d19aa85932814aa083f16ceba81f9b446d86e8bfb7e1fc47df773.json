@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre signalement concernant le bruit dans la chambre R304. Nous sommes désolés pour le désagrément et nous faisons le nécessaire.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R304"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-04-07T22:09Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R304"
+  },
+  "t": "2026-04-07T22:09Z",
+  "template": "Nous sommes désolés pour le bruit près de la chambre {room}. Notre personnel est informé et s'en occupe."
+ },
+ "violations": []
+}

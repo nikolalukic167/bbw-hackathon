@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta di pulizia per la camera R308. Grazie per la pazienza.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R308"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-08-09T15:24Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R308"
+  },
+  "t": "2026-08-09T15:24Z",
+  "template": "Grazie per la richiesta per la camera {room}. L'abbiamo inoltrata al servizio di pulizia, che la contatterà prima di entrare in camera."
+ },
+ "violations": []
+}

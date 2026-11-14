@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben helaas een probleem met de verwarming in kamer R404. We zijn bezig het te onderzoeken en de oorzaak is nog onbekend. We houden u op de hoogte.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001673",
+   "cause": "unknown",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-06-28T15:50Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R404"
+  },
+  "t": "2026-06-28T15:50Z",
+  "template": "Bedankt voor uw bericht over de warmte in kamer {room}. Het gebouw heeft alleen verwarming, geen koeling of airconditioning. We hebben de ingestelde temperatuur verlaagd: de verwarming blijft uit. Het raam 's nachts openen, als het buiten koeler is, helpt."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben gemeld gekregen dat het in kamer R108 warm is. We zijn er mee bezig en onderzoeken de oorzaak. Het is nog niet bekend wat er precies aan de hand is. We laten u zo snel mogelijk weten wat we vinden.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001381",
+   "cause": "unknown",
+   "room": "R108"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-19T06:33Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R108"
+  },
+  "t": "2026-07-19T06:33Z",
+  "template": "Bedankt voor uw bericht over de warmte in kamer {room}. Het gebouw heeft alleen verwarming, geen koeling of airconditioning. We hebben de ingestelde temperatuur verlaagd: de verwarming blijft uit. Het raam 's nachts openen, als het buiten koeler is, helpt."
+ },
+ "violations": []
+}

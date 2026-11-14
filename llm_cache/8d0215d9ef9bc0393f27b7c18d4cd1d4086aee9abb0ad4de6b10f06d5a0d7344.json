@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Sehr geehrte Gäste, in Ihrem Zimmer R102 gibt es derzeit ein Problem mit der Heizung. Die Ursache ist noch unbekannt. Wir kümmern uns darum und melden uns so schnell wie möglich bei Ihnen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK002279",
+   "cause": "unknown",
+   "room": "R102"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-12T15:58Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R102"
+  },
+  "t": "2026-07-12T15:58Z",
+  "template": "Danke für Ihre Nachricht zur Wärme in Zimmer {room}. Das Haus hat nur eine Heizung, keine Kühlung und keine Klimaanlage. Wir haben die Solltemperatur gesenkt, die Heizung bleibt aus. Nachts, wenn es draußen kühler ist, hilft ein offenes Fenster."
+ },
+ "violations": []
+}

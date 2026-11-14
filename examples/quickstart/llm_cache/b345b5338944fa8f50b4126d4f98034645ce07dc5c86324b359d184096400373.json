@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Estimado huésped, lamentamos las molestias en la habitación R109. Estamos trabajando para resolverlo lo antes posible. Gracias por su paciencia.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000054",
+   "cause": "unknown",
+   "room": "R109"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-23T13:34Z",
+  "lane": "s03",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R109"
+  },
+  "t": "2026-01-23T13:34Z",
+  "template": "Gracias por su mensaje sobre la temperatura de la habitación {room}. Estamos revisando la calefacción y le contactaremos si es necesario entrar en la habitación."
+ },
+ "violations": []
+}

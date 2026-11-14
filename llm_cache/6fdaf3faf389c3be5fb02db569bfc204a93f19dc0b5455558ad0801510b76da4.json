@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Su habitación R302 estará lista, según lo previsto, a las 12:00 hora local.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R302 expected ready at 12:00 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-06-05T04:24Z",
+  "lane": "s01",
+  "language": "es",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R302",
+   "t2": "12:00"
+  },
+  "t": "2026-06-05T04:24Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

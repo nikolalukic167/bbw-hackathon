@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Ihr Zimmer R303 ist bereit für einen frühen Check-in. Bitte melden Sie sich an der Rezeption, wir kümmern uns um Ihren Aufenthalt.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R303"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-01-14T02:48Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R303"
+  },
+  "t": "2026-01-14T02:48Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Das Zimmer sollte voraussichtlich bereit sein; unser Personal meldet sich, falls sich etwas ändert."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos registrado que llegará más tarde de lo previsto a la habitación R302. Gracias por avisarnos; el personal de recepción estará al tanto de su llegada.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R302"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-11-03T18:16Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R302"
+  },
+  "t": "2026-11-03T18:16Z",
+  "template": "Gracias por avisarnos de su llegada tardía a la habitación {room}. Lo hemos anotado e informado a nuestra recepción."
+ },
+ "violations": []
+}

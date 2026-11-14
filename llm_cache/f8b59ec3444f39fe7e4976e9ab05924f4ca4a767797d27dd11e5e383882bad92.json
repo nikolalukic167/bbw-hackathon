@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about your delayed arrival. We have noted this for room R401. We look forward to welcoming you when you arrive.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R401"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-01-08T17:55Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R401"
+  },
+  "t": "2026-01-08T17:55Z",
+  "template": "Thank you for letting us know about your late arrival to room {room}. We have noted it and informed our reception."
+ },
+ "violations": []
+}

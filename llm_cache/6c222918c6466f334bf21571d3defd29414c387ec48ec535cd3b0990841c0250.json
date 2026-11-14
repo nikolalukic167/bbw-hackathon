@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté que votre arrivée sera retardée pour la chambre R302. Nous restons à votre disposition pour toute question.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R302"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-05-11T18:13Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R302"
+  },
+  "t": "2026-05-11T18:13Z",
+  "template": "Merci de nous avoir prévenus de votre arrivée tardive pour la chambre {room}. Nous l'avons notée et en avons informé notre réception."
+ },
+ "violations": []
+}

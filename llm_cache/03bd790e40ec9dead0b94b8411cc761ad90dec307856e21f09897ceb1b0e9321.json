@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to hear about the heat in room R410. We are looking into the cause and will get back to you as soon as possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK002042",
+   "cause": "unknown",
+   "room": "R410"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-06T10:35Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R410"
+  },
+  "t": "2026-07-06T10:35Z",
+  "template": "Thank you for your message about the heat in room {room}. The building has heating only, no cooling or air conditioning. We have lowered the room's setpoint, so the heating stays off. Opening the window at night, when it is cooler outside, helps."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Gracias por su solicitud de entrada anticipada para la habitación R109. Hemos recibido su petición y le pedimos que espere; le informaremos en cuanto tengamos una respuesta.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R109"
+  },
+  "hedged": false,
+  "intent": "guest_early_wait",
+  "known_by": "2026-11-28T04:42Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R109"
+  },
+  "t": "2026-11-28T04:42Z",
+  "template": "Gracias por su solicitud para la habitación {room}. La habitación aún no está lista; le escribiremos cuando lo esté."
+ },
+ "violations": []
+}

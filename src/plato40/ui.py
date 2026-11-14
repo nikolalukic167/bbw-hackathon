@@ -1,21 +1,29 @@
-"""Operations console: one self-contained HTML page from a run's decisions and trace.
+"""Operations console and demo page: one self-contained HTML from a run's decisions and trace.
 
-The page shows, per episode, the evidence (signals), the risk (priority), every decision
-with its autonomy level and the policy rule behind it, and the verification plan. It needs
-no server: the data is embedded, and approvals clicked on the page are a mock executor
-kept in the viewer's browser only.
+The page has four views: Year (the jury dashboard), Day (the replay of one day), Episode
+(evidence, risk, decisions, verification, with a mock executor kept in the browser) and Trail
+(one decision's chain). Views live in ``ui_*.js`` next to ``ui.html`` and are inlined here.
+
+Without ``--data`` the page shows the episodes only. With it, the pipeline runs once more on the
+dataset (same settings, same cache) and the page gets the KPIs, misses, the year strip, hourly
+series and the day extracts from that run, so every number on the page is computed from the
+same source as ``insights.md``. The data path is always an argument.
 """
 
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from plato40 import contract
+from plato40 import contract, lanes, pipeline, ui_data
+from plato40.load.reader import load_dataset
+from plato40.settings import Settings
 
 TEMPLATE = Path(__file__).with_name("ui.html")
 PLACEHOLDER = "/*__DATA__*/null"
+VIEWS = "/*__VIEWS__*/"
 
 
 def payload(decisions_path: Path, trace_path: Path) -> dict[str, Any]:
@@ -41,8 +49,11 @@ def payload(decisions_path: Path, trace_path: Path) -> dict[str, Any]:
             d = dict(full.get(r["event_id"], {}))
             d["rule"] = r["rule"]
             episodes[r["episode_id"]]["decisions"].append(d)
+    issues = {e["issue"] for e in episodes.values()} | {d["issue_type"] for d in full.values()}
     return {
         "source": decisions_path.name,
+        "tz": "Europe/Vienna",
+        "lanes": ui_data.lanes(issues),
         "episodes": sorted(
             episodes.values(),
             key=lambda e: (e["signals"][0]["time"] if e["signals"] else "", e["id"]),
@@ -50,11 +61,44 @@ def payload(decisions_path: Path, trace_path: Path) -> dict[str, Any]:
     }
 
 
-def render(decisions_path: Path, trace_path: Path, out: Path) -> int:
-    """Write the console to ``out``; return the number of episodes shown."""
-    data = payload(decisions_path, trace_path)
-    blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    page = TEMPLATE.read_text("utf-8").replace(PLACEHOLDER, blob)
+def _views() -> str:
+    """Return the view scripts (``ui_*.js``) in name order, inlined after the shell."""
+    return "\n".join(p.read_text("utf-8") for p in sorted(TEMPLATE.parent.glob("ui_*.js")))
+
+
+def render(
+    decisions_path: Path,
+    trace_path: Path,
+    out: Path,
+    data: Path | None = None,
+    llm_cache: Path | None = None,
+    days: Sequence[str] = (),
+    supervisor: Path | None = None,
+    rerun: Path | None = None,
+) -> dict[str, Any]:
+    """Write the page to ``out``; return what it holds (episodes, views, size, warnings)."""
+    page = payload(decisions_path, trace_path)
+    info: dict[str, Any] = {"episodes": len(page["episodes"]), "warnings": []}
+    if data is not None:
+        ds = load_dataset(data)
+        settings = Settings(
+            data_root=data, out_dir=out.parent, llm_cache=llm_cache, lanes=tuple(lanes.registry())
+        )
+        run = pipeline.run(ds, settings)
+        info["warnings"] += ui_data.decisions_match(run, contract.read_decisions(decisions_path))
+        log = None
+        if supervisor is not None and supervisor.exists():
+            log = [json.loads(x) for x in supervisor.read_text("utf-8").splitlines() if x.strip()]
+        page["dataset"] = data.name
+        page["tz"] = settings.local_tz
+        page |= ui_data.demo_data(ds, settings, run, decisions_path, days, log, rerun)
+    else:
+        page["dataset"] = decisions_path.stem
+    blob = json.dumps(page, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    html = TEMPLATE.read_text("utf-8").replace(PLACEHOLDER, blob).replace(VIEWS, _views())
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(page, "utf-8")
-    return len(data["episodes"])
+    out.write_text(html, "utf-8")
+    info["views"] = sorted(p.stem.removeprefix("ui_") for p in TEMPLATE.parent.glob("ui_*.js"))
+    info["kb"] = len(html.encode("utf-8")) // 1024
+    info["days"] = sorted(page.get("days", {}))
+    return info

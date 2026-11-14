@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Nachricht zu Ihrer verspäteten Ankunft in Zimmer R401. Wir haben Ihre Information erhalten und kümmern uns darum. Bei Fragen stehen wir Ihnen gerne zur Verfügung.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R401"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-12-18T19:50Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R401"
+  },
+  "t": "2026-12-18T19:50Z",
+  "template": "Danke für die Nachricht zu Ihrer späten Ankunft in Zimmer {room}. Wir haben es notiert und unsere Rezeption informiert."
+ },
+ "violations": []
+}

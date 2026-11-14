@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your request regarding luggage storage for room R407. We have noted it, and our staff will be in touch with you shortly.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R407"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-08-18T16:47Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R407"
+  },
+  "t": "2026-08-18T16:47Z",
+  "template": "Thank you for your question about luggage storage for room {room}. Our reception will tell you how it works."
+ },
+ "violations": []
+}

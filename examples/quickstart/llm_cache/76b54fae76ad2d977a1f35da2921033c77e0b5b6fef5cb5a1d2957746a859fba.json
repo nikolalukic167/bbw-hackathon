@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry for the inconvenience in room R310. We are aware that the comfort of your room has been affected and we are working to address it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000029",
+   "cause": "hp_degradation",
+   "room": "R310"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-18T02:21Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R310"
+  },
+  "t": "2026-01-18T02:21Z",
+  "template": "Dear guest in room {room}: our heating is running at reduced capacity and a repair has been requested. We are directing heat to occupied rooms first. We apologise for the inconvenience."
+ },
+ "violations": []
+}

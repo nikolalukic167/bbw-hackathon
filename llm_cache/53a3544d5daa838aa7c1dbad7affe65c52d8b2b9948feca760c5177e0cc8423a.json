@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Meldung zu Zimmer R103 erhalten. Wir kümmern uns darum, dass Sie wieder Zugang zu Ihrem Zimmer erhalten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R103"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-05-24T13:09Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R103"
+  },
+  "t": "2026-05-24T13:09Z",
+  "template": "Entschuldigen Sie die Probleme beim Zugang zu Zimmer {room}. Wir haben unser Personal gebeten, Ihnen beim Zutritt zu helfen."
+ },
+ "violations": []
+}

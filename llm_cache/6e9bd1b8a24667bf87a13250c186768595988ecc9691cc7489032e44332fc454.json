@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"We are sorry for the inconvenience in room R301. We are looking into the cause and will keep you updated.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK003387",
+   "cause": "unknown",
+   "room": "R301"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-11-28T14:13Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R301"
+  },
+  "t": "2026-11-28T14:13Z",
+  "template": "Thank you for your message about the temperature in room {room}. We are checking the heating now and will contact you if a visit to the room is needed."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Le informamos que hemos recibido un aviso sobre la calefacción en su habitación R102. Estamos revisando la situación y le avisaremos en cuanto tengamos novedades. Disculpe las molestias.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001976",
+   "cause": "unknown",
+   "room": "R102"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-06-29T23:22Z",
+  "lane": "s03",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R102"
+  },
+  "t": "2026-06-29T23:22Z",
+  "template": "Gracias por su mensaje sobre el calor en la habitación {room}. El edificio solo tiene calefacción, sin aire acondicionado. Abrir la ventana por la noche, cuando fuera hace más fresco, ayuda."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw vraag over parkeren voor kamer R405. Wij helpen u hier graag mee. Kunt u ons laten weten welke parkeerinformatie u precies nodig heeft?\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "parking",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_parking",
+  "known_by": "2026-06-22T09:23Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-06-22T09:23Z",
+  "template": "Bedankt voor uw vraag over parkeren voor kamer {room}. Onze receptie komt bij u terug met de details."
+ },
+ "violations": []
+}

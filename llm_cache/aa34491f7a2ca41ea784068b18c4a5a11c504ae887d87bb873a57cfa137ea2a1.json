@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien reçu votre demande de ménage pour la chambre R201. Nous vous remercions de votre patience.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R201"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-03-12T19:17Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R201"
+  },
+  "t": "2026-03-12T19:17Z",
+  "template": "Merci pour votre demande concernant la chambre {room}. Nous l'avons transmise au service d'étage, qui vous contactera avant d'entrer dans la chambre."
+ },
+ "violations": []
+}

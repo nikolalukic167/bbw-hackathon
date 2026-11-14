@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Wij begrijpen dat er een probleem is met kamer R205. We houden u op de hoogte zodra we meer weten en doen ons best om uw verblijf zo comfortabel mogelijk te maken.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK003121",
+   "cause": "unknown",
+   "room": "R205"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-10-08T12:22Z",
+  "lane": "s03",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R205"
+  },
+  "t": "2026-10-08T12:22Z",
+  "template": "Bedankt voor uw bericht over de temperatuur in kamer {room}. We controleren de verwarming nu en nemen contact met u op als een bezoek aan de kamer nodig is."
+ },
+ "violations": []
+}

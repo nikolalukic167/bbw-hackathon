@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Ihr Zimmer R310 wird voraussichtlich am 20.07. um 12:00 Uhr bezugsbereit sein.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R310 expected ready at Mon 20 Jul 12:00 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-07-19T20:40Z",
+  "lane": "s01",
+  "language": "de",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R310",
+   "t2": "20.07.",
+   "t3": "12:00"
+  },
+  "t": "2026-07-19T20:40Z",
+  "template": "{t1} expected ready at {t2} {t3} local"
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Meldung zu Zimmer R402. Wir haben das Anliegen an unsere Technik weitergegeben und kümmern uns darum.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R402"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-04-26T06:38Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R402"
+  },
+  "t": "2026-04-26T06:38Z",
+  "template": "Danke für die Meldung des Defekts in Zimmer {room}. Wir haben ihn an unser Technikteam weitergegeben; es meldet sich bei Ihnen, bevor es das Zimmer betritt."
+ },
+ "violations": []
+}

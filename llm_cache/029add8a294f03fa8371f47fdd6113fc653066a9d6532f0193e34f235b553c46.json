@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto una segnalazione di un problema con il riscaldamento nella camera R102. Non conosciamo ancora la causa. Stiamo verificando la situazione e le daremo aggiornamenti appena possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK002140",
+   "cause": "unknown",
+   "room": "R102"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-03T00:18Z",
+  "lane": "s03",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R102"
+  },
+  "t": "2026-07-03T00:18Z",
+  "template": "Grazie per il messaggio sul caldo nella camera {room}. L'edificio ha solo il riscaldamento, senza aria condizionata. Abbiamo abbassato la temperatura impostata: il riscaldamento resta spento. Aprire la finestra di notte, quando fuori è più fresco, aiuta."
+ },
+ "violations": []
+}

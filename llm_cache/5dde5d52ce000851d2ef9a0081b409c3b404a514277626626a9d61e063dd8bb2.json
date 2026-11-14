@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"La camera R209 non è ancora pronta per l'orario indicato, le 13:09. Il nostro personale se ne sta occupando e le comunicheremo a breve un nuovo orario di disponibilità.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R209 is not ready at the promised 13:09 local; staff are on it and a new ready time follows"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-05-09T11:24Z",
+  "lane": "s01",
+  "language": "it",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R209",
+   "t2": "13:09"
+  },
+  "t": "2026-05-09T11:24Z",
+  "template": "{t1} is not ready at the promised {t2} local; staff are on it and a new ready time follows"
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Lamentamos mucho el problema con el acceso a su habitación R109. Nuestro equipo ya está al tanto y se pondrá en contacto con usted lo antes posible para ayudarle.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R109"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-06-01T09:26Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R109"
+  },
+  "t": "2026-06-01T09:26Z",
+  "template": "Lamentamos el problema para acceder a la habitación {room}. Hemos pedido a nuestro personal que le ayude a entrar."
+ },
+ "violations": []
+}

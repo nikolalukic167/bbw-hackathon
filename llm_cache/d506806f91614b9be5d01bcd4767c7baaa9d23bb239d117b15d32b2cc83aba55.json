@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Meldung zur Lärmbelästigung in Zimmer R405. Wir haben Ihr Anliegen aufgenommen und kümmern uns darum.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-04-03T21:23Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-04-03T21:23Z",
+  "template": "Es tut uns leid wegen des Lärms bei Zimmer {room}. Unser Personal ist informiert und kümmert sich darum."
+ },
+ "violations": []
+}

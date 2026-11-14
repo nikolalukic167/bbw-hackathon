@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Uw verzoek om schoonmaak voor kamer R406 is genoteerd. Wij laten u weten wanneer het schoonmaakteam naar uw kamer komt.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-07-24T06:46Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-07-24T06:46Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. We hebben het doorgegeven aan housekeeping, dat contact met u opneemt voordat het de kamer betreedt."
+ },
+ "violations": []
+}

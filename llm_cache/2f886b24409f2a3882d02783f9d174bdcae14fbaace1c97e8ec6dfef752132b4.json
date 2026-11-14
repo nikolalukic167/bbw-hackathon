@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Sehr geehrte Gäste, wir wissen von einem Problem in Ihrem Zimmer R301 und kümmern uns darum. Wir entschuldigen uns für die Unannehmlichkeiten.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK004081",
+   "cause": "unknown",
+   "room": "R301"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-12-31T11:32Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R301"
+  },
+  "t": "2026-12-31T11:32Z",
+  "template": "Danke für Ihre Nachricht zur Temperatur in Zimmer {room}. Wir prüfen die Heizung jetzt und melden uns, falls ein Besuch im Zimmer nötig ist."
+ },
+ "violations": []
+}

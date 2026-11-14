@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your patience. We are working on your room, R305, and will update you as soon as it is ready.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "waiting_for_room",
+   "room": "R305"
+  },
+  "hedged": false,
+  "intent": "guest_waiting",
+  "known_by": "2026-02-28T10:46Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R305"
+  },
+  "t": "2026-02-28T10:46Z",
+  "template": "Sorry for the wait for room {room}. Our staff are checking it now and will message you when it is ready."
+ },
+ "violations": []
+}

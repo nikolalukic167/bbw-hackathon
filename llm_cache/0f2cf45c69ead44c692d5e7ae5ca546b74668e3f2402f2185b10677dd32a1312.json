@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your early check-in request for room R206. We have noted it. We will let you know as soon as we have an update on your room.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R206"
+  },
+  "hedged": false,
+  "intent": "guest_early_wait",
+  "known_by": "2026-05-10T21:38Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R206"
+  },
+  "t": "2026-05-10T21:38Z",
+  "template": "Thank you for your request for room {room}. The room is not ready yet; we will message you when it is ready."
+ },
+ "violations": []
+}

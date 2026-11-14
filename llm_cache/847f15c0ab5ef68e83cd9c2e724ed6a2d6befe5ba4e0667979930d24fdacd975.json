@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben uw wifi-verzoek voor kamer R108 ontvangen. Ons team helpt u graag met de verbinding.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R108"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-03-16T17:10Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R108"
+  },
+  "t": "2026-03-16T17:10Z",
+  "template": "Bedankt voor uw bericht over de wifi in kamer {room}. Ons personeel zoekt het uit en komt bij u terug."
+ },
+ "violations": []
+}

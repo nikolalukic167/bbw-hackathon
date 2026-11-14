@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your request. We are arranging extra towels for room R306.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R306"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-07-02T05:34Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R306"
+  },
+  "t": "2026-07-02T05:34Z",
+  "template": "Thank you for your request for room {room}. We have asked housekeeping to bring fresh towels."
+ },
+ "violations": []
+}

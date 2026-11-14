@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to let you know that the heat pump serving room R101 is not performing at its usual level. Our team is looking into it, and we will keep you updated. Thank you for your patience.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000202",
+   "cause": "hp_degradation",
+   "room": "R101"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-17T17:00Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R101"
+  },
+  "t": "2026-01-17T17:00Z",
+  "template": "Dear guest in room {room}: our heating is running at reduced capacity and a repair has been requested. We are directing heat to occupied rooms first. We apologise for the inconvenience."
+ },
+ "violations": []
+}

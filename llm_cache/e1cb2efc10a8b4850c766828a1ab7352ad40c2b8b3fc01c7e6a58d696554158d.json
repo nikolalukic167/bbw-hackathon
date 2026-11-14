@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw melding over kamer R406. Wij hebben uw verzoek ontvangen en ons team gaat ermee aan de slag. Heeft u nog vragen, dan helpen wij u graag verder.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-09-11T19:12Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-09-11T19:12Z",
+  "template": "Bedankt voor het melden van de storing in kamer {room}. We hebben dit doorgegeven aan ons technisch team, dat contact met u opneemt voordat het de kamer betreedt."
+ },
+ "violations": []
+}

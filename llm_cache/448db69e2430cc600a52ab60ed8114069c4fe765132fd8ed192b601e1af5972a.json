@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Nachricht zu Ihrer verspäteten Ankunft in Zimmer R406. Wir haben sie erhalten und kümmern uns darum.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-12-10T18:53Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-12-10T18:53Z",
+  "template": "Danke für die Nachricht zu Ihrer späten Ankunft in Zimmer {room}. Wir haben es notiert und unsere Rezeption informiert."
+ },
+ "violations": []
+}

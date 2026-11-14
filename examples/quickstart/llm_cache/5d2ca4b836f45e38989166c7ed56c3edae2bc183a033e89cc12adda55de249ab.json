@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Het spijt ons, kamer R207 is niet klaar om 10:51 zoals beloofd. Ons personeel is ermee bezig en er volgt een nieuw tijdstip.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R207 is not ready at the promised 10:51 local; staff are on it and a new ready time follows"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-01-23T10:06Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R207",
+   "t2": "10:51"
+  },
+  "t": "2026-01-23T10:06Z",
+  "template": "{t1} is not ready at the promised {t2} local; staff are on it and a new ready time follows"
+ },
+ "violations": []
+}

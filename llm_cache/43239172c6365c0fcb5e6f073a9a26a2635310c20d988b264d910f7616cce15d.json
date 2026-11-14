@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua segnalazione di rumore dalla camera R305. Ci scusiamo per il disturbo e stiamo provvedendo.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R305"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-06-06T19:50Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R305"
+  },
+  "t": "2026-06-06T19:50Z",
+  "template": "Ci dispiace per il rumore vicino alla camera {room}. Il nostro personale è stato informato e se ne occuperà."
+ },
+ "violations": []
+}

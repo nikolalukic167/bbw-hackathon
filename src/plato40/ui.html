@@ -4,58 +4,70 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Steward Console</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: a console. Header with run totals, filter bar, a year timeline with one lane per
-   scenario, then episode list (left) and the selected episode's evidence-to-verification
-   chain (right). */
+/* Shell: header with the dataset badge and the view tabs, then one view at a time.
+   Views live in ui_*.js (year, day, trail) and in this file (episode). Look: ISA-101 grey
+   canvas; colour only for abnormal states and where a person is needed. */
 :root {
-  --bg: #eef1f4; --panel: #ffffff; --sunk: #f5f7f9; --fg: #17202a; --muted: #5a6875;
-  --line: #d6dde4; --grid: #e6ebef; --focus: #2f6fd6;
-  --s01: #0e8a7d; --s02: #2b63c4; --s03: #c45a1c; --log: #7a4fb5; --dq: #6b7785;
-  --critical: #c62f2f; --high: #d9741a; --medium: #b38f00; --low: #7d8894;
-  --auto: #1f7a4d; --approve: #b36b00; --consent: #b0306a;
-  --display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
-  --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --bg: #e9ecef; --panel: #f7f8f9; --sunk: #eef0f2; --fg: #1b232b; --muted: #5f6b76;
+  --line: #cfd6dc; --grid: #dfe4e8; --focus: #2f6fd6;
+  --l0: #4e6e8e; --l1: #3d8c7a; --l2: #7a6aa6; --l3: #b5712e; --l4: #6b7f93; --l5: #8a5a86;
+  --l6: #5b8a4a; --l7: #9a7a3a; --l8: #4a7f95; --l9: #808a94;
+  --critical: #c62f2f; --high: #d9741a; --medium: #a98a16; --low: #7d8894;
+  --auto: #4f6b5c; --approve: #c27b00; --consent: #b0306a; --miss: #c62f2f;
+  --st-occupied: #b9c6d2; --st-dirty: #d9c3a3; --st-cleaning: #c7d7b8; --st-clean: #eceff2; --st-unknown: #d4d8dc;
+  --display: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1418; --panel: #172026; --sunk: #12191e; --fg: #e3e9ee; --muted: #93a2ae;
-  --line: #2b3741; --grid: #202a32; --focus: #6aa2ff;
-  --s01: #3cc4b4; --s02: #6b9cf0; --s03: #ef8b4e; --log: #ab88e6; --dq: #9aa6b2;
-  --critical: #ff6b6b; --high: #f3a04b; --medium: #e0c040; --low: #9aa6b2;
-  --auto: #4fc48a; --approve: #f0b04a; --consent: #ff7fb4; color-scheme: dark } }
+  --bg: #15191d; --panel: #1d2329; --sunk: #181d22; --fg: #dde3e8; --muted: #93a0ab;
+  --line: #2d363e; --grid: #242c33; --focus: #6aa2ff;
+  --l0: #7fa0c0; --l1: #5fbba6; --l2: #a899d6; --l3: #e09a5a; --l4: #97a9bb; --l5: #c088bb;
+  --l6: #8dbb7a; --l7: #c9a85e; --l8: #74adc4; --l9: #a3adb6;
+  --critical: #ff6b6b; --high: #f3a04b; --medium: #d9c04a; --low: #9aa6b2;
+  --auto: #8fb3a0; --approve: #f0b04a; --consent: #ff7fb4; --miss: #ff6b6b;
+  --st-occupied: #3c4f60; --st-dirty: #5e4f36; --st-cleaning: #40553a; --st-clean: #272e35; --st-unknown: #30363c;
+  color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0f1418; --panel: #172026; --sunk: #12191e; --fg: #e3e9ee; --muted: #93a2ae;
-  --line: #2b3741; --grid: #202a32; --focus: #6aa2ff;
-  --s01: #3cc4b4; --s02: #6b9cf0; --s03: #ef8b4e; --log: #ab88e6; --dq: #9aa6b2;
-  --critical: #ff6b6b; --high: #f3a04b; --medium: #e0c040; --low: #9aa6b2;
-  --auto: #4fc48a; --approve: #f0b04a; --consent: #ff7fb4; color-scheme: dark }
+  --bg: #15191d; --panel: #1d2329; --sunk: #181d22; --fg: #dde3e8; --muted: #93a0ab;
+  --line: #2d363e; --grid: #242c33; --focus: #6aa2ff;
+  --l0: #7fa0c0; --l1: #5fbba6; --l2: #a899d6; --l3: #e09a5a; --l4: #97a9bb; --l5: #c088bb;
+  --l6: #8dbb7a; --l7: #c9a85e; --l8: #74adc4; --l9: #a3adb6;
+  --critical: #ff6b6b; --high: #f3a04b; --medium: #d9c04a; --low: #9aa6b2;
+  --auto: #8fb3a0; --approve: #f0b04a; --consent: #ff7fb4; --miss: #ff6b6b;
+  --st-occupied: #3c4f60; --st-dirty: #5e4f36; --st-cleaning: #40553a; --st-clean: #272e35; --st-unknown: #30363c;
+  color-scheme: dark }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--body); }
-.wrap { max-width: 1440px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; display: grid; gap: 14px; }
+.wrap { max-width: 1480px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 40px; display: grid; gap: 12px; }
 h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; }
-h1 { font-size: 1.6rem; letter-spacing: 0.01em; }
-h2 { font-size: 1.15rem; }
-h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-family: var(--body); font-weight: 600; }
+h1 { font-size: 1.35rem; letter-spacing: 0.01em; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
 .mono { font-family: var(--mono); font-size: 0.85em; }
 .muted { color: var(--muted); }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
-.top { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; justify-content: space-between; }
-.top .id { display: grid; gap: 2px; }
+.top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; }
+.badge { display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.badge b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.tabs button { font: 600 0.85rem var(--body); color: var(--muted); background: none; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+nav.tabs button[aria-selected="true"] { color: var(--fg); background: var(--panel); border-color: var(--line); }
+nav.tabs button kbd { font: 0.7rem var(--mono); color: var(--muted); margin-left: 6px; }
+#view { min-height: 60vh; display: grid; gap: 12px; }
 .stats { display: flex; flex-wrap: wrap; gap: 8px; }
-.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; min-width: 104px; }
-.stat b { display: block; font: 600 1.3rem/1.2 var(--display); font-variant-numeric: tabular-nums; }
-.stat span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; }
-.chip { font: 500 0.85rem var(--body); border: 1px solid var(--line); background: var(--sunk); color: var(--fg); border-radius: 999px; padding: 4px 12px 4px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; min-width: 120px; }
+.stat b { display: block; font: 600 1.5rem/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; }
+.chip { font: 500 0.82rem var(--body); border: 1px solid var(--line); background: var(--sunk); color: var(--fg); border-radius: 999px; padding: 3px 10px 3px 8px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
 .chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); display: inline-block; }
 .chip[aria-pressed="false"] { opacity: 0.45; }
 .chip small { color: var(--muted); font-variant-numeric: tabular-nums; }
-select, input[type="search"] { font: 0.85rem var(--body); color: var(--fg); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
-input[type="search"] { min-width: 0; width: 180px; }
+select, input[type="search"], input[type="range"] { font: 0.85rem var(--body); color: var(--fg); background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+input[type="search"] { width: 180px; }
 label.toggle { display: inline-flex; gap: 6px; align-items: center; font-size: 0.85rem; }
 button:focus-visible, select:focus-visible, input:focus-visible, .ep:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .timeline { padding: 8px 12px 4px; overflow-x: auto; }
@@ -63,7 +75,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, .ep:focus-visib
 .timeline text { fill: var(--muted); font-size: 10px; }
 .timeline .lane { fill: var(--fg); font-family: var(--body); font-size: 11px; font-weight: 600; }
 .timeline rect.ep-mark { cursor: pointer; }
-.split { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.split { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 12px; align-items: start; }
 @media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); } }
 .list { max-height: 78vh; overflow-y: auto; }
 .list .head { position: sticky; top: 0; background: var(--panel); padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); z-index: 1; }
@@ -74,7 +86,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, .ep:focus-visib
 .ep .t { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ep .when { font-size: 0.78rem; color: var(--muted); grid-column: 2; }
 .ep .tags { grid-row: 1 / span 2; grid-column: 3; display: flex; flex-direction: column; gap: 3px; align-items: end; }
-.pill { font: 600 0.7rem/1 var(--body); text-transform: uppercase; letter-spacing: 0.05em; border-radius: 4px; padding: 3px 6px; border: 1px solid currentColor; white-space: nowrap; }
+.pill { font: 600 0.68rem/1 var(--body); text-transform: uppercase; letter-spacing: 0.05em; border-radius: 4px; padding: 3px 6px; border: 1px solid currentColor; white-space: nowrap; }
 .p-critical { color: var(--critical); } .p-high { color: var(--high); } .p-medium { color: var(--medium); } .p-low { color: var(--low); }
 .a-autonomous { color: var(--auto); } .a-human_approval { color: var(--approve); } .a-approval_and_consent { color: var(--consent); }
 .detail { padding: 16px; display: grid; gap: 18px; min-width: 0; }
@@ -84,8 +96,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, .ep:focus-visib
 .sig { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 2px 12px; padding: 6px 0; border-bottom: 1px solid var(--grid); }
 .sig .k { font-weight: 600; }
 .sig .ev { grid-column: 2; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; overflow-wrap: anywhere; }
-.more { font: 500 0.85rem var(--body); background: none; border: 0; color: var(--focus); cursor: pointer; padding: 6px 0; }
-.chain { display: grid; gap: 10px; counter-reset: step; }
+.more, .link { font: 500 0.85rem var(--body); background: none; border: 0; color: var(--focus); cursor: pointer; padding: 6px 0; }
+.chain { display: grid; gap: 10px; }
 .dec { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 6px; background: var(--panel); min-width: 0; }
 .dec .row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
 .dec .act { font: 600 1rem var(--display); }
@@ -104,53 +116,31 @@ footer { font-size: 0.8rem; color: var(--muted); }
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="id">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
       <h1>Steward operations console</h1>
-      <div class="muted">PLATO-40 &middot; <span id="period"></span> &middot; <span class="mono" id="source"></span></div>
+      <span class="badge"><b id="dataset"></b><span id="period"></span><span class="mono" id="source"></span></span>
     </div>
-    <div class="stats" id="stats"></div>
+    <nav class="tabs" id="tabs" aria-label="Views"></nav>
   </header>
-
-  <section class="panel filters" aria-label="Filters">
-    <div id="chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-    <select id="prio" aria-label="Minimum priority">
-      <option value="low">all priorities</option>
-      <option value="medium">medium and up</option>
-      <option value="high">high and up</option>
-      <option value="critical">critical only</option>
-    </select>
-    <label class="toggle"><input type="checkbox" id="approval"> needs a human</label>
-    <input type="search" id="q" placeholder="Room or asset, e.g. R305" aria-label="Search room or asset">
-  </section>
-
-  <section class="panel timeline" aria-label="Episodes over time"><svg id="tl" role="img" aria-label="Episode timeline per scenario"></svg></section>
-
-  <div class="split">
-    <section class="panel list" aria-label="Episodes"><div class="head" id="count"></div><div id="eps"></div></section>
-    <article class="panel detail" id="detail" aria-live="polite"></article>
-  </div>
-
-  <footer>Times are Europe/Vienna local; hover a time for UTC. Decisions are proposals from a replay: effects are simulated, and Approve or Reject here is a mock executor recorded in this browser only.</footer>
+  <main id="view"></main>
+  <footer>Times are Europe/Vienna local; hover a time for UTC. Room tiles and series show recorded data; decisions are proposals from a replay, their effects are simulated, and Approve or Reject on this page is a mock executor kept in this browser only. Keys: Y D E T switch views, arrows step a day.</footer>
 </div>
 
 <script>
 const DATA = /*__DATA__*/null;
-const SCEN = {
-  room_turnaround: { label: "S01 Room turnaround", c: "var(--s01)" },
-  water_leak: { label: "S02 Water leak", c: "var(--s02)" },
-  heating_comfort: { label: "S03 Heating and comfort", c: "var(--s03)" },
-  logistics: { label: "Logistics", c: "var(--log)" },
-  data_quality: { label: "Data quality", c: "var(--dq)" },
-};
-const ORDER = Object.keys(SCEN);
+const TZ = DATA.tz || "Europe/Vienna";
 const PRIO = { low: 0, medium: 1, high: 2, critical: 3 };
 const AUTONOMY = { autonomous: "autonomous", human_approval: "needs approval", approval_and_consent: "approval and guest consent" };
-const TZ = "Europe/Vienna";
+const SCEN = Object.fromEntries((DATA.lanes || []).map(l => [l.key, { label: `${l.short} ${l.label}`, short: l.short, c: l.color }]));
+const ORDER = (DATA.lanes || []).map(l => l.key);
 const fmtDay = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 const fmtDate = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
-const ms = s => Date.parse(s.length === 17 ? s.replace("Z", ":00Z") : s);
+const fmtTime = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const ms = s => typeof s === "number" ? s : Date.parse(s.length === 17 ? s.replace("Z", ":00Z") : s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const when = s => `<time datetime="${esc(s)}" title="${esc(s)} UTC">${fmtDay.format(ms(s))}</time>`;
+const localDay = t => { const p = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(t); return p; };
+const fmtN = n => (n ?? 0).toLocaleString("en-GB");
 
 const store = {
   key: id => `steward:${DATA.source}:${id}`,
@@ -158,153 +148,231 @@ const store = {
   set(id, v) { try { v ? localStorage.setItem(this.key(id), v) : localStorage.removeItem(this.key(id)); } catch {} },
 };
 
+const ROUTINE = new Set(DATA.routine || []);
 const EPS = DATA.episodes.map(e => {
   const times = [...e.signals.map(s => ms(s.time)), ...e.decisions.map(d => ms(d.timestamp_utc))];
   const prio = Math.max(-1, ...e.decisions.map(d => PRIO[d.priority] ?? 0));
   return {
     ...e,
+    routine: ROUTINE.has(e.id),
     t0: Math.min(...times), t1: Math.max(...times),
     prio: prio < 0 ? null : Object.keys(PRIO)[prio],
     human: e.decisions.filter(d => d.autonomy !== "autonomous").length,
     hay: [...e.assets, ...e.decisions.flatMap(d => d.affected_assets || [])].join(" ").toLowerCase(),
   };
 });
+const BY_EVENT = Object.fromEntries(EPS.flatMap(e => e.decisions.map(d => [d.event_id, { d, e }])));
 const T0 = Math.min(...EPS.map(e => e.t0)), T1 = Math.max(...EPS.map(e => e.t1));
-const state = { on: new Set(ORDER), prio: "low", approval: false, q: "", sel: null };
 
-function title(e) {
-  const a = e.assets.length > 3 ? `${e.assets.slice(0, 3).join(", ")} +${e.assets.length - 3}` : e.assets.join(", ");
-  return `${SCEN[e.issue]?.label ?? e.issue}: ${a}`;
+/* Router: the view and its arguments live in the URL hash, so a presenter step is a link. */
+const VIEWS = {};
+const TABS = [["year", "Year", "Y"], ["day", "Day", "D"], ["episode", "Episode", "E"], ["trail", "Trail", "T"]];
+function parseHash() {
+  const p = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const s = Object.fromEntries(p.entries());
+  if (!TABS.some(t => t[0] === s.view)) s.view = DATA.kpi ? "year" : "episode";
+  if (s.step != null) s.step = Number(s.step);
+  return s;
 }
-function visible() {
-  return EPS.filter(e => state.on.has(e.issue)
-    && (e.prio === null ? state.prio === "low" : PRIO[e.prio] >= PRIO[state.prio])
-    && (!state.approval || e.human > 0)
-    && (!state.q || e.hay.includes(state.q)));
+let state = parseHash();
+function go(patch) {
+  const next = { ...state, ...patch };
+  for (const k of Object.keys(next)) if (next[k] == null || next[k] === "") delete next[k];
+  location.hash = new URLSearchParams(next).toString();
 }
-
-function header() {
-  document.getElementById("source").textContent = DATA.source;
-  document.getElementById("period").textContent = `${fmtDate.format(T0)} to ${fmtDate.format(T1)}`;
-  const dec = EPS.flatMap(e => e.decisions);
-  const n = k => dec.filter(d => d.autonomy === k).length;
-  const stats = [
-    [EPS.length, "episodes"], [dec.length, "decisions"], [n("autonomous"), "autonomous"],
-    [n("human_approval"), "need approval"], [n("approval_and_consent"), "need consent"],
-  ];
-  document.getElementById("stats").innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
-  document.getElementById("chips").innerHTML = ORDER.filter(k => EPS.some(e => e.issue === k)).map(k =>
-    `<button class="chip" type="button" data-k="${k}" aria-pressed="true" style="--c:${SCEN[k].c}"><i></i>${SCEN[k].label}<small>${EPS.filter(e => e.issue === k).length}</small></button>`).join("");
+function render() {
+  state = parseHash();
+  document.getElementById("tabs").innerHTML = TABS.map(([k, label, key]) =>
+    `<button type="button" role="tab" data-view="${k}" aria-selected="${state.view === k}">${label}<kbd>${key}</kbd></button>`).join("");
+  const el = document.getElementById("view");
+  const v = VIEWS[state.view];
+  if (!v) { el.innerHTML = `<div class="panel empty">The ${esc(state.view)} view is not in this build.</div>`; return; }
+  v.render(el, state);
 }
-
-function timeline(list) {
-  const svg = document.getElementById("tl");
-  const lanes = ORDER.filter(k => EPS.some(e => e.issue === k));
-  const W = 1200, L = 170, R = 1188, LH = 22, top = 8, H = top + lanes.length * LH + 22;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const x = t => L + (R - L) * (t - T0) / Math.max(1, T1 - T0);
-  const shown = new Set(list.map(e => e.id));
-  let out = "";
-  const months = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, month: "short" });
-  const span = (T1 - T0) / 864e5;
-  const step = span > 60 ? null : (span > 14 ? 7 : 1);
-  if (step === null) {
-    const d = new Date(T0); d.setUTCDate(1); d.setUTCHours(0, 0, 0, 0);
-    for (d.setUTCMonth(d.getUTCMonth() + 1); d.getTime() <= T1; d.setUTCMonth(d.getUTCMonth() + 1)) {
-      const xx = x(d.getTime());
-      out += `<line x1="${xx}" x2="${xx}" y1="${top}" y2="${H - 18}" stroke="var(--grid)"/><text x="${xx}" y="${H - 6}" text-anchor="middle">${months.format(d)}</text>`;
-    }
-  } else {
-    for (let t = T0 - T0 % 864e5; t <= T1; t += step * 864e5) {
-      if (t < T0) continue;
-      const xx = x(t);
-      out += `<line x1="${xx}" x2="${xx}" y1="${top}" y2="${H - 18}" stroke="var(--grid)"/><text x="${xx}" y="${H - 6}" text-anchor="middle">${new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "numeric", month: "short" }).format(t)}</text>`;
-    }
+window.addEventListener("hashchange", render);
+document.getElementById("tabs").addEventListener("click", ev => { const b = ev.target.closest("[data-view]"); if (b) go({ view: b.dataset.view }); });
+document.addEventListener("keydown", ev => {
+  if (ev.target.matches("input, select, textarea")) return;
+  const tab = TABS.find(t => t[2].toLowerCase() === ev.key.toLowerCase());
+  if (tab) { go({ view: tab[0] }); return; }
+  if (state.view === "day" && (ev.key === "ArrowRight" || ev.key === "ArrowLeft")) {
+    ev.preventDefault(); go({ step: Math.max(0, (state.step ?? -1) + (ev.key === "ArrowRight" ? 1 : -1)) });
   }
-  lanes.forEach((k, i) => {
-    const y = top + i * LH;
-    out += `<text class="lane" x="0" y="${y + 15}">${esc(SCEN[k].label)}</text><line x1="${L}" x2="${R}" y1="${y + LH - 2}" y2="${y + LH - 2}" stroke="var(--grid)"/>`;
-    for (const e of EPS.filter(e => e.issue === k)) {
-      const x0 = x(e.t0), w = Math.max(3, x(e.t1) - x0);
-      const on = shown.has(e.id), sel = state.sel === e.id;
-      out += `<rect class="ep-mark" data-id="${esc(e.id)}" x="${x0}" y="${y + 4}" width="${w}" height="${LH - 9}" rx="2" fill="${SCEN[k].c}" opacity="${sel ? 1 : on ? 0.75 : 0.15}" ${sel ? 'stroke="var(--fg)" stroke-width="1.5"' : ""}><title>${esc(title(e))}</title></rect>`;
-    }
-  });
-  svg.innerHTML = out;
-}
-
-function list(items) {
-  document.getElementById("count").textContent = `${items.length} of ${EPS.length} episodes, oldest first`;
-  document.getElementById("eps").innerHTML = items.map(e => `
-    <button class="ep" type="button" data-id="${esc(e.id)}" aria-current="${state.sel === e.id}" style="--c:${SCEN[e.issue]?.c}">
-      <span class="bar"></span><span class="t">${esc(title(e))}</span>
-      <span class="tags">${e.prio ? `<span class="pill p-${e.prio}">${e.prio}</span>` : ""}${e.human ? `<span class="pill a-human_approval">${e.human} human</span>` : ""}</span>
-      <span class="when">${fmtDay.format(e.t0)} &middot; ${e.signals.length} signals, ${e.decisions.length} decisions</span>
-    </button>`).join("") || `<div class="empty">No episode matches these filters.</div>`;
-}
-
-function decisionCard(d, i) {
-  const mock = d.autonomy === "autonomous" ? "" : (() => {
-    const v = store.get(d.event_id);
-    return `<div class="mock" data-ev="${esc(d.event_id)}">${v ? `<span class="${v === "approved" ? "ok" : "no"}">Mock: ${v} in this browser.</span> <button type="button" data-v="">Undo</button>`
-      : `<span class="muted">Waiting for a human:</span> <button type="button" data-v="approved">Approve</button><button type="button" data-v="rejected">Reject</button>`}</div>`;
-  })();
-  const extra = [
-    d.resource_id && ["Resource", `<span class="mono">${esc(d.resource_id)}</span>`],
-    ["Affects", `<span class="mono">${esc((d.affected_assets || []).join(", "))}</span>`],
-    d.expected_outcome && ["Expected", esc(d.expected_outcome)],
-    d.verification_plan && ["Verification", esc(d.verification_plan)],
-    d.guest_request_ids && ["Guest request", `<span class="mono">${esc(d.guest_request_ids.join(", "))}</span>`],
-    d.dependencies && ["After", `<span class="mono">${esc(d.dependencies.map(x => x.slice(-2)).join(", "))}</span>`],
-    d.evidence && ["Evidence", `<span class="mono">${esc(d.evidence.join("; "))}</span>`],
-    d.confidence != null && ["Confidence", d.confidence.toFixed(2)],
-  ].filter(Boolean);
-  return `<div class="dec">
-    <div class="row"><span class="mono muted">${esc(d.event_id.slice(-2))}</span><span class="act">${esc(d.action.replace(/_/g, " "))}</span>
-      <span class="pill p-${esc(d.priority)}">${esc(d.priority)}</span><span class="pill a-${esc(d.autonomy)}">${esc(AUTONOMY[d.autonomy] || d.autonomy)}</span>
-      <span class="muted">${when(d.timestamp_utc)}</span></div>
-    <div>${esc(d.reason)}</div>
-    <div class="rule">Autonomy rule: ${esc(d.rule)}</div>
-    <dl>${extra.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>${mock}</div>`;
-}
-
-function detail() {
-  const el = document.getElementById("detail");
-  const e = EPS.find(x => x.id === state.sel);
-  if (!e) { el.innerHTML = `<div class="empty">Select an episode in the list or on the timeline.</div>`; return; }
-  const sigs = e.signals, many = sigs.length > 8 && !e.open;
-  const shown = many ? [...sigs.slice(0, 5), null, ...sigs.slice(-2)] : sigs;
-  const first = sigs[0];
-  el.innerHTML = `
-    <div class="dhead"><h2>${esc(title(e))}</h2>
-      <div class="meta"><span class="mono">${esc(e.id)}</span><span>${fmtDay.format(e.t0)} to ${fmtDay.format(e.t1)}</span></div></div>
-    <div class="risk" style="--c:${SCEN[e.issue]?.c}"><h3>Risk</h3>
-      <div>${e.prio ? `<span class="pill p-${e.prio}">${e.prio}</span> ` : "No decision. "}${first ? esc(first.detail) : ""}</div></div>
-    <section><h3>Evidence: ${sigs.length} signals</h3>
-      ${shown.map(s => s === null ? `<button class="more" type="button" id="more">Show ${sigs.length - 7} more signals</button>` :
-        `<div class="sig"><span class="mono">${when(s.time)}</span><div><span class="k">${esc(s.kind.replace(/_/g, " "))}</span>: ${esc(s.detail)}</div><div class="ev">${esc(s.evidence.join("; "))}</div></div>`).join("")}</section>
-    <section><h3>Decisions and verification: ${e.decisions.length}</h3>
-      <div class="chain">${e.decisions.map(decisionCard).join("") || `<div class="muted">No rule fired for these signals.</div>`}</div></section>`;
-}
-
-function draw() { const v = visible(); timeline(v); list(v); detail(); }
-
-document.addEventListener("click", ev => {
-  const chip = ev.target.closest(".chip");
-  if (chip) { const k = chip.dataset.k; state.on.has(k) ? state.on.delete(k) : state.on.add(k); chip.setAttribute("aria-pressed", state.on.has(k)); draw(); return; }
-  const pick = ev.target.closest("[data-id]");
-  if (pick) { state.sel = pick.dataset.id; draw(); if (window.innerWidth < 860) document.getElementById("detail").scrollIntoView({ behavior: "smooth" }); return; }
-  if (ev.target.id === "more") { EPS.find(x => x.id === state.sel).open = true; detail(); return; }
-  const b = ev.target.closest(".mock button");
-  if (b) { store.set(b.closest(".mock").dataset.ev, b.dataset.v); detail(); }
 });
-document.getElementById("prio").addEventListener("change", ev => { state.prio = ev.target.value; draw(); });
-document.getElementById("approval").addEventListener("change", ev => { state.approval = ev.target.checked; draw(); });
-document.getElementById("q").addEventListener("input", ev => { state.q = ev.target.value.trim().toLowerCase(); draw(); });
 
-header();
-state.sel = (EPS.find(e => e.issue === "water_leak" && e.decisions.length) || EPS[0] || {}).id ?? null;
-draw();
+document.getElementById("source").textContent = DATA.source;
+document.getElementById("dataset").textContent = DATA.dataset || "";
+document.getElementById("period").textContent = `${fmtDate.format(T0)} to ${fmtDate.format(T1)}`;
+
+/* Episode view: the original console (filters, scenario timeline, list, detail). */
+VIEWS.episode = (() => {
+  const f = { on: new Set(ORDER), prio: "low", approval: false, q: "", routine: false };
+  const title = e => {
+    const a = e.assets.length > 3 ? `${e.assets.slice(0, 3).join(", ")} +${e.assets.length - 3}` : e.assets.join(", ");
+    return `${SCEN[e.issue]?.label ?? e.issue}: ${a}`;
+  };
+  const visible = () => EPS.filter(e => f.on.has(e.issue)
+    && (f.routine || !e.routine)
+    && (e.prio === null ? f.prio === "low" : PRIO[e.prio] >= PRIO[f.prio])
+    && (!f.approval || e.human > 0)
+    && (!f.q || e.hay.includes(f.q)));
+
+  function shell(el) {
+    const dec = EPS.flatMap(e => e.decisions);
+    const n = k => dec.filter(d => d.autonomy === k).length;
+    const stats = [[EPS.filter(e => !e.routine).length, "incidents"], [EPS.filter(e => e.routine).length, "routine episodes"], [dec.length, "decisions"],
+      [n("autonomous"), "autonomous"], [n("human_approval"), "need approval"], [n("approval_and_consent"), "need consent"]];
+    el.innerHTML = `
+      <div class="stats">${stats.map(([v, l]) => `<div class="stat"><b>${fmtN(v)}</b><span>${l}</span></div>`).join("")}</div>
+      <section class="panel filters" aria-label="Filters">
+        <div id="chips" style="display:flex;flex-wrap:wrap;gap:6px">${ORDER.filter(k => EPS.some(e => e.issue === k)).map(k =>
+          `<button class="chip" type="button" data-k="${k}" aria-pressed="${f.on.has(k)}" style="--c:${SCEN[k].c}"><i></i>${esc(SCEN[k].label)}<small>${EPS.filter(e => e.issue === k && !e.routine).length}</small></button>`).join("")}</div>
+        <select id="prio" aria-label="Minimum priority"><option value="low">all priorities</option><option value="medium">medium and up</option><option value="high">high and up</option><option value="critical">critical only</option></select>
+        <label class="toggle"><input type="checkbox" id="approval"> needs a human</label>
+        <label class="toggle"><input type="checkbox" id="routine"> show routine</label>
+        <input type="search" id="q" placeholder="Room or asset, e.g. R305" aria-label="Search room or asset">
+      </section>
+      <section class="panel timeline" aria-label="Episodes over time"><svg id="tl" role="img" aria-label="Episode timeline per scenario"></svg></section>
+      <div class="split">
+        <section class="panel list" aria-label="Episodes"><div class="head" id="count"></div><div id="eps"></div></section>
+        <article class="panel detail" id="detail" aria-live="polite"></article>
+      </div>`;
+    el.querySelector("#prio").value = f.prio;
+    el.querySelector("#approval").checked = f.approval;
+    el.querySelector("#routine").checked = f.routine;
+    el.querySelector("#q").value = f.q;
+  }
+
+  function timeline(list) {
+    const svg = document.getElementById("tl");
+    const lanes = ORDER.filter(k => EPS.some(e => e.issue === k));
+    const W = 1200, L = 190, R = 1188, LH = 20, top = 8, H = top + lanes.length * LH + 22;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const x = t => L + (R - L) * (t - T0) / Math.max(1, T1 - T0);
+    const shown = new Set(list.map(e => e.id));
+    let out = "";
+    const span = (T1 - T0) / 864e5;
+    const step = span > 60 ? null : (span > 14 ? 7 : 1);
+    if (step === null) {
+      const months = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, month: "short" });
+      const d = new Date(T0); d.setUTCDate(1); d.setUTCHours(0, 0, 0, 0);
+      for (d.setUTCMonth(d.getUTCMonth() + 1); d.getTime() <= T1; d.setUTCMonth(d.getUTCMonth() + 1)) {
+        const xx = x(d.getTime());
+        out += `<line x1="${xx}" x2="${xx}" y1="${top}" y2="${H - 18}" stroke="var(--grid)"/><text x="${xx}" y="${H - 6}" text-anchor="middle">${months.format(d)}</text>`;
+      }
+    } else {
+      const f2 = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "numeric", month: "short" });
+      for (let t = T0 - T0 % 864e5; t <= T1; t += step * 864e5) {
+        if (t < T0) continue;
+        const xx = x(t);
+        out += `<line x1="${xx}" x2="${xx}" y1="${top}" y2="${H - 18}" stroke="var(--grid)"/><text x="${xx}" y="${H - 6}" text-anchor="middle">${f2.format(t)}</text>`;
+      }
+    }
+    lanes.forEach((k, i) => {
+      const y = top + i * LH;
+      out += `<text class="lane" x="0" y="${y + 14}">${esc(SCEN[k].label)}</text><line x1="${L}" x2="${R}" y1="${y + LH - 2}" y2="${y + LH - 2}" stroke="var(--grid)"/>`;
+      for (const e of EPS.filter(e => e.issue === k && (f.routine || !e.routine))) {
+        const x0 = x(e.t0), w = Math.max(3, x(e.t1) - x0);
+        const on = shown.has(e.id), sel = state.ep === e.id;
+        out += `<rect class="ep-mark" data-id="${esc(e.id)}" x="${x0}" y="${y + 4}" width="${w}" height="${LH - 9}" rx="2" fill="${SCEN[k].c}" opacity="${sel ? 1 : on ? 0.75 : 0.15}" ${sel ? 'stroke="var(--fg)" stroke-width="1.5"' : ""}><title>${esc(title(e))}</title></rect>`;
+      }
+    });
+    svg.innerHTML = out;
+  }
+
+  function list(items) {
+    document.getElementById("count").textContent = `${items.length} of ${EPS.length} episodes, oldest first`;
+    document.getElementById("eps").innerHTML = items.map(e => `
+      <button class="ep" type="button" data-id="${esc(e.id)}" aria-current="${state.ep === e.id}" style="--c:${SCEN[e.issue]?.c}">
+        <span class="bar"></span><span class="t">${esc(title(e))}</span>
+        <span class="tags">${e.prio ? `<span class="pill p-${e.prio}">${e.prio}</span>` : ""}${e.human ? `<span class="pill a-human_approval">${e.human} human</span>` : ""}</span>
+        <span class="when">${fmtDay.format(e.t0)} &middot; ${e.signals.length} signals, ${e.decisions.length} decisions</span>
+      </button>`).join("") || `<div class="empty">No episode matches these filters.</div>`;
+  }
+
+  function decisionCard(d) {
+    const mock = d.autonomy === "autonomous" ? "" : (() => {
+      const v = store.get(d.event_id);
+      return `<div class="mock" data-ev="${esc(d.event_id)}">${v ? `<span class="${v === "approved" ? "ok" : "no"}">Mock: ${v} in this browser.</span> <button type="button" data-v="">Undo</button>`
+        : `<span class="muted">Waiting for a human:</span> <button type="button" data-v="approved">Approve</button><button type="button" data-v="rejected">Reject</button>`}</div>`;
+    })();
+    const out = DATA.outcomes?.[d.event_id];
+    const extra = [
+      d.resource_id && ["Resource", `<span class="mono">${esc(d.resource_id)}</span>`],
+      ["Affects", `<span class="mono">${esc((d.affected_assets || []).join(", "))}</span>`],
+      d.expected_outcome && ["Expected", esc(d.expected_outcome)],
+      d.verification_plan && ["Verification", esc(d.verification_plan)],
+      out && ["Happened next", out.outcome ? `${esc(out.outcome.kind.replace(/_/g, " "))} at ${when(out.outcome.t)}: ${esc(out.outcome.detail || "")}` : `<span class="muted">no outcome in the data</span>`],
+      d.guest_request_ids && ["Guest request", `<span class="mono">${esc(d.guest_request_ids.join(", "))}</span>`],
+      d.dependencies && ["After", `<span class="mono">${esc(d.dependencies.join(", "))}</span>`],
+      d.evidence && ["Evidence", `<span class="mono">${esc(d.evidence.join("; "))}</span>`],
+      d.confidence != null && ["Confidence", d.confidence.toFixed(2)],
+    ].filter(Boolean);
+    return `<div class="dec" id="ev-${esc(d.event_id)}">
+      <div class="row"><span class="act">${esc(d.action.replace(/_/g, " "))}</span>
+        <span class="pill p-${esc(d.priority)}">${esc(d.priority)}</span><span class="pill a-${esc(d.autonomy)}">${esc(AUTONOMY[d.autonomy] || d.autonomy)}</span>
+        <span class="muted">${when(d.timestamp_utc)}</span>
+        ${VIEWS.trail ? `<button class="link" type="button" data-trail="${esc(d.event_id)}">trail</button>` : ""}</div>
+      <div>${esc(d.reason)}</div>
+      <div class="rule">Autonomy rule: ${esc(d.rule)}</div>
+      <dl>${extra.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>${mock}</div>`;
+  }
+
+  function detail() {
+    const el = document.getElementById("detail");
+    const e = EPS.find(x => x.id === state.ep);
+    if (!e) { el.innerHTML = `<div class="empty">Select an episode in the list or on the timeline.</div>`; return; }
+    const sigs = e.signals, many = sigs.length > 8 && !e.open;
+    const shown = many ? [...sigs.slice(0, 5), null, ...sigs.slice(-2)] : sigs;
+    const first = sigs[0];
+    el.innerHTML = `
+      <div class="dhead"><h2>${esc(title(e))}</h2>
+        <div class="meta"><span class="mono">${esc(e.id)}</span><span>${fmtDay.format(e.t0)} to ${fmtDay.format(e.t1)}</span>${e.routine ? `<span>routine</span>` : ""}
+        <button class="link" type="button" data-day="${localDay(e.t0)}">open this day</button></div></div>
+      <div class="risk" style="--c:${SCEN[e.issue]?.c}"><h3>Risk</h3>
+        <div>${e.prio ? `<span class="pill p-${e.prio}">${e.prio}</span> ` : "No decision. "}${first ? esc(first.detail) : ""}</div></div>
+      <section><h3>Evidence: ${sigs.length} signals</h3>
+        ${shown.map(s => s === null ? `<button class="more" type="button" id="more">Show ${sigs.length - 7} more signals</button>` :
+          `<div class="sig"><span class="mono">${when(s.time)}</span><div><span class="k">${esc(s.kind.replace(/_/g, " "))}</span>: ${esc(s.detail)}</div><div class="ev">${esc(s.evidence.join("; "))}</div></div>`).join("")}</section>
+      <section><h3>Decisions and verification: ${e.decisions.length}</h3>
+        <div class="chain">${e.decisions.map(decisionCard).join("") || `<div class="muted">No rule fired for these signals.</div>`}</div></section>`;
+  }
+
+  function draw() { const v = visible(); timeline(v); list(v); detail(); }
+
+  function onClick(ev) {
+    const chip = ev.target.closest(".chip");
+    if (chip) { const k = chip.dataset.k; f.on.has(k) ? f.on.delete(k) : f.on.add(k); chip.setAttribute("aria-pressed", f.on.has(k)); draw(); return; }
+    const trail = ev.target.closest("[data-trail]");
+    if (trail) { go({ view: "trail", ev: trail.dataset.trail }); return; }
+    const day = ev.target.closest("[data-day]");
+    if (day) { go({ view: "day", day: day.dataset.day, step: null }); return; }
+    const pick = ev.target.closest("[data-id]");
+    if (pick) { go({ ep: pick.dataset.id }); return; }
+    if (ev.target.id === "more") { EPS.find(x => x.id === state.ep).open = true; detail(); return; }
+    const b = ev.target.closest(".mock button");
+    if (b) { store.set(b.closest(".mock").dataset.ev, b.dataset.v); detail(); }
+  }
+
+  return {
+    render(el, st) {
+      if (!el.querySelector("#tl")) {
+        shell(el);
+        el.addEventListener("click", onClick);
+        el.querySelector("#prio").addEventListener("change", ev => { f.prio = ev.target.value; draw(); });
+        el.querySelector("#approval").addEventListener("change", ev => { f.approval = ev.target.checked; draw(); });
+        el.querySelector("#routine").addEventListener("change", ev => { f.routine = ev.target.checked; draw(); });
+        el.querySelector("#q").addEventListener("input", ev => { f.q = ev.target.value.trim().toLowerCase(); draw(); });
+      }
+      if (!st.ep) { const first = EPS.find(e => !e.routine && e.decisions.length && e.human) || EPS.find(e => !e.routine) || EPS[0]; if (first) { go({ ep: first.id }); return; } }
+      draw();
+    },
+  };
+})();
+
+/*__VIEWS__*/
+
+render();
 </script>
 </body>
 </html>

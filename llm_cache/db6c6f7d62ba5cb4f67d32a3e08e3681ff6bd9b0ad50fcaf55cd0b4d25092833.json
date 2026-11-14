@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous avons bien noté que vous rencontrez un problème d'accès à votre chambre R206. Nous nous en occupons dès que possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R206"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-03-04T18:09Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R206"
+  },
+  "t": "2026-03-04T18:09Z",
+  "template": "Nous sommes désolés pour la difficulté d'accès à la chambre {room}. Nous avons demandé à notre personnel de vous aider à entrer."
+ },
+ "violations": []
+}

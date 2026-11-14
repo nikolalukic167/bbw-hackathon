@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw melding over het water in kamer R208. We hebben uw melding ontvangen en laten zo snel mogelijk iemand naar u toe komen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "water_issue",
+   "room": "R208"
+  },
+  "hedged": false,
+  "intent": "guest_water",
+  "known_by": "2026-11-12T07:26Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R208"
+  },
+  "t": "2026-11-12T07:26Z",
+  "template": "Bedankt voor uw bericht over het water in kamer {room}. We hebben ons personeel gevraagd dit te controleren en nemen contact op voordat iemand de kamer betreedt."
+ },
+ "violations": []
+}

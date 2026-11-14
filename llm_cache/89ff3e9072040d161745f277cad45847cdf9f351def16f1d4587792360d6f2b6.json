@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage zur Gepäckaufbewahrung für Zimmer R202 erhalten. Unser Team kümmert sich darum.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R202"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-05-06T16:02Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R202"
+  },
+  "t": "2026-05-06T16:02Z",
+  "template": "Danke für Ihre Frage zur Gepäckaufbewahrung für Zimmer {room}. Unsere Rezeption sagt Ihnen, wie es funktioniert."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank, dass Sie uns über Ihre verspätete Ankunft informieren. Wir haben Ihre Nachricht für Zimmer R104 notiert. Wir wünschen Ihnen eine gute Anreise.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R104"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-04-14T17:37Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R104"
+  },
+  "t": "2026-04-14T17:37Z",
+  "template": "Danke für die Nachricht zu Ihrer späten Ankunft in Zimmer {room}. Wir haben es notiert und unsere Rezeption informiert."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben festgestellt, dass es in Ihrem Zimmer R210 zu warm ist. Die Ursache ist uns derzeit nicht bekannt. Wir kümmern uns darum und melden uns bei Ihnen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001715",
+   "cause": "unknown",
+   "room": "R210"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-11T17:40Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R210"
+  },
+  "t": "2026-07-11T17:40Z",
+  "template": "Danke für Ihre Nachricht zur Wärme in Zimmer {room}. Das Haus hat nur eine Heizung, keine Kühlung und keine Klimaanlage. Wir haben die Solltemperatur gesenkt, die Heizung bleibt aus. Nachts, wenn es draußen kühler ist, hilft ein offenes Fenster."
+ },
+ "violations": []
+}

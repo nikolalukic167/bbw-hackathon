@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Meldung zu Zimmer R203. Wir haben Ihr Anliegen an unser Technikteam weitergeleitet.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R203"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-12-23T19:56Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R203"
+  },
+  "t": "2026-12-23T19:56Z",
+  "template": "Danke für die Meldung des Defekts in Zimmer {room}. Wir haben ihn an unser Technikteam weitergegeben; es meldet sich bei Ihnen, bevor es das Zimmer betritt."
+ },
+ "violations": []
+}

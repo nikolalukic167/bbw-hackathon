@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua richiesta di asciugamani extra per la camera R108. Le faremo sapere appena possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R108"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-01-21T06:19Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R108"
+  },
+  "t": "2026-01-21T06:19Z",
+  "template": "Grazie per la richiesta per la camera {room}. Abbiamo chiesto al servizio di pulizia di portare asciugamani puliti."
+ },
+ "violations": []
+}

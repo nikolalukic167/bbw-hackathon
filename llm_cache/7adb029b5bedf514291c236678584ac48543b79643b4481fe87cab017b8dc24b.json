@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous sommes désolés pour la gêne occasionnée dans votre chambre R103. Nous ignorons pour l'instant la cause du problème et nous faisons le nécessaire pour le résoudre au plus vite.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000853",
+   "cause": "unknown",
+   "room": "R103"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-03-10T12:37Z",
+  "lane": "s03",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R103"
+  },
+  "t": "2026-03-10T12:37Z",
+  "template": "Merci pour votre message concernant la température de la chambre {room}. Nous vérifions le chauffage maintenant et vous contacterons si une visite dans la chambre est nécessaire."
+ },
+ "violations": []
+}

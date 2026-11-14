@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about the noise in room R204. We are sorry for the disturbance and are looking into it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R204"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-08-06T22:17Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R204"
+  },
+  "t": "2026-08-06T22:17Z",
+  "template": "We are sorry about the noise near room {room}. Our staff have been informed and will look into it."
+ },
+ "violations": []
+}

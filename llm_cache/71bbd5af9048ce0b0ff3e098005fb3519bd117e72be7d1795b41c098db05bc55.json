@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Wir bedauern sehr, dass es in Zimmer R207 Probleme gibt. Wir kümmern uns darum, damit Sie sich schnellstmöglich wieder wohlfühlen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000876",
+   "cause": "unknown",
+   "room": "R207"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-03-19T10:26Z",
+  "lane": "s03",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R207"
+  },
+  "t": "2026-03-19T10:26Z",
+  "template": "Danke für Ihre Nachricht zur Temperatur in Zimmer {room}. Wir prüfen die Heizung jetzt und melden uns, falls ein Besuch im Zimmer nötig ist."
+ },
+ "violations": []
+}

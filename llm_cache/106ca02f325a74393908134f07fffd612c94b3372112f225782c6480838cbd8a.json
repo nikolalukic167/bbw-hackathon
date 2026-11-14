@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua segnalazione di un problema tecnico nella camera R107. Il nostro personale è stato informato e si occuperà di verificarlo al più presto.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R107"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-10-01T16:00Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R107"
+  },
+  "t": "2026-10-01T16:00Z",
+  "template": "Grazie per la segnalazione del guasto nella camera {room}. L'abbiamo inoltrata al nostro team tecnico, che la contatterà prima di entrare in camera."
+ },
+ "violations": []
+}

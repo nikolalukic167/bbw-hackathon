@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Wir haben Ihre Meldung zur Ruhestörung in Zimmer R207 erhalten. Wir kümmern uns darum.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R207"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-08-08T23:03Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R207"
+  },
+  "t": "2026-08-08T23:03Z",
+  "template": "Es tut uns leid wegen des Lärms bei Zimmer {room}. Unser Personal ist informiert und kümmert sich darum."
+ },
+ "violations": []
+}

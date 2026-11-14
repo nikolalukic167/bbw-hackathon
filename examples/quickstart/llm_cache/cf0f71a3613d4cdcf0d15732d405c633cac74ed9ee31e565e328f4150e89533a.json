@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Uw kamer R207 zal naar verwachting om 10:51 lokale tijd klaar zijn.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R207 expected ready at 10:51 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-01-23T08:52Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R207",
+   "t2": "10:51"
+  },
+  "t": "2026-01-23T08:52Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

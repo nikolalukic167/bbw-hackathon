@@ -1,0 +1,29 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your late checkout request for room R402. We have noted your request for 13:00. Our front desk will confirm the details with you shortly.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R402"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-03-25T07:23Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R402",
+   "time": "13:00"
+  },
+  "t": "2026-03-25T07:23Z",
+  "template": "Thank you for your request for room {room}. A later check-out until {time} looks possible; our staff will decide and let you know."
+ },
+ "violations": [
+  "banned claim 'confirm'"
+ ]
+}

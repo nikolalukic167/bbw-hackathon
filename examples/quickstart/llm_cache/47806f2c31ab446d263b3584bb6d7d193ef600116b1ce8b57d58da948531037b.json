@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su aviso sobre un problema con el agua en la habitación R305. Estamos atendiendo el asunto y nos pondremos en contacto con usted lo antes posible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "water_issue",
+   "room": "R305"
+  },
+  "hedged": false,
+  "intent": "guest_water",
+  "known_by": "2026-01-22T08:51Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R305"
+  },
+  "t": "2026-01-22T08:51Z",
+  "template": "Gracias por su mensaje sobre el agua en la habitación {room}. Hemos pedido a nuestro personal que lo revise y le contactaremos antes de entrar en la habitación."
+ },
+ "violations": []
+}

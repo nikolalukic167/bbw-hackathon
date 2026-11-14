@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Lamentamos mucho las molestias por el ruido en la habitación R305. Hemos registrado su queja y nuestro equipo se encargará de ello.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R305"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-12-18T22:53Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R305"
+  },
+  "t": "2026-12-18T22:53Z",
+  "template": "Lamentamos el ruido cerca de la habitación {room}. Nuestro personal está informado y lo revisará."
+ },
+ "violations": []
+}

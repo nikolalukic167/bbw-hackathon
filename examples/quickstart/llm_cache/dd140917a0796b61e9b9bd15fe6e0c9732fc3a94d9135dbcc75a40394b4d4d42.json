@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous vous informons que la chambre R101 présente actuellement un problème de confort. Nous nous excusons pour la gêne occasionnée et travaillons à le résoudre.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000202",
+   "cause": "hp_degradation",
+   "room": "R101"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-17T21:45Z",
+  "lane": "s03",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R101"
+  },
+  "t": "2026-01-17T21:45Z",
+  "template": "Merci pour votre message concernant la chambre {room}. Le capteur indique une fenêtre ouverte ; veuillez la fermer pour que la chambre puisse se réchauffer. Nous vérifions aussi le chauffage."
+ },
+ "violations": []
+}

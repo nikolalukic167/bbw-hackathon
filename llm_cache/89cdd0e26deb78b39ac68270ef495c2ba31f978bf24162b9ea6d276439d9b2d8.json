@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your message about Wi-Fi in room R209. We are looking into it and will help you get connected as soon as possible.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "wifi_help",
+   "room": "R209"
+  },
+  "hedged": false,
+  "intent": "guest_wifi",
+  "known_by": "2026-05-23T19:34Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R209"
+  },
+  "t": "2026-05-23T19:34Z",
+  "template": "Thank you for your message about the WiFi in room {room}. Our staff will look into it and get back to you."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous sommes désolés pour le bruit dans la chambre R405. Nous avons bien noté votre plainte et nous allons la transmettre au service concerné.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R405"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-03-14T22:47Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R405"
+  },
+  "t": "2026-03-14T22:47Z",
+  "template": "Nous sommes désolés pour le bruit près de la chambre {room}. Notre personnel est informé et s'en occupe."
+ },
+ "violations": []
+}

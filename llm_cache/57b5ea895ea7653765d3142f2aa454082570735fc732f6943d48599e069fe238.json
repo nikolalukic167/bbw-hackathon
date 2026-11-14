@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre demande concernant la consigne de vos bagages pour la chambre R209. Merci de nous indiquer à quelle heure vous souhaitez les déposer ou les récupérer.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R209"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-03-12T17:39Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R209"
+  },
+  "t": "2026-03-12T17:39Z",
+  "template": "Merci pour votre question sur la consigne à bagages pour la chambre {room}. Notre réception vous expliquera comment cela fonctionne."
+ },
+ "violations": []
+}

@@ -20,12 +20,14 @@ The pipeline runs unchanged.
    The script:
    - runs once with `PLATO40_LLM=on` when `.env` holds a key, writing the cache to
      `llm_cache_holdout/`;
-   - reruns with the LLM off from that cache, and stops unless the output is byte-identical;
+   - reruns with the LLM off from that cache, records both hashes in
+     `decisions_holdout.rerun.json`, and stops unless the output is byte-identical;
    - validates against the contract and policy;
-   - writes `decisions_holdout.html`.
+   - writes `decisions_holdout.html`, the console and demo page (`--data` gives it the KPIs,
+     the year strip and the day replay; the trust tile reads `rerun.json`).
 4. Commit `decisions_holdout.jsonl`, `decisions_holdout.trace.jsonl`,
-   `decisions_holdout.supervisor.jsonl`, `decisions_holdout.html` and `llm_cache_holdout/`.
-   Never commit `data/`.
+   `decisions_holdout.supervisor.jsonl`, `decisions_holdout.rerun.json`,
+   `decisions_holdout.html` and `llm_cache_holdout/`. Never commit `data/`.
 
 Rehearsed on quickstart as the pretend holdout:
 

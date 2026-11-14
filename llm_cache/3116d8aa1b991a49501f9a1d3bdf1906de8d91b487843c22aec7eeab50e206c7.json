@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre signalement concernant un problème technique dans la chambre R108. Notre équipe de maintenance va s'en occuper.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R108"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-08-31T19:09Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R108"
+  },
+  "t": "2026-08-31T19:09Z",
+  "template": "Merci d'avoir signalé le problème dans la chambre {room}. Nous l'avons transmis à notre équipe technique, qui vous contactera avant d'entrer dans la chambre."
+ },
+ "violations": []
+}

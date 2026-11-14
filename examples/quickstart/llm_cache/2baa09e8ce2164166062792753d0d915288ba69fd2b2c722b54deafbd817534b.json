@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Dear guest, we are sorry to let you know that there is a problem with the heating in room R304 and we are working on it. Please contact the front desk if you need anything, and we will do our best to make you comfortable.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000188",
+   "cause": "hp_degradation",
+   "room": "R304"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-17T15:00Z",
+  "lane": "s03",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R304"
+  },
+  "t": "2026-01-17T15:00Z",
+  "template": "Dear guest in room {room}: our heating is running at reduced capacity and a repair has been requested. We are directing heat to occupied rooms first. We apologise for the inconvenience."
+ },
+ "violations": []
+}

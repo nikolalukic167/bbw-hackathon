@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for letting us know about the maintenance issue in room R207. We are sorry for the inconvenience and are looking into it.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "maintenance_issue",
+   "room": "R207"
+  },
+  "hedged": false,
+  "intent": "guest_maintenance",
+  "known_by": "2026-10-23T05:51Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R207"
+  },
+  "t": "2026-10-23T05:51Z",
+  "template": "Thank you for reporting the fault in room {room}. We have passed it to our maintenance team, who will contact you before entering the room."
+ },
+ "violations": []
+}

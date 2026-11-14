@@ -8,31 +8,76 @@ action is simulated.
 
 ## The year at a glance
 
-Steward turned 1,078 detector signals into 144 incidents and 451 decisions. 406 decisions were
-autonomous. A person was asked to approve 45, on average every 8.1 days, and 11 of those also
-need guest consent.
+Steward turned 2,728 detector signals into 163 incidents, 2,127 routine guest replies, pre-heats
+and battery plans, and 2,942 decisions. 2,770 decisions were autonomous. A person was asked to
+approve 172, on average every 2.1 days, and 127 of those also need guest consent. 116 of the
+approvals are guest-desk consent requests (maintenance, cleaning), so the manager's own load is
+56.
 
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|
-| Room turnaround | 70 | 278 | 256 | 22 | 0 | 19 of 24 waiting guests had a decision on their room earlier that day |
+| Room turnaround | 53 | 224 | 209 | 15 | 0 | 21 of 24 waiting guests had a decision on their room earlier that day |
 | Water leaks | 5 | 23 | 11 | 8 | 4 | 5 of 5 followed by a repair work order |
 | Heat pump and comfort | 31 | 112 | 101 | 4 | 7 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
-| Waste and vending | 22 | 22 | 22 | 0 | 0 | 21 of 22 orders came before a real shortage |
+| Comfort requests (too hot) | 185 | 377 | 377 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
+| Guest desk | 1,331 | 1,454 | 1,338 | 0 | 116 | 1,612 of 1,612 guest requests (all lanes) answered before their due time; 116 got a staff action |
+| Waste and vending | 27 | 31 | 31 | 0 | 0 | 21 of 25 orders came before a real shortage |
 | Data quality | 16 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
+| Ventilation (AHU filter) | 12 | 19 | 15 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
+| Busy days and event weekends | 14 | 67 | 53 | 14 | 0 | 5 of 11 days flagged at the morning plan had a waiting guest |
+| Energy (pre-heat, battery plan) | 616 | 619 | 619 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |
 
-## Operating recommendations for PLATO-40 (next year)
+## Guest requests
+
+1,612 of the 1,612 guest requests were answered by a decision that cites the request, 1,612 of
+them before the request's due time.
+
+| Request type | Requests | Answered | Before due |
+|---|---|---|---|
+| early_checkin | 349 | 349 | 349 |
+| late_checkout | 271 | 271 | 271 |
+| temperature_hot | 201 | 201 | 201 |
+| noise_complaint | 173 | 173 | 173 |
+| wifi_help | 140 | 140 | 140 |
+| extra_towels | 112 | 112 | 112 |
+| arrival_delay | 87 | 87 | 87 |
+| parking | 57 | 57 | 57 |
+| maintenance_issue | 50 | 50 | 50 |
+| cleaning_request | 44 | 44 | 44 |
+| luggage_storage | 44 | 44 | 44 |
+| temperature_cold | 29 | 29 | 29 |
+| invoice | 19 | 19 | 19 |
+| access_issue | 17 | 17 | 17 |
+| waiting_for_room | 14 | 14 | 14 |
+| air_quality | 4 | 4 | 4 |
+| water_issue | 1 | 1 | 1 |
+
+## Supervisor review
+
+A supervisor LLM (claude-sonnet-5-5, ADR-003) reviewed the rules' decisions at 488 review points
+(364 daily and 124 hotspot). It answered at 481 of them; 7 had no answer, all because the call
+failed. The checks rejected 0 answers. It added 9 decisions (the policy set 9 autonomous) and
+changed or removed none. By action: 9 flag_anomaly; by lane: 6 guest desk and 3 energy
+(pre-heat, battery plan). For example, `SV-D-BUILDING-20260315T0600Z-01`: "R405 reported noise
+at 22:47Z and again at 23:02Z. The first reply did not settle it, and the rules only sent a
+second notify_guest. A repeat noise complaint within 15 minutes points to an ongoing disturbance
+that a..." And `SV-D-BUILDING-20260323T0600Z-01`: "Three noise complaints from R308 (23:01Z),
+R304 (23:44Z) and R108 (00:59Z) arrived within about two hours. The rules treated each as a
+separate guest reply. R304 and R308 are both on floor 3, and R303 on the same..."
+
+## Operating recommendations for PLATO-40 next year (feedback to CLARA)
 
 **Turnovers: act at the morning plan, and move on-call help to the hours when guests wait.** 24
-guests waited for a room, on 16 days. For 19 of them Steward had already decided on that room
-earlier the same day, a median 6.5 h before the wait. The 20 days that the 07:00 plan flagged as
-at risk carried 14 of the waits, and 13 of those days were short-staffed, with fewer than the
+guests waited for a room, on 16 days. For 21 of them Steward had already decided on that room
+earlier the same day, a median 6.5 h before the wait. The 11 days that the 07:00 plan flagged as
+at risk carried 13 of the waits, and 3 of those days were short-staffed, with fewer than the
 usual 2 cleaners on shift. The year had 15 short-staffed days, from 24 cleaner shifts lost to
 absence. 22 of the 24 waits began before the on-call window opens at 15:30, so on-call help
 arrives too late. *Recommendation:* when a sick note leaves a day short-staffed, book
 replacement cleaning at the morning plan, and move the on-call window to the hours before
-check-in. *Uncertainty:* Steward did not anticipate 5 waits; they came on days the plan judged
-safe, and 3 of them followed an early check-in request that Steward predicted would be met.
-Their median wait was 0.25 h, against 1.00 h for the anticipated ones.
+check-in. *Uncertainty:* Steward did not anticipate 3 waits; they came on days the plan judged
+safe, and 1 of them followed an early check-in request that Steward predicted would be met.
+Their median wait was 0.50 h, against 1.00 h for the anticipated ones.
 
 **Leaks: dispatch on persistence and on the night gap; do not wait for a guest report.** 5 of
 Steward's 5 leak incidents were followed by a corrective work order on the same asset. Steward
@@ -53,8 +98,8 @@ add a refrigerant check to the autumn service. *Uncertainty:* 2 incidents, and t
 drift as the unit ages.
 
 **Logistics: keep ordering on the 96 h use rate, and add a summer drinks restock.** Steward
-ordered 22 extra services (20 for VEND1, 2 for WASTE_MAIN). 21 came before a real stock-out or
-full container, a median 26.5 h ahead, 18 of them at least the 24 h order lead time ahead; 1
+ordered 25 extra services (24 for VEND1, 1 for WASTE_MAIN). 21 came before a real stock-out or
+full container, a median 31.8 h ahead, 21 of them at least the 24 h order lead time ahead; 4
 found no shortage before the regular service. 21 of the year's 23 shortages had an order before
 them. The 20 vending stock-outs (20 of them drinks) fell between April and September, most in
 July (6). *Recommendation:* in those months, add a restock between the regular visits (Mon and
@@ -72,10 +117,10 @@ evidence beside Steward's rules, and check every exchanged meter for backward st
 **Filters: change AHU1 filters on pressure, not on the calendar.** Planned changes ran 97 days
 apart, yet the filters clogged 2 times and were replaced unplanned by EXTERNAL_HVAC, 43 to 87
 days after the previous change; FILTER_DP_HIGH was raised 10 times. *Recommendation:* trigger
-the change on day-mode filter pressure. *Uncertainty:* 2 events, and Steward has no filter
-detector yet.
+the change on day-mode filter pressure. *Uncertainty:* 2 events. Steward's filter lane made 19
+decisions on AHU1 this year.
 
-## Design recommendations for the next building
+## Design recommendations for the next building (feedback to PLATO)
 
 **Plan for summer heat.** The building lists its cooling as "none (heating-only heat pump;
 ventilation provides night flushing in summer)". Occupied rooms spent 19,308 room-hours above 26
@@ -127,9 +172,9 @@ reveal a leak. *Recommendation:* submeters on the circulation loop and the commo
 
 ## Limits
 
-- The data is a single synthetic year. The leak and heat pump rules rest on 5 to 31 incidents
+- The data is a single synthetic year. The leak and heat pump rules rest on 5 to 216 incidents
   per class; the holdout and real operation must confirm them.
 - The data is a replay: no action changes later readings, so outcomes are matched to work orders
   and events that people wrote after the fact.
-- The data has no costs, so the report claims no savings. Steward has no daily energy plan and
-  no filter detector yet.
+- The data has no costs, so the report claims no savings. Steward's energy lane pre-heats
+  arrival rooms but has no battery plan yet.

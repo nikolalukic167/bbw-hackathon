@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su aviso de que llegará con retraso. Su habitación R310 seguirá reservada. Gracias por informarnos.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "arrival_delay",
+   "room": "R310"
+  },
+  "hedged": false,
+  "intent": "guest_delay",
+  "known_by": "2026-03-14T18:23Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R310"
+  },
+  "t": "2026-03-14T18:23Z",
+  "template": "Gracias por avisarnos de su llegada tardía a la habitación {room}. Lo hemos anotado e informado a nuestra recepción."
+ },
+ "violations": []
+}

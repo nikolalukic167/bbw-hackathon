@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag! Zu Ihrer Anfrage zur Gepäckaufbewahrung für Zimmer R303: Wir haben Ihre Anfrage erhalten. Bitte geben Sie uns Bescheid, wann Sie Ihr Gepäck abgeben oder abholen möchten, damit wir alles für Sie vorbereiten können.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R303"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-10-23T20:06Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R303"
+  },
+  "t": "2026-10-23T20:06Z",
+  "template": "Danke für Ihre Frage zur Gepäckaufbewahrung für Zimmer {room}. Unsere Rezeption sagt Ihnen, wie es funktioniert."
+ },
+ "violations": []
+}

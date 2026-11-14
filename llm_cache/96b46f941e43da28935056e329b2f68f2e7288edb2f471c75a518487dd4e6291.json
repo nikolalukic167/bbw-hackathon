@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"La camera R209 dovrebbe essere pronta alle 13:09 ora locale.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R209 expected ready at 13:09 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-05-09T10:10Z",
+  "lane": "s01",
+  "language": "it",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R209",
+   "t2": "13:09"
+  },
+  "t": "2026-05-09T10:10Z",
+  "template": "{t1} expected ready at {t2} local"
+ },
+ "violations": []
+}

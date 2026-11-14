@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, we hebben uw melding over de luchtkwaliteit in kamer R103 ontvangen. We kijken er direct naar en laten u zo snel mogelijk weten wat we voor u kunnen doen.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "air_quality",
+   "room": "R103"
+  },
+  "hedged": false,
+  "intent": "guest_air",
+  "known_by": "2026-10-24T01:22Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R103"
+  },
+  "t": "2026-10-24T01:22Z",
+  "template": "Bedankt voor uw bericht over de lucht in kamer {room}. We hebben ons personeel gevraagd dit te controleren en nemen contact op voordat iemand de kamer betreedt."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Het spijt ons, kamer R208 is om 10:15 nog niet klaar. Ons personeel is ermee bezig en u ontvangt een nieuw tijdstip.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R208 is not ready at the promised 10:15 local; staff are on it and a new ready time follows"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-11-11T09:30Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R208",
+   "t2": "10:15"
+  },
+  "t": "2026-11-11T09:30Z",
+  "template": "{t1} is not ready at the promised {t2} local; staff are on it and a new ready time follows"
+ },
+ "violations": []
+}

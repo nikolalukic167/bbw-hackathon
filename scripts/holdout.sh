@@ -20,9 +20,16 @@ PLATO40_LLM=$llm uv run plato40 run "$data" \
 echo "== run 2: PLATO40_LLM=off, from the cache"
 PLATO40_LLM=off uv run plato40 run "$data" \
   --out "$scratch/decisions_holdout.jsonl" --trace "$scratch/trace.jsonl" --llm-cache "$cache"
+a=$(sha256sum decisions_holdout.jsonl | cut -d" " -f1)
+b=$(sha256sum "$scratch/decisions_holdout.jsonl" | cut -d" " -f1)
+same=false; [ "$a" = "$b" ] && same=true
+printf '{"decisions_sha256": "%s", "rerun_sha256": "%s", "identical": %s}\n' "$a" "$b" "$same" \
+  > decisions_holdout.rerun.json
 cmp decisions_holdout.jsonl "$scratch/decisions_holdout.jsonl"
 echo "rerun byte-identical"
 
 uv run plato40 validate decisions_holdout.jsonl "$data"
-uv run plato40 ui decisions_holdout.jsonl decisions_holdout.trace.jsonl --out decisions_holdout.html
+uv run plato40 ui decisions_holdout.jsonl decisions_holdout.trace.jsonl --out decisions_holdout.html \
+  --data "$data" --llm-cache "$cache" --supervisor decisions_holdout.supervisor.jsonl \
+  --rerun decisions_holdout.rerun.json
 sha256sum decisions_holdout.jsonl

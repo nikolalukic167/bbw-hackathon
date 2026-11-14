@@ -87,6 +87,17 @@ def _parser() -> argparse.ArgumentParser:
     page.add_argument("decisions", type=Path, help="decisions.jsonl written by run")
     page.add_argument("trace", type=Path, help="trace written by run --trace")
     page.add_argument("--out", type=Path, required=True, help="HTML page to write")
+    page.add_argument(
+        "--data",
+        type=Path,
+        help="the run's dataset directory: adds the KPIs, year strip, series and day replay",
+    )
+    page.add_argument("--llm-cache", type=Path, help="the run's LLM cache (with --data)")
+    page.add_argument(
+        "--days", nargs="*", default=[], help="local days to extract for the replay, YYYY-MM-DD"
+    )
+    page.add_argument("--supervisor", type=Path, help="the run's supervisor log")
+    page.add_argument("--rerun", type=Path, help="rerun.json written by the regeneration")
     lane = sub.add_parser("bus", help="run one trigger lane through the bus and the arbiter")
     lane.add_argument("data_dir", type=Path, help="one dataset directory (with manifest.json)")
     lane.add_argument("--lane", choices=sorted(lanes.registry()), required=True, help="lane to run")
@@ -289,8 +300,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "validate":
         return _validate(args.decisions, args.data_dir)
     if args.command == "ui":
-        n = ui.render(args.decisions, args.trace, args.out)
-        print(f"wrote {args.out} with {n} episodes")
+        info = ui.render(
+            args.decisions,
+            args.trace,
+            args.out,
+            data=args.data,
+            llm_cache=args.llm_cache,
+            days=tuple(args.days),
+            supervisor=args.supervisor,
+            rerun=args.rerun,
+        )
+        for w in info["warnings"]:
+            print(f"warning: {w}")
+        print(
+            f"wrote {args.out}: {info['episodes']} episodes, views {', '.join(info['views'])}, "
+            f"days {', '.join(info['days']) or 'none'}, {info['kb']} KB"
+        )
         return 0
     if args.command == "bus":
         return _bus(args.data_dir, args.lane, args.out, args.llm_cache)

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Bedankt voor uw bericht over kamer R202. Wij hebben uw melding over de toegang tot uw kamer ontvangen. Een medewerker kijkt er zo snel mogelijk naar.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R202"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-02-04T17:21Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R202"
+  },
+  "t": "2026-02-04T17:21Z",
+  "template": "Excuses voor het probleem met de toegang tot kamer {room}. We hebben ons personeel gevraagd u te helpen om binnen te komen."
+ },
+ "violations": []
+}

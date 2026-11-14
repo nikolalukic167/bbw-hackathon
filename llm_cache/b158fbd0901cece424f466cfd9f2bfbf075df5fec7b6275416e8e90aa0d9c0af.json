@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, abbiamo ricevuto la sua segnalazione di un problema di accesso alla camera R404. Ci stiamo occupando della questione e le faremo sapere appena possibile. Ci scusiamo per il disagio.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "access_issue",
+   "room": "R404"
+  },
+  "hedged": false,
+  "intent": "guest_access",
+  "known_by": "2026-01-23T11:17Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R404"
+  },
+  "t": "2026-01-23T11:17Z",
+  "template": "Ci scusiamo per il problema di accesso alla camera {room}. Abbiamo chiesto al nostro personale di aiutarla a entrare."
+ },
+ "violations": []
+}

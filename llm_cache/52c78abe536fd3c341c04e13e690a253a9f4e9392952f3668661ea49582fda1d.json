@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank, dass Sie uns Bescheid geben. Ihr früher Check-in für Zimmer R203 ist vorgemerkt und wird derzeit geprüft. Wir melden uns, sobald es eine Rückmeldung gibt.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R203"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-06-19T01:34Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R203"
+  },
+  "t": "2026-06-19T01:34Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Das Zimmer sollte voraussichtlich bereit sein; unser Personal meldet sich, falls sich etwas ändert."
+ },
+ "violations": []
+}

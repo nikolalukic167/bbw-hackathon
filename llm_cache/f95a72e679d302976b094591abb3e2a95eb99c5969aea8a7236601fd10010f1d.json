@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"La chambre R302 n'est pas encore prête pour 11:30 comme prévu. Notre équipe s'en occupe et vous communiquera une nouvelle heure de disponibilité.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R302 is not ready at the promised 11:30 local; staff are on it and a new ready time follows"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-09-21T09:45Z",
+  "lane": "s01",
+  "language": "fr",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R302",
+   "t2": "11:30"
+  },
+  "t": "2026-09-21T09:45Z",
+  "template": "{t1} is not ready at the promised {t2} local; staff are on it and a new ready time follows"
+ },
+ "violations": []
+}

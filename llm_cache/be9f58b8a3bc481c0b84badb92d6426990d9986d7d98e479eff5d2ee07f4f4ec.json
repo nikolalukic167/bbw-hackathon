@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, nous avons bien noté votre demande de nettoyage pour la chambre R103. Notre équipe en sera informée.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R103"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-03-10T18:15Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R103"
+  },
+  "t": "2026-03-10T18:15Z",
+  "template": "Merci pour votre demande concernant la chambre {room}. Nous l'avons transmise au service d'étage, qui vous contactera avant d'entrer dans la chambre."
+ },
+ "violations": []
+}

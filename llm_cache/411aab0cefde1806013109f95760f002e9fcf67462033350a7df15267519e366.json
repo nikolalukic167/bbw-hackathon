@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your parking request for room R409. We have received it, and our team will look into it and get back to you shortly.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "parking",
+   "room": "R409"
+  },
+  "hedged": false,
+  "intent": "guest_parking",
+  "known_by": "2026-03-29T09:29Z",
+  "lane": "s08",
+  "language": "en",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R409"
+  },
+  "t": "2026-03-29T09:29Z",
+  "template": "Thank you for your question about parking for room {room}. Our reception will get back to you with the details."
+ },
+ "violations": []
+}

@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Estimado huésped, hemos recibido un aviso sobre la calefacción de su habitación R408. Aún no conocemos la causa, pero nuestro equipo de mantenimiento ya está al tanto y lo revisará lo antes posible. Disculpe las molestias.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK001648",
+   "cause": "unknown",
+   "room": "R408"
+  },
+  "hedged": false,
+  "intent": "notify_guest_heat",
+  "known_by": "2026-07-15T21:51Z",
+  "lane": "s03",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R408"
+  },
+  "t": "2026-07-15T21:51Z",
+  "template": "Gracias por su mensaje sobre el calor en la habitación {room}. El edificio solo tiene calefacción, sin aire acondicionado. Hemos bajado la consigna: la calefacción permanece apagada. Abrir la ventana por la noche, cuando fuera hace más fresco, ayuda."
+ },
+ "violations": []
+}

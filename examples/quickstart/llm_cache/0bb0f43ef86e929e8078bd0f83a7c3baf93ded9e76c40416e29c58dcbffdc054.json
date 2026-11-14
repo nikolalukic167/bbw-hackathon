@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Nous sommes désolés pour la gêne occasionnée dans votre chambre R203. Nous travaillons à résoudre le problème afin de rétablir votre confort.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK000040",
+   "cause": "hp_degradation",
+   "room": "R203"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-01-16T11:00Z",
+  "lane": "s03",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R203"
+  },
+  "t": "2026-01-16T11:00Z",
+  "template": "Chers hôtes de la chambre {room} : notre chauffage fonctionne actuellement à puissance réduite et une réparation a été demandée. Nous dirigeons la chaleur en priorité vers les chambres occupées. Veuillez nous excuser pour ce désagrément."
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de toallas adicionales para la habitación R402. Le ofrecemos enviarlas en breve.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "extra_towels",
+   "room": "R402"
+  },
+  "hedged": false,
+  "intent": "guest_towels",
+  "known_by": "2026-05-21T06:00Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R402"
+  },
+  "t": "2026-05-21T06:00Z",
+  "template": "Gracias por su solicitud para la habitación {room}. Hemos pedido a housekeeping que lleve toallas limpias."
+ },
+ "violations": []
+}

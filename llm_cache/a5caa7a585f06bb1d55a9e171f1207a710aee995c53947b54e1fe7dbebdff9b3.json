@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Goed nieuws: uw kamer R101 is klaar voor vroeg inchecken. Wij kijken graag naar uw verzoek en laten u weten wat er mogelijk is.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R101"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-06-13T09:19Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R101"
+  },
+  "t": "2026-06-13T09:19Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. De kamer is naar verwachting klaar; ons personeel laat het u weten als er iets verandert."
+ },
+ "violations": []
+}

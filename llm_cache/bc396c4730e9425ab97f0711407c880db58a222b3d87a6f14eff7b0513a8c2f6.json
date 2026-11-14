@@ -1,0 +1,28 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Wir können Ihnen Zimmer R303 anbieten, vorbehaltlich der Genehmigung. Andernfalls wird Zimmer R110 voraussichtlich um 12:15 Uhr bezugsbereit sein.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R303 is offered pending approval; otherwise R110 expected ready at 12:15 local"
+  },
+  "hedged": true,
+  "intent": "guest_message",
+  "known_by": "2026-05-18T09:45Z",
+  "lane": "s01",
+  "language": "de",
+  "must_say": [
+   "t1",
+   "t2",
+   "t3"
+  ],
+  "say": {
+   "t1": "R303",
+   "t2": "R110",
+   "t3": "12:15"
+  },
+  "t": "2026-05-18T09:45Z",
+  "template": "{t1} is offered pending approval; otherwise {t2} expected ready at {t3} local"
+ },
+ "violations": []
+}

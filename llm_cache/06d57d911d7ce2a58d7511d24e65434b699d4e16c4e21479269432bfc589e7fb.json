@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite, ci scusiamo per il disagio nella camera R210. Stiamo verificando la causa e ci occuperemo di risolvere la situazione il prima possibile.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "booking": "BK003565",
+   "cause": "unknown",
+   "room": "R210"
+  },
+  "hedged": false,
+  "intent": "notify_guest_comfort",
+  "known_by": "2026-10-28T12:10Z",
+  "lane": "s03",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R210"
+  },
+  "t": "2026-10-28T12:10Z",
+  "template": "Grazie per il messaggio sulla temperatura della camera {room}. Stiamo controllando ora il riscaldamento e la contatteremo se sarà necessario un intervento in camera."
+ },
+ "violations": []
+}

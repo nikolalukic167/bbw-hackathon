@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, concernant votre demande de stockage de bagages pour la chambre R309 : nous avons bien pris note de votre demande. Merci de nous indiquer les détails souhaités, et notre équipe reviendra vers vous.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R309"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-08-30T20:45Z",
+  "lane": "s08",
+  "language": "fr",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R309"
+  },
+  "t": "2026-08-30T20:45Z",
+  "template": "Merci pour votre question sur la consigne à bagages pour la chambre {room}. Notre réception vous expliquera comment cela fonctionne."
+ },
+ "violations": []
+}

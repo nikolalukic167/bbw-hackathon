@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Beste gast, bedankt voor uw verzoek om vroeg in te checken voor kamer R105. Wij bekijken dit en laten u zo snel mogelijk weten wat de mogelijkheden zijn.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R105"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-11-10T10:36Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R105"
+  },
+  "t": "2026-11-10T10:36Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. De kamer is naar verwachting klaar; ons personeel laat het u weten als er iets verandert."
+ },
+ "violations": []
+}

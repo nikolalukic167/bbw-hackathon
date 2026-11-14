@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"de\", \"text\": \"Vielen Dank für Ihre Anfrage zur Reinigung von Zimmer R206. Wir haben sie an unser Housekeeping weitergeleitet.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "cleaning_request",
+   "room": "R206"
+  },
+  "hedged": false,
+  "intent": "guest_cleaning",
+  "known_by": "2026-05-24T05:54Z",
+  "lane": "s08",
+  "language": "de",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R206"
+  },
+  "t": "2026-05-24T05:54Z",
+  "template": "Danke für Ihre Anfrage zu Zimmer {room}. Wir haben sie an das Housekeeping weitergegeben; es meldet sich bei Ihnen, bevor es das Zimmer betritt."
+ },
+ "violations": []
+}

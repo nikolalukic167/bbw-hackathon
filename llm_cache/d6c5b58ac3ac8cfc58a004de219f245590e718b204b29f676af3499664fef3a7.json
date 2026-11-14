@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Su habitación R406 está lista para una entrada anticipada. Si desea llegar antes de la hora habitual de registro, por favor hágalo saber en recepción.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "early_checkin",
+   "room": "R406"
+  },
+  "hedged": false,
+  "intent": "guest_early_ready",
+  "known_by": "2026-01-24T08:29Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R406"
+  },
+  "t": "2026-01-24T08:29Z",
+  "template": "Gracias por su solicitud para la habitación {room}. La habitación debería estar lista; nuestro personal le avisará si algo cambia."
+ },
+ "violations": []
+}

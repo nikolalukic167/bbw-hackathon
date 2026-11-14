@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"it\", \"text\": \"Gentile ospite della camera R106, abbiamo ricevuto la sua segnalazione di rumore. Ci scusiamo per il disturbo e stiamo provvedendo a verificare la situazione.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "noise_complaint",
+   "room": "R106"
+  },
+  "hedged": false,
+  "intent": "guest_noise",
+  "known_by": "2026-10-21T21:05Z",
+  "lane": "s08",
+  "language": "it",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R106"
+  },
+  "t": "2026-10-21T21:05Z",
+  "template": "Ci dispiace per il rumore vicino alla camera {room}. Il nostro personale è stato informato e se ne occuperà."
+ },
+ "violations": []
+}

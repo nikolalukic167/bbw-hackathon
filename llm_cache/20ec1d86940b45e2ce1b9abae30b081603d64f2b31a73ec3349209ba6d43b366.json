@@ -1,0 +1,27 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Uw verzoek om later uit te checken voor kamer R102 is genoteerd. Een late check-out tot 13:00 is aangeboden en wacht op goedkeuring. Wij laten u zo snel mogelijk weten of dit is goedgekeurd.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "late_checkout",
+   "room": "R102"
+  },
+  "hedged": false,
+  "intent": "guest_late_free",
+  "known_by": "2026-01-12T08:14Z",
+  "lane": "s08",
+  "language": "nl",
+  "must_say": [
+   "room",
+   "time"
+  ],
+  "say": {
+   "room": "R102",
+   "time": "13:00"
+  },
+  "t": "2026-01-12T08:14Z",
+  "template": "Bedankt voor uw verzoek voor kamer {room}. Een latere check-out tot {time} lijkt mogelijk; ons personeel beslist en laat het u weten."
+ },
+ "violations": []
+}
