@@ -39,7 +39,7 @@ from plato40.episodes import Episode
 from plato40.load import derive
 from plato40.load.reader import Dataset, load_dataset
 from plato40.settings import Settings
-from plato40.supervise import DEFAULT_MODEL
+from plato40.supervise import DEFAULT_MODEL, MAX_ADDS
 
 Facts = dict[str, str]
 NA = "n/a"
@@ -272,8 +272,9 @@ common-area draw every other day, so daily totals cannot reveal a leak.
   carries the time it became known.
 - **Agents:** a deterministic lane for each domain (turnaround, water, heating and energy,
   logistics, data quality) feeding a single policy gate that sets the autonomy level. A
-  language model only words guest messages; every room, time and ID stays as the rules
-  wrote them.
+  language model words guest messages, and every room, time and ID stays as the rules wrote
+  them. A supervisor model may add at most {sv_max} checked flags or requests per review; it
+  never changes or removes a rule's decision.
 - **Robots:** floor robots clean before the human clean and carry floor bins; they never
   certify or release a room. Repairs and entering occupied rooms stay with people.
 - **Interfaces:** the decision contract as the action log, an approval inbox with consent
@@ -1098,6 +1099,7 @@ def render(
     facts |= supervisor(run, log if log is not None else run.reviews)
     hp = [e for e in _of(run, "heating_comfort") if any(s.kind == "cop_low" for s in e.signals)]
     facts["small_n"] = _span([len(_of(run, "water_leak")), len(hp)])
+    facts["sv_max"] = _n(MAX_ADDS)
     facts["table"] = lane_table(run, facts)
     return reflow(TEMPLATE.format(**facts))
 
