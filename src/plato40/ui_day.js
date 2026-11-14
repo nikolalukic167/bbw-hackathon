@@ -24,7 +24,9 @@
     price_eur_kwh: { label: "Price", unit: " EUR/kWh", lanes: ["energy_optimization"] },
   };
   const RANK = typeof PRIO !== "undefined" ? PRIO : { low: 0, medium: 1, high: 2, critical: 3 };
-  const BAND = [20, 23]; // occupied comfort band (degC), as in building.json constraints
+  // Thresholds come from the run (DATA.thresholds), never typed here.
+  const BAND = () => DATA.thresholds?.comfort_c ?? null;
+  const COP_LOW = () => DATA.thresholds?.cop_ratio_low ?? null;
 
   let cur = { day: null, i: 0, step: null, timer: null, open: new Set(), showTemp: false, el: null };
   const cache = {};
@@ -168,13 +170,14 @@
         const st = roomName(R.state?.[i], D), sty = STATE_STYLE[st] || STATE_STYLE.unknown;
         const temp = R.temp?.[i], sp = R.sp?.[i], win = R.win?.[i];
         const occ = st === "occupied";
-        const tcls = temp == null ? "" : occ && temp < BAND[0] ? "cold" : occ && temp > BAND[1] ? "hot" : "";
+        const band = BAND();
+        const tcls = temp == null || !band ? "" : occ && temp < band[0] ? "cold" : occ && temp > band[1] ? "hot" : "";
         const tip = [`${r}: ${sty.label}`, temp != null ? `${temp.toFixed(1)} degC` : "no reading",
           sp != null ? `setpoint ${sp.toFixed(1)}` : "", win ? "window open" : "", meta.get(r)?.orientation ? `faces ${meta.get(r).orientation}` : ""].filter(Boolean).join(", ");
         const rec = P.recent.get(r), issue = P.open.get(r);
         svg += `<g class="tile"><title>${esc(tip)}${rec ? esc(` | proposed ${hhmm(rec.t)}: ${rec.d.action} (simulated)`) : ""}</title>`;
         svg += `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="4" fill="${sty.fill}" stroke="var(--line)"/>`;
-        if (P.blocked.has(r)) svg += `<rect x="${x + 2}" y="${y + 2}" width="${W - 4}" height="${H - 4}" rx="3" fill="none" stroke="var(--critical)" stroke-width="2.5" stroke-dasharray="5 3"/><text x="${x + 6}" y="${y + 52}" font-size="10" style="fill:var(--critical);font-weight:700">block proposed</text>`;
+        if (P.blocked.has(r)) svg += `<rect x="${x + 2}" y="${y + 2}" width="${W - 4}" height="${H - 4}" rx="3" fill="none" stroke="var(--critical)" stroke-width="2.5" stroke-dasharray="5 3"/><text x="${x + 6}" y="${y + 52}" font-size="11" style="fill:var(--critical);font-weight:700">BLOCK</text>`;
         else if (rec) svg += `<rect x="${x + 1.5}" y="${y + 1.5}" width="${W - 3}" height="${H - 3}" rx="3" fill="none" stroke="${lane(rec.e.issue).c}" stroke-width="2.5" stroke-dasharray="5 3"/>`;
         svg += `<text class="id" x="${x + 6}" y="${y + 17}">${r}</text>`;
         if (issue) svg += `<circle cx="${x + W - 11}" cy="${y + 11}" r="8" fill="${lane(issue).c}"/><text x="${x + W - 11}" y="${y + 15}" text-anchor="middle" font-size="10" font-weight="700" style="fill:#fff">${MARK[issue] || "?"}</text>`;
@@ -188,7 +191,7 @@
     svg += `</svg>`;
     const legend = Object.entries(STATE_STYLE).map(([, v]) => `<span><i style="background:${v.fill}"></i>${v.label}</span>`).join("")
       + `<span><i class="prop"></i>Steward proposal (simulated, not applied in the replay)</span>`
-      + `<span>letter = incident active in the last 6 h; blue / orange = occupied room below / above ${BAND[0]}-${BAND[1]} degC</span>`;
+      + `<span>letter = incident active in the last 6 h${BAND() ? `; blue / orange = occupied room below / above ${BAND()[0]}-${BAND()[1]} degC` : ""}</span>`;
     return `${svg}<div class="dv-legend">${legend}</div>`;
   }
 
@@ -198,11 +201,11 @@
     const cop = p.cop?.[i];
     const cells = [
       ["HP1", v(p.hp1_status, x => x), p.hp1_status?.[i] && p.hp1_status[i] !== "running"],
-      ["HP1 COP ratio", cop != null ? cop.toFixed(2) : "n/a", false],
+      ["HP1 COP ratio", cop != null ? cop.toFixed(2) : "n/a", cop != null && COP_LOW() != null && cop < COP_LOW()],
       ["AHU1 filter dp", v(p.ahu_dp, x => `${x.toFixed(0)} Pa`), false],
       ["BAT1 SOC (plan)", v(p.soc, x => `${x.toFixed(0)} kWh`) + (p.soc_plan?.[i] != null ? ` (${p.soc_plan[i].toFixed(0)})` : ""), false],
       ["Main water flow", v(p.flow, x => `${x.toFixed(0)} L/h`), false],
-      ["Cleaners on shift", v(s.cleaner, x => x.length ? x.join(", ") : "none"), s.cleaner?.[i]?.length === 0],
+      ["Cleaners on shift", v(s.cleaner, x => x.length ? x.join(", ") : "none"), false],
       ["Robots", v(s.robot, x => x.length ? x.join(", ") : "none"), false],
       ["Technician", v(s.technician, x => x.length ? x.join(", ") : "none"), false],
     ];
@@ -352,7 +355,6 @@
         <div class="ttl"><h2>${esc(fmtDate.format(D.t[0]))}</h2><span class="muted">PLATO-40 replay, 15-min steps. Tiles are recorded data; Steward's proposals are dashed outlines (simulated).</span></div>
         <div class="now" aria-live="polite">${hhmm(D.t[cur.i])}</div>
         <div class="dv-days">${days.map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format(DATA.days[k].t[0]))}</button>`).join("")}</div>
-        <span class="dv-badge" title="dataset of this page">${esc(DATA.source || "")}</span>
       </section>
       <section class="panel dv-scrub" aria-label="Replay controls">
         ${scrubber(D, cur.i)}
