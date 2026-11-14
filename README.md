@@ -185,11 +185,12 @@ scripts/          fetch_data.sh, holdout.sh (docs/HOLDOUT.md), insights.py (insi
 Decisions that shape the code are recorded as ADRs:
 
 - [ADR-001](docs/adr/ADR-001-deterministic-core.md): deterministic Python core; the
-  LLM only phrases language, and its outputs are cached.
+  guest-message model only phrases language, and its outputs are cached.
 - [ADR-002](docs/adr/ADR-002-missing-and-known-at.md): blank means missing, never zero;
   decisions use only information known at that time.
 - [ADR-003](docs/adr/ADR-003-supervisor-llm.md): the rules decide first; a supervisor
-  LLM may add a few checked, grounded decisions, cached like guest messages.
+  LLM may add at most 2 checked, grounded flags or requests per review, never changes or
+  removes a rule's decision, and is cached like guest messages.
 
 ## Assumptions
 

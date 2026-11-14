@@ -43,7 +43,7 @@ computed when the page is written, so this script quotes none: read them off the
 | 19 | `#view=trail&ev=EP-room_turnaround-R209-20260509T1009Z-03` | Limit, said plainly: the data shows the guest still waited. The morning plan cannot know who arrives early; the Limits panel counts these misses. | Outcome: arrival_waiting_room. |
 | 20 | `#view=year` | The Limits panel: what Steward missed, as numbers, and what the replay cannot show. | The Limits panel. |
 | 21 | `insights.md` (second tab) | The learning loop: feedback to CLARA and to PLATO, every number from a script. | The recommendations. |
-| 22 | `#view=year` | Trust: the holdout ran unchanged with one command, the rerun was byte-identical, and the language model only words messages and flags, under a contract. | The trust tile. |
+| 22 | `#view=year` | Trust: the holdout ran unchanged with one command, the rerun was byte-identical, and the language model words messages and may add a few checked flags, under a contract. | The trust tile. |
 
 ## Fallback
 
@@ -57,7 +57,9 @@ computed when the page is written, so this script quotes none: read them off the
 
 - **What is real and what is simulated?** Detection and decisions are real code on the given
   data. Every effect of an action is simulated, because the data is a replay.
-- **Where does the language model decide?** It does not. It words guest messages, and the
-  supervisor may add a flag or an approval request, each checked against the data and cached.
+- **Where does the language model decide?** Never in place of the rules: it words guest
+  messages, and the supervisor may add at most 2 flags, inspections, deferrals or approval
+  requests per review, each checked against the data and cached. It never changes or removes a
+  rule's decision.
 - **Would it work on new data?** The holdout ran unchanged with one command.
 - **What did it get wrong?** The Limits panel lists it, with numbers.
