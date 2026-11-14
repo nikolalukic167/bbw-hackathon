@@ -51,7 +51,7 @@ h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; colo
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
 .top { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; }
 .badge { display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
-.badge b { color: var(--fg); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
+.badge b { color: var(--fg); font-weight: 600; }
 nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
 nav.tabs button { font: 600 0.85rem var(--body); color: var(--muted); background: none; border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 nav.tabs button[aria-selected="true"] { color: var(--fg); background: var(--panel); border-color: var(--line); }
@@ -201,7 +201,11 @@ document.addEventListener("keydown", ev => {
 });
 
 document.getElementById("source").textContent = DATA.source;
-document.getElementById("dataset").textContent = DATA.dataset || "";
+// "PLATO40_v2_quickstart" reads as "PLATO-40 quickstart data"; any other folder name with spaces.
+document.getElementById("dataset").textContent = (ds => {
+  const m = ds.match(/^PLATO40_v\d+_(.+)$/i);
+  return m ? `PLATO-40 ${m[1].replace(/_/g, " ")} data` : ds.replace(/_/g, " ");
+})(String(DATA.dataset || ""));
 document.getElementById("period").textContent = `${fmtDate.format(T0)} to ${fmtDate.format(T1)}`;
 
 /* Episode view: the original console (filters, scenario timeline, list, detail). */
