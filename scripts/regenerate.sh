@@ -12,6 +12,8 @@ scratch=$(mktemp -d)
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 llm=off
 if [ -n "${ANTHROPIC_API_KEY:-}" ]; then llm=on; fi
+# The API client is an extra: a fresh clone has it only after this sync.
+if [ "$llm" = on ]; then uv sync --locked --extra llm; else uv sync --locked; fi
 
 run_twice() {  # <data> <out> <cache> <trace>
   echo "== $2: PLATO40_LLM=$llm"
