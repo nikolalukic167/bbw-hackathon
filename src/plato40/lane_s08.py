@@ -31,10 +31,11 @@ import pandas as pd
 from plato40 import lane_s05, llm_guard, plan
 from plato40.bus import VERSION
 from plato40.detect import turnaround, water
-from plato40.detect.grid import stamp
+from plato40.detect.grid import local_time, stamp
 from plato40.episodes import group
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
+from plato40.staff import Roster
 from plato40.state import RoomStates
 
 LANE = "s08"
@@ -792,6 +793,7 @@ def rows(
         items.append(_Item(r, t, variant, task, says))
     done = llm_guard.prefetch([i.task for i in items], cache, call)
     board = _Board()
+    roster = Roster(ds)
     sources: Counter[str] = Counter()
     for it in items:
         q, t = it.req, it.t
@@ -830,6 +832,19 @@ def rows(
             verification_plan="No repeat of the same request from the booking before it is due.",
         )
         if extra is not None and extra[1] is not None and extra[2] is not None:
+            what, verify = (
+                f"{extra[3]} in {room}.",
+                ("A staff visit or work order for the room before the due time."),
+            )
+            if extra[2] == "schedule_cleaning" and not roster.on_shift("cleaner", t, t):
+                start = roster.next_start("cleaner", t, t)
+                what = (
+                    f"{extra[3]} in {room}, from {local_time(start, t, tz)}: no cleaner is on "
+                    "shift now."
+                    if start is not None
+                    else f"{extra[3]} in {room}: no cleaner shift is known; staff arrange it."
+                )
+                verify = "A cleaning of the room in the first cleaner shift."
             board.propose(
                 eid,
                 t,
@@ -837,11 +852,11 @@ def rows(
                 extra[1],
                 extra[2],
                 prio,
-                f"{extra[3]} in {room}.",
+                what,
                 guest_request_ids=ids,
                 confidence=0.7,
                 expected_outcome="The room is handled by staff (simulated).",
-                verification_plan="A staff visit or work order for the room before the due time.",
+                verification_plan=verify,
             )
     order = {"signal": 0, "proposal": 1}
     board.rows.sort(key=lambda x: (x.get("t_known") or x["t"], order[x["row"]], x["id"]))
