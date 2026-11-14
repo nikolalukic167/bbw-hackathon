@@ -193,8 +193,9 @@ def _water(ep: Episode, states: RoomStates, settings: Settings) -> list[Decision
     verify = (
         VERIFY_LEAK
         if in_room
-        else f"Median night gap main minus rooms below {th.gap_night_l_per_h:.0f} L/h after "
-        "repair (the main meter also feeds common areas); escalate if it stays above another night."
+        else f"Median night gap main minus rooms back within {th.gap_night_l_per_h:.0f} L/h of "
+        "its baseline from past nights after repair (the main meter also feeds common areas); "
+        "escalate if it stays above another night."
     )
     for s in ep.signals:
         if s.kind == "night_blank":

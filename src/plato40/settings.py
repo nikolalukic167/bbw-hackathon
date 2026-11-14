@@ -96,8 +96,26 @@ class DetectorSettings:
     interval flows; normal nights reach <= 180 L, but one bath alone draws up to 250 L."""
 
     gap_night_l_per_h: float = 4.0
-    """Median night gap main minus rooms (L/h) above which a pipe leak is suspected. Normal
-    nights reach at most 2.0 L/h (dev, 0.4 quickstart); the dev pipe leak ran at ~25 L/h."""
+    """Median night gap main minus rooms (L/h) above the run's own baseline at which a pipe leak
+    is suspected. Normal nights reach at most 2.0 L/h (dev, 1.2 quickstart) over a baseline of
+    0; the dev pipe leak ran at ~29 L/h."""
+
+    gap_absolute_l_per_h: float = 15.0
+    """Median night gap (L/h) that is a pipe leak whatever the baseline: a leak running from the
+    first night is learnt as normal, so this net still catches one of half the dev leak's size."""
+
+    gap_baseline_nights: int = 14
+    """Past normal gap nights (count) the baseline is learnt from; nights in a leak run, blank
+    nights and later nights never count, so a leak does not teach the baseline."""
+
+    gap_baseline_min_nights: int = 2
+    """Normal gap nights (count) needed before the baseline is used; before that only
+    ``gap_absolute_l_per_h`` applies."""
+
+    gap_baseline_quantile: float = 0.25
+    """Quantile of the past normal nights taken as the baseline. A low quantile keeps the
+    baseline at the normal level when a leak starts early in the run, and one odd night
+    cannot move it."""
 
     gap_min_coverage: float = 0.75
     """Share of a night's intervals with the main and every room meter needed for a gap verdict.

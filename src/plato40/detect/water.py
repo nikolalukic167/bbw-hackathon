@@ -16,8 +16,13 @@
   leak nights so far. A night without a verdict (blank intervals, low gap coverage) neither
   counts nor breaks the run; while a run is open it emits ``night_blank`` so the episode
   stays one incident.
-- ``night_gap``: median of main meter minus room meters reaches ``gap_night_l_per_h``;
-  points at pipes outside the rooms. Needs the gap on ``gap_min_coverage`` of the night.
+- ``night_gap``: median of main meter minus room meters reaches ``gap_night_l_per_h`` above
+  the run's own baseline, or ``gap_absolute_l_per_h`` whatever the baseline; points at pipes
+  outside the rooms. Needs the gap on ``gap_min_coverage`` of the night. The baseline is a
+  low quantile of the past normal nights (``gap_limit``), so another run of the building
+  with higher normal losses outside the rooms learns its own normal instead of alarming
+  every night. A leak running from the first night is learnt as normal; only the absolute
+  net catches it.
 
 Every signal carries the in-house technician's availability as known at its time
 (``technician`` on shift now, ``technician_from`` his next shift), so the planner can
@@ -99,6 +104,19 @@ def _continuous(series: pd.Series, settings: Settings) -> tuple[bool, str]:
     return bool(ok), f"jittering meter, minimum {hourly.min():.1f} L per hour"
 
 
+def gap_limit(normal: list[float], settings: Settings) -> tuple[float, float | None]:
+    """Return the night gap (L/h) that is a leak, and the baseline it came from, if any.
+
+    ``normal`` holds the median gaps of the past nights without a leak verdict, oldest first.
+    """
+    th = settings.detect
+    recent = normal[-th.gap_baseline_nights :]
+    if len(recent) < th.gap_baseline_min_nights:
+        return th.gap_absolute_l_per_h, None
+    base = float(pd.Series(recent).quantile(th.gap_baseline_quantile))
+    return min(th.gap_absolute_l_per_h, base + th.gap_night_l_per_h), base
+
+
 def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     """Return water leak signals for the whole dataset, each timed when it became known."""
     th = settings.detect
@@ -109,6 +127,7 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
     per_hour = 60 / settings.interval_minutes
     out: list[Signal] = []
     streak: dict[str, int] = {}
+    normal: list[float] = []
 
     def verdict(asset: str, blank: bool, leaking: bool) -> int | None:
         """Update the asset's run of leak nights; a night without a verdict keeps it."""
@@ -174,11 +193,18 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
             f"room_water.csv:all rooms:{stamp(first)}..{stamp(last)}",
         )
         blank = bool(g.notna().mean() < th.gap_min_coverage)
-        high = bool(g.median() * per_hour >= th.gap_night_l_per_h)
+        rate = float(g.median() * per_hour)
+        limit, base = gap_limit(normal, settings)
+        high = bool(rate >= limit)
         n = verdict("WM_MAIN", blank, high)
         if blank:
             held("WM_MAIN", last, refs, f"gap on {int(g.notna().sum())} of {len(g)} intervals")
         elif high:
+            against = (
+                f"baseline {base:.1f} L/h from past nights"
+                if base is not None
+                else "no baseline yet"
+            )
             out.append(
                 Signal(
                     last,
@@ -186,11 +212,14 @@ def signals(ds: Dataset, settings: Settings) -> list[Signal]:
                     "night_gap",
                     ("WM_MAIN",),
                     refs,
-                    f"median night gap main minus rooms {g.median() * per_hour:.1f} L/h over "
-                    f"{int(g.notna().sum())} of {len(g)} intervals",
-                    {"streak": n},
+                    f"median night gap main minus rooms {rate:.1f} L/h over "
+                    f"{int(g.notna().sum())} of {len(g)} intervals ({against}, "
+                    f"leak from {limit:.1f} L/h)",
+                    {"streak": n, "baseline_l_per_h": base, "limit_l_per_h": limit},
                 )
             )
+        else:
+            normal.append(rate)
     return _with_technician(out + _burst_flow(rooms, settings), ds)
 
 
