@@ -709,6 +709,23 @@ VIEWS.episode = (() => {
       <input type="range" min="0" max="${D.t.length - 1}" value="${i}" aria-label="Time of day">`;
   }
 
+  // A day without a 15-min extract (picked on the year strip): the timeline, bookmarks and the
+  // hourly sparklines still work; the room tiles and plant strip say they are not extracted.
+  function synth(day) {
+    if (cache["synth:" + day]) return cache["synth:" + day];
+    const noonUtc = Date.parse(`${day}T12:00:00Z`);
+    const localNoon = +new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hourCycle: "h23" }).format(noonUtc);
+    const t0 = Date.parse(`${day}T00:00:00Z`) - (localNoon - 12) * 3600000;
+    const t = Array.from({ length: 96 }, (_, k) => t0 + k * STEP_MS);
+    const D = { t, rooms: {}, states: [], plant: {}, shift: {}, bookmarks: [], synthetic: true };
+    for (const x of items("synth-items:" + day, D)) {
+      if (x.kind === "decision" && !isRoutine(x.e)) {
+        D.bookmarks.push({ t: x.d.timestamp_utc, label: `${x.d.action.replaceAll("_", " ")}: ${(x.d.affected_assets || []).slice(0, 2).join(", ")}`, event_id: x.d.event_id, kind: "decision" });
+      }
+    }
+    return (cache["synth:" + day] = D);
+  }
+
   function stepOfBookmark(D, step) {
     const b = (D.bookmarks || [])[step];
     return b ? { i: indexAt(D, ms(b.t)), b } : null;
@@ -726,7 +743,7 @@ VIEWS.episode = (() => {
       <section class="panel dv-head">
         <div class="ttl"><h2>${esc(fmtDate.format(D.t[0]))}</h2><span class="muted">PLATO-40 replay, 15-min steps. Tiles are recorded data; Steward's proposals are dashed outlines (simulated).</span></div>
         <div class="now" aria-live="polite">${hhmm(D.t[cur.i])}</div>
-        <div class="dv-days">${days.map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format(DATA.days[k].t[0]))}</button>`).join("")}</div>
+        <div class="dv-days">${(D.synthetic ? [...days, dayKey] : days).map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format((DATA.days[k] || D).t[0]))}</button>`).join("")}</div>
       </section>
       <section class="panel dv-scrub" aria-label="Replay controls">
         ${scrubber(D, cur.i)}
@@ -739,7 +756,9 @@ VIEWS.episode = (() => {
         </div>
       </section>
       <div class="dv-main">
-        <section class="panel dv-plan" aria-label="Building">${floorPlan(D, cur.i, list)}${plant(D, cur.i)}</section>
+        <section class="panel dv-plan" aria-label="Building">${D.synthetic
+          ? `<div class="dv-empty">Room tiles and the plant strip are extracted only for the replay days of this page: ${days.map(k => esc(fmtDate.format(DATA.days[k].t[0]))).join(", ")}. The timeline and the hourly series below are complete for this day.</div>`
+          : floorPlan(D, cur.i, list) + plant(D, cur.i)}</section>
         <section class="panel dv-tl" aria-label="What Steward saw and proposed">${timeline(list, t, flashId)}</section>
       </div>
       <section class="panel dv-spark" aria-label="Day series">${sparks(D, list, t)}</section>
@@ -797,7 +816,7 @@ VIEWS.episode = (() => {
   // N / P / space while the Day view is shown; the shell's arrow keys set state.step.
   document.addEventListener("keydown", ev => {
     if (!cur.el || !cur.el.isConnected || !cur.day || ev.target.closest?.("input,select,textarea")) return;
-    const D = DATA.days?.[cur.day];
+    const D = DATA.days?.[cur.day] || synth(cur.day);
     if (!D) return;
     const k = ev.key.toLowerCase();
     if (k === "n" || k === "p") {
@@ -815,12 +834,12 @@ VIEWS.episode = (() => {
     render(el, state) {
       css();
       const days = Object.keys(DATA.days || {}).sort();
-      if (!days.length) {
+      if (!days.length && !state.day) {
         el.innerHTML = `<div class="panel dv-empty">This page has no day extract. Write it with plato40 ui ... --data &lt;dir&gt; --days &lt;date&gt;.</div>`;
         return;
       }
-      const dayKey = state.day && DATA.days[state.day] ? state.day : days[0];
-      const D = DATA.days[dayKey];
+      const dayKey = state.day || days[0];
+      const D = DATA.days[dayKey] || synth(dayKey);
       if (cur.day !== dayKey) { stop(); cur = { ...cur, day: dayKey, i: 0, open: new Set() }; }
       cur.el = el;
       let flash = null;
@@ -931,14 +950,20 @@ VIEWS.trail = (() => {
       const id = st.ev && BY_EVENT[st.ev] ? st.ev : list.length ? list[0].d.event_id : null;
       if (!id) { el.innerHTML = `<div class="panel empty">No decision to trace in this run.</div>`; return; }
       const { d, e } = BY_EVENT[id];
-      const shown = list.slice(0, 150);
+      // The decision on show is pinned at the top of the list, so a deep link is visible.
+      const pinned = list.find(x => x.d.event_id === id) || { d, e };
+      const shown = [pinned, ...list.filter(x => x !== pinned)].slice(0, 150);
       el.innerHTML = `<style>${CSS}</style><div class="tr-wrap">
         <nav class="panel tr-pick" aria-label="Decisions with a trail"><h3>Decisions with a trail</h3>
           ${shown.map(({ d: x, e: ex }) => `<button type="button" data-ev="${esc(x.event_id)}" aria-current="${x.event_id === id}">
             <span>${act(x)} <small>${esc(ex.assets.join(", "))}</small></span><small>${fmtDay.format(ms(x.timestamp_utc))} · ${esc(x.priority)}</small></button>`).join("")}
-          ${list.length > shown.length ? `<small>${fmtN(list.length - shown.length)} more: open one from the Episode view.</small>` : ""}
+          ${list.length + (list.includes(pinned) ? 0 : 1) > shown.length ? `<small>${fmtN(list.length + (list.includes(pinned) ? 0 : 1) - shown.length)} more: open one from the Episode view.</small>` : ""}
         </nav>
         <section class="panel">${chain(d, e)}</section></div>`;
+      const pick = el.querySelector(".tr-pick");
+      if (pick) pick.scrollTop = 0;
+      const cur = el.querySelector('.tr-pick [aria-current="true"]');
+      if (cur) cur.scrollIntoView({ block: "nearest" });
       el.onclick = ev => {
         if (state.view !== "trail") return;
         const a = ev.target.closest("[data-ev]");
@@ -988,6 +1013,11 @@ VIEWS.year = (() => {
   const pct = (a, b) => (b ? `${Math.round((100 * a) / b)} %` : "n/a");
   const pair = p => (p ? `<b>${n(p[0])}</b> of ${n(p[1])}` : "n/a");
   const EXTRA = { comfort_hot: "too-hot replies", routine: "routine" };
+  // Strip rows: the scenario code and one short word, so no label is clipped.
+  const WORD = { water_leak: "leaks", room_turnaround: "turnaround", occupancy_surge: "busy days",
+    heating_comfort: "heating", ventilation_maintenance: "filters", logistics: "logistics",
+    energy_optimization: "energy", guest_service: "guest desk", data_quality: "data" };
+  const rowName = k => (SCEN[k] && WORD[k] ? `${SCEN[k].short} ${WORD[k]}` : label(k));
   const label = k => (SCEN[k] ? SCEN[k].label : EXTRA[k] || k.replace(/_/g, " "));
   const words = obj => Object.entries(obj || {}).map(([k, v]) => `${n(v)} ${k.replace(/_/g, " ")}`).join(", ") || "none";
 
@@ -1028,10 +1058,10 @@ VIEWS.year = (() => {
   function strip(y) {
     if (!y || !y.days || !y.days.length) return `<div class="panel empty">No year data: write the page with --data.</div>`;
     const lanes = ORDER.filter(l => (y.lanes[l] || []).some(v => v > 0));
-    const rows = [...lanes.map(l => ({ key: l, name: label(l), vals: y.lanes[l] })),
+    const rows = [...lanes.map(l => ({ key: l, name: rowName(l), vals: y.lanes[l] })),
       { key: "routine", name: "routine", vals: y.routine || [] }];
     // A fixed drawing width, so a short run (quickstart) and a year read at the same scale.
-    const D = y.days.length, L = 170, W = 1000, cw = (W - L - 4) / D, ch = 17, top = 24, H = top + rows.length * ch + 16;
+    const D = y.days.length, L = 120, W = 1000, cw = (W - L - 4) / D, ch = 17, top = 24, H = top + rows.length * ch + 16;
     const max = Math.max(1, ...lanes.flatMap(l => y.lanes[l]));
     const shade = v => (v ? 0.18 + 0.82 * Math.log1p(v) / Math.log1p(max) : 0);
     let out = "";
@@ -1047,7 +1077,7 @@ VIEWS.year = (() => {
     });
     rows.forEach((r, j) => {
       const yy = top + j * ch;
-      out += `<text class="lab" x="0" y="${yy + 12}">${esc(r.name.length > 26 ? r.name.slice(0, 25) + "." : r.name)}</text>`;
+      out += `<text class="lab" x="0" y="${yy + 12}">${esc(r.name.length > 18 ? r.name.slice(0, 17) + "." : r.name)}</text>`;
       r.vals.forEach((v, i) => {
         if (!v) return;
         const a = r.key === "routine" ? 0.12 + 0.2 * Math.min(1, v / 20) : shade(v);
