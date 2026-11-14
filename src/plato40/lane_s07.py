@@ -466,6 +466,12 @@ class _Lane:
         day = proj.overflow.tz_convert(self.tz).date()
         if feasible:
             self.plans[reg] = _Plan(eid, sig, day, event)
+            hold_at = pd.Timestamp(day).tz_localize(self.tz) + pd.Timedelta(
+                hours=th.logistics_hold_local_h
+            )
+            if hold_at > self.idx[-1]:
+                # The data ends before the hold hour: decide the hold now, not never.
+                self._hold(i, t, reg, self.plans[reg], when=t)
             return
         if t + lead >= reg:
             return
@@ -494,7 +500,14 @@ class _Lane:
             ),
         )
 
-    def _hold(self, i: int, t: pd.Timestamp, reg: pd.Timestamp, plan: _Plan) -> None:
+    def _hold(
+        self,
+        i: int,
+        t: pd.Timestamp,
+        reg: pd.Timestamp,
+        plan: _Plan,
+        when: pd.Timestamp | None = None,
+    ) -> None:
         """UC3 part 1: hold the dump of the bins that would overflow the container."""
         th = self.th
         proj = self._project(i, t, reg, hold=True)
@@ -502,7 +515,12 @@ class _Lane:
             return
         plan.held = sorted(proj.held)
         names = [f"WASTE_F{n}" for n in plan.held]
-        when = t + pd.Timedelta(hours=th.logistics_hold_local_h - t.tz_convert(self.tz).hour)
+        dump = f"{th.logistics_dump_local_h:.1f} h"
+        if when is None:
+            when = t + pd.Timedelta(hours=th.logistics_hold_local_h - t.tz_convert(self.tz).hour)
+        else:
+            at = pd.Timestamp(plan.day).tz_localize(self.tz)
+            dump = local_time(at + pd.Timedelta(hours=th.logistics_dump_local_h), when, self.tz)
         self.board.propose(
             plan.eid,
             when,
@@ -511,7 +529,7 @@ class _Lane:
             "defer_action",
             names,
             "medium",
-            f"Hold the {th.logistics_dump_local_h:.1f} h floor bin dump of {', '.join(names)}: "
+            f"Hold the {dump} floor bin dump of {', '.join(names)}: "
             f"emptying them would fill WASTE_MAIN to the cap before the pickup "
             f"{local_time(reg, when, self.tz)}. A robot carries them after the pickup.",
             confidence=0.8,
