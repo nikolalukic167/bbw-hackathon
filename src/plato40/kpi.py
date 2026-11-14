@@ -29,6 +29,7 @@ from plato40.settings import Settings
 
 Log = list[dict[str, Any]]
 CHECKINS = ("checkin", "checkin_early", "checkin_after_wait")
+PLANT = frozenset({"BAT1", "PV1", "BUILDING"})
 FOLLOW_UP = re.compile(r"-F\d\d$")
 FOLLOW_UP_KINDS = (
     ("Leak on ", "repair_not_held"),
@@ -80,7 +81,8 @@ def too_hot(run: Run) -> set[str]:
 def routine(run: Run) -> set[str]:
     """Return the episodes that are routine work, not incidents.
 
-    Routine: guest-desk replies, too-hot replies and arrival pre-heat batches.
+    Routine: guest-desk replies, too-hot replies, arrival pre-heat batches and the daily
+    battery plan (energy episodes with only setpoint and energy-plan decisions).
     """
     by_ep: dict[str, set[str]] = defaultdict(set)
     for d in run.decisions:
@@ -89,7 +91,8 @@ def routine(run: Run) -> set[str]:
     for e in run.episodes:
         if e.issue_type == "guest_service" or (
             e.issue_type == "energy_optimization"
-            and by_ep.get(e.episode_id, set()) <= {"adjust_room_setpoint"}
+            and by_ep.get(e.episode_id, set()) <= {"adjust_room_setpoint", "optimize_energy"}
+            and ("optimize_energy" not in by_ep[e.episode_id] or set(e.assets) <= PLANT)
         ):
             out.add(e.episode_id)
     return out

@@ -59,7 +59,7 @@ LANES = {
     "data_quality": "Data quality",
     "ventilation_maintenance": "Ventilation (AHU filter)",
     "occupancy_surge": "Busy days and event weekends",
-    "energy_optimization": "Energy (pre-heat)",
+    "energy_optimization": "Energy (pre-heat, battery plan)",
 }
 
 OUTCOMES = {
@@ -99,9 +99,9 @@ NOTES = {
 
 SUPERVISOR = (
     "A supervisor LLM ({sv_model}, ADR-003) reviewed the rules' decisions at {sv_reviews} "
-    "review points ({sv_kinds}). It answered at {sv_answered} of them; {sv_none} had no "
-    "answer ({sv_none_why}). The checks rejected {sv_rejected} answers ({sv_rejected_why}). "
-    "It added {sv_added} decisions{sv_levels} and changed or removed none.{sv_examples}"
+    "review points ({sv_kinds}). It answered at {sv_answered} of them{sv_none}. The checks "
+    "rejected {sv_rejected} answers{sv_rejected_why}. It added {sv_added} decisions{sv_levels} "
+    "and changed or removed none.{sv_what}{sv_examples}"
 )
 NO_SUPERVISOR = (
     "The supervisor LLM (ADR-003) was not part of this run: it runs only with a cache of its "
@@ -122,9 +122,9 @@ effect of an action is simulated.
 ## The year at a glance
 
 Steward turned {signals} detector signals into {episodes} incidents, {routine} routine guest
-replies and pre-heats, and {decisions} decisions. {autonomous} decisions were autonomous. A
-person was asked to approve {approvals}, on average every {days_per_approval} days, and
-{consent} of those also need guest consent. {desk_approvals} of the approvals are guest-desk
+replies, pre-heats and battery plans, and {decisions} decisions. {autonomous} decisions were
+autonomous. A person was asked to approve {approvals}, on average every {days_per_approval}
+days, and {consent} of those also need guest consent. {desk_approvals} of the approvals are guest-desk
 consent requests (maintenance, cleaning), so the manager's own load is {manager_approvals}.
 
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
@@ -882,6 +882,27 @@ def _why(text: str) -> str:
     return WHY[kpi.reason_class(text)]
 
 
+BECAUSE = {
+    "number_or_id_not_in_input": "a number or ID was not in its input",
+    "evidence_not_from_refs": "its evidence was not copied from its refs",
+    "asset_or_decision_not_shown": "it named an asset or decision it was not shown",
+    "malformed": "the answer was malformed",
+    "call_failed": "the call failed",
+    "no_cached_answer": "no answer was cached",
+    "other_check": "another check failed",
+}
+
+
+def _because(reasons: list[str]) -> str:
+    """Return ", all because ..." for one reason class, " (n because ..., ...)" for more."""
+    c = Counter(kpi.reason_class(r) for r in reasons)
+    if not c:
+        return ""
+    if len(c) == 1:
+        return f", all because {BECAUSE[next(iter(c))]}"
+    return " (" + _and([f"{_n(n)} because {BECAUSE[k]}" for k, n in c.most_common()]) + ")"
+
+
 def _counted(reasons: Iterable[str]) -> str:
     c = Counter(_why(r) for r in reasons)
     return _and([f"{_n(n)} {label}" for label, n in c.most_common()]) or "none"
@@ -915,13 +936,35 @@ def supervisor(run: pipeline.Run, log: list[dict[str, Any]]) -> Facts:
             [f"{_n(n)} {k}" for k, n in sorted(Counter(r["kind"] for r in log).items())]
         ),
         "sv_answered": _n(len(log) - len(none)),
-        "sv_none": _n(len(none)),
-        "sv_none_why": _counted(r.get("why", "") for r in none),
+        "sv_none": (
+            f"; {_n(len(none))} had no answer{_because([r.get('why', '') for r in none])}"
+            if none
+            else ""
+        ),
         "sv_rejected": _n(len(rejected)),
-        "sv_rejected_why": _counted(r["why"] for r in rejected),
+        "sv_rejected_why": _because([r["why"] for r in rejected]),
         "sv_added": _n(len(added)),
         "sv_levels": (
             f" (the policy set {_and([f'{_n(n)} {k}' for k, n in levels.most_common()])})"
+            if mine
+            else ""
+        ),
+        "sv_what": (
+            " By action: "
+            + _and(
+                [
+                    f"{_n(n)} {a}"
+                    for a, n in Counter(d["action"] for d in mine.values()).most_common()
+                ]
+            )
+            + "; by lane: "
+            + _and(
+                [
+                    f"{_n(n)} {LANES.get(i, i).lower()}"
+                    for i, n in Counter(d["issue_type"] for d in mine.values()).most_common()
+                ]
+            )
+            + "."
             if mine
             else ""
         ),
