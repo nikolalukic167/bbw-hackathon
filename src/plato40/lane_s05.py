@@ -42,7 +42,7 @@ import pandas as pd
 
 from plato40 import llm_guard
 from plato40.bus import LANES, LANGUAGES, VERSION
-from plato40.detect.grid import stamp
+from plato40.detect.grid import stamp, state_ref
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
 from plato40.staff import Roster
@@ -411,8 +411,8 @@ class _Lane:
             "day_plan",
             [
                 f"staff_roster.csv:cleaner shifts {day.date()} as known at {stamp(t)}",
-                f"bookings.csv:departures and arrivals {day.date()} created by {stamp(t)}",
-                f"events.jsonl:room states at {stamp(t)}",
+                *(f"bookings.csv:{k}" for k in sorted(set(guests.values()))),
+                *(state_ref(self.ds, r, t) for r in sorted(jobs)),
             ],
             f"{len(jobs)} rooms to turn, {len(plan.cleaners)} cleaners "
             f"({plan.minutes:.0f} min); {len(late)} of {len(arrivals)} arrival rooms "

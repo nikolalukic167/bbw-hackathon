@@ -22,7 +22,7 @@ from typing import Any
 
 import pandas as pd
 
-from plato40.detect.grid import local_time, stamp
+from plato40.detect.grid import local_time, stamp, state_ref
 from plato40.episodes import Signal
 from plato40.load.reader import Dataset
 from plato40.settings import Settings
@@ -242,7 +242,7 @@ def _triggers(ds: Dataset) -> list[dict[str, Any]]:
                 "text": "",
                 "request_id": None,
                 "language": str(earlier.iloc[-1]) if len(earlier) else "en",
-                "ref": f"bookings.csv:{bid} arrival {stamp(t)}",
+                "ref": f"bookings.csv:{bid}",
             }
         )
     return sorted(rows, key=lambda x: (x["t"], x["ref"]))
@@ -272,7 +272,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
                     ISSUE,
                     "ready",
                     (room,),
-                    (r["ref"], f"events.jsonl:{room} cleaning_completed at {stamp(t)}"),
+                    (r["ref"], state_ref(ds, room, t)),
                     f"guest of {bid} is waiting; {room} became clean at {f.local(t, t)}",
                     {
                         "booking": bid,
@@ -319,11 +319,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
             f"guest of {bid} wants the room at {f.local(wanted, t)}; room is {state}; "
             f"predicted ready {f.local(ready, t)} without action"
         )
-        evidence = (
-            r["ref"],
-            f"bookings.csv:{bid}",
-            f"events.jsonl:{room} {state} at {stamp(t)}",
-        )
+        evidence = tuple(dict.fromkeys((r["ref"], f"bookings.csv:{bid}", state_ref(ds, room, t))))
         kind = "checkin_due" if r.get("due") else "request"
         out.append(Signal(t, ISSUE, kind, (room,), evidence, detail, facts))
         if state == "occupied":
@@ -337,7 +333,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
                         (room,),
                         (
                             f"bookings.csv:{occupant}",
-                            f"events.jsonl:{room} still occupied at {stamp(checkout)}",
+                            state_ref(ds, room, checkout),
                         ),
                         f"guest of {occupant} has not checked out of {room} by "
                         f"{f.local(checkout, checkout)} as expected; guest of {bid} waits for it",
@@ -365,7 +361,7 @@ def signals(ds: Dataset, settings: Settings, out_of_order: Spans | None = None) 
                         ISSUE,
                         "checkout",
                         (room,),
-                        (f"events.jsonl:{room} checkout at {stamp(actual)}",),
+                        (state_ref(ds, room, actual),),
                         f"{room} checked out at {f.local(actual, actual)}; guest of {bid} "
                         f"wants it at {f.local(wanted, actual)}",
                         later,

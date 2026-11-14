@@ -25,7 +25,7 @@ from collections import Counter
 import pandas as pd
 
 from plato40.contract import Decision
-from plato40.detect.grid import local_time, stamp
+from plato40.detect.grid import local_time, stamp, state_ref
 from plato40.episodes import Episode, Signal
 from plato40.load.derive import telemetry_wide
 from plato40.load.reader import Dataset
@@ -114,7 +114,7 @@ def _repairs(
         fixed = pd.Timestamp(order["completed_utc"])
         ref = f"work_orders.csv:{order['work_order_id']}"
         if ep.issue_type == "water_leak":
-            _leak(ep, sent, fixed, ref, states, settings, decisions, out)
+            _leak(ds, ep, sent, fixed, ref, states, settings, decisions, out)
             continue
         after = fixed + pd.Timedelta(hours=th.cop_window_h)
         still = [
@@ -139,6 +139,7 @@ def _repairs(
 
 
 def _leak(
+    ds: Dataset,
     ep: Episode,
     sent: Decision,
     fixed: pd.Timestamp,
@@ -181,7 +182,7 @@ def _leak(
         [room],
         f"Release {room}: the repair completed at {stamp(fixed)} and no leak signal followed "
         f"for {settings.detect.repair_verify_h:.0f} h; the room is clean.",
-        [ref, f"events.jsonl:{room} clean at {stamp(t)}"],
+        [ref, state_ref(ds, room, t)],
         f"{room} can be sold again; reopen the leak episode on any new signal.",
         expected_outcome=f"{room} is back in the sellable stock (simulated).",
     )
@@ -266,7 +267,9 @@ def promised_at(d: Decision, tz: str) -> tuple[str, pd.Timestamp, str] | None:
     return str(m["room"]), promised, str(m["lang"])
 
 
-def _promises(decisions: list[Decision], states: RoomStates, settings: Settings, out: _Out) -> None:
+def _promises(
+    ds: Dataset, decisions: list[Decision], states: RoomStates, settings: Settings, out: _Out
+) -> None:
     tz = settings.local_tz
     grace = pd.Timedelta(minutes=settings.detect.promise_grace_min)
     said: dict[str, list[pd.Timestamp]] = {}
@@ -293,7 +296,7 @@ def _promises(decisions: list[Decision], states: RoomStates, settings: Settings,
             [room],
             f"Tell the guest ({lang}): {room} is not ready at the promised "
             f"{local_time(promised, t, tz)}; staff are on it and a new ready time follows" + SUFFIX,
-            [f"events.jsonl:{room} {states.at(room, t)} at {stamp(t)}"],
+            [state_ref(ds, room, t)],
             "Guest gets the new ready time; escalate if the guest waits.",
             expected_outcome="Guest is not left with a promise that has passed.",
             **({"guest_request_ids": d["guest_request_ids"]} if "guest_request_ids" in d else {}),
@@ -361,6 +364,6 @@ def follow_ups(
     _repairs(ds, episodes, decisions, states, settings, out)
     _cold_rooms(ds, decisions, states, settings, out)
     _repeats(ds, decisions, out)
-    _promises(decisions, states, settings, out)
+    _promises(ds, decisions, states, settings, out)
     _early_ready(ds, decisions, settings, out)
     return out.decisions

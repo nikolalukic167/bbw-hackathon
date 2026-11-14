@@ -42,3 +42,47 @@ def local_time(t: pd.Timestamp | None, ref: pd.Timestamp, tz: str) -> str:
     lt = t.tz_convert(tz)
     same_day = lt.date() == ref.tz_convert(tz).date()
     return f"{lt:%H:%M} local" if same_day else f"{lt:%a %d %b %H:%M} local"
+
+
+STATE_EVENTS = (
+    "stay_in_progress",
+    "checkin",
+    "checkin_early",
+    "checkin_after_wait",
+    "checkout",
+    "checkout_early",
+    "no_show",
+    "cleaning_started",
+    "cleaning_completed",
+)
+_INDEX: list[tuple[Dataset, dict[str, tuple[pd.DatetimeIndex, list[str]]], pd.DataFrame]] = []
+
+
+def _events(ds: Dataset) -> tuple[dict[str, tuple[pd.DatetimeIndex, list[str]]], pd.DataFrame]:
+    for seen, rooms, ev in _INDEX:
+        if seen is ds:
+            return rooms, ev
+    ev = ds.events.sort_values(["timestamp_utc", "event_id"], kind="stable")
+    st = ev.loc[ev["type"].isin(STATE_EVENTS) & ev["room_id"].notna()]
+    rooms = {
+        str(room): (pd.DatetimeIndex(g["timestamp_utc"]), [str(x) for x in g["event_id"]])
+        for room, g in st.groupby("room_id", sort=True)
+    }
+    _INDEX[:] = [(ds, rooms, ev)]
+    return rooms, ev
+
+
+def state_ref(ds: Dataset, room: str, t: pd.Timestamp) -> str:
+    """Return the evidence ref of the last event at or before ``t`` that set ``room``'s state."""
+    times, ids = _events(ds)[0].get(room, (pd.DatetimeIndex([]), []))
+    k = int(times.searchsorted(t, side="right"))
+    return f"events.jsonl:{ids[k - 1]}" if k else f"events.jsonl:{room} no event by {stamp(t)}"
+
+
+def events_ref(ds: Dataset, t: pd.Timestamp) -> str:
+    """Return the evidence ref of every event known at ``t``, as a range of event IDs."""
+    ev = _events(ds)[1]
+    known = ev.loc[ev["timestamp_utc"] <= t, "event_id"]
+    if known.empty:
+        return f"events.jsonl:no event by {stamp(t)}"
+    return f"events.jsonl:{known.iloc[0]}..{known.iloc[-1]}"
