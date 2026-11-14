@@ -294,6 +294,31 @@ common-area draw every other day, so daily totals cannot reveal a leak.
 
 ## Target architecture
 
+```
+  data, every row with the time it became known (bookings, telemetry, meters, prices,
+  forecasts, roster, work orders, guest requests, BMS alarms)
+        |
+        v
+  a lane per domain: turnaround, water, heating, filters, busy days, energy,
+  logistics, guest desk, data quality      -> signals and proposals on the trigger bus
+        |
+        v
+  arbiter on a shared ledger: decision contract, known-at, roster, autonomy policy
+        ^                                   supervisor model: may add at most {sv_max}
+        |                                   checked flags or requests per review
+        +-----------------------------------+
+        |
+        +--> autonomous: executor (mock today; robots, BMS setpoints, battery, orders)
+        +--> approval inbox: manager, guest consent where a room is entered
+        |
+        v
+  closed loop: checks each outcome when due and follows up a miss
+        |
+        v
+  decisions.jsonl and console (audit trail) -> this report -> CLARA (operating rules)
+                                                            -> PLATO (next building)
+```
+
 - **Data:** the files Steward reads today, plus a measured COP (heat meter and electricity
   submeter on the heat pump), submeters on common-area water, leak sensors under washbasins,
   logged room exits, inspection events, and an on-call and contractor calendar. Every record
@@ -401,7 +426,7 @@ def reflow(markdown: str, width: int = 96) -> str:
     """Rewrap prose paragraphs and list items; leave headings and tables as they are."""
     out = []
     for block in markdown.strip().split("\n\n"):
-        if block.startswith(("#", "|")):
+        if block.startswith(("#", "|", "```")):
             out.append(block)
         elif block.startswith("- "):
             items = re.split(r"\n(?=- )", block)
