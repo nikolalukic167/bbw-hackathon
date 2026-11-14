@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Good news: room R305 is ready now, earlier than the 14:15 we had mentioned. You can check in yourself, no need to wait at the desk.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R305 is ready now, before the promised 14:15 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-09-19T12:00Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R305",
+   "t2": "14:15"
+  },
+  "t": "2026-09-19T12:00Z",
+  "template": "{t1} is ready now, before the promised {t2} local; self check-in works"
+ },
+ "violations": []
+}

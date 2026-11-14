@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"en\", \"text\": \"Thank you for your late checkout request for room R206. We are sorry we cannot confirm it yet; we will get back to you shortly with an update.\"}",
+ "answer": "{\"language\": \"en\", \"text\": \"Thank you for your late checkout request for room R206. We are sorry we cannot confirm it yet, but we have noted your request and will get back to you as soon as possible.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {

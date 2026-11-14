@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonne nouvelle : la chambre R302 est prête dès maintenant, avant l'heure prévue de 12:45. Vous pouvez effectuer l'enregistrement vous-même.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R302 is ready now, before the promised 12:45 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-09-21T10:30Z",
+  "lane": "s01",
+  "language": "fr",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R302",
+   "t2": "12:45"
+  },
+  "t": "2026-09-21T10:30Z",
+  "template": "{t1} is ready now, before the promised {t2} local; self check-in works"
+ },
+ "violations": []
+}

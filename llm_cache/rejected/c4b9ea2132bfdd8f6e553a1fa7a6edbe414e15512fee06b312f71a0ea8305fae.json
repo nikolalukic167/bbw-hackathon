@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, zu Ihrem Späte-Check-out-Wunsch für Zimmer R109 um 13:00: Wir haben Ihre Anfrage erhalten. Ein später Check-out wird derzeit geprüft und ist bisher nur angeboten, nicht bestätigt. Wir melden uns bei Ihnen, sobald es eine Entscheidung gibt.\"}",
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage für einen späten Check-out für Zimmer R109 um 13:00 Uhr erhalten. Wir prüfen dies und melden uns bei Ihnen. Die Möglichkeit ist derzeit nur angeboten und noch nicht bestätigt.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {

@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, zu Ihrem Späterauschecken in Zimmer R407 bis 13:00 Uhr: Wir haben Ihre Anfrage erhalten. Eine kostenlose Verlängerung ist derzeit nur angeboten und muss noch genehmigt werden. Wir melden uns bei Ihnen.\"}",
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage für einen späteren Check-out aus Zimmer R407 um 13:00 Uhr erhalten. Wir bieten Ihnen dies gerne kostenlos an. Bitte melden Sie sich bei Bedarf an der Rezeption.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {

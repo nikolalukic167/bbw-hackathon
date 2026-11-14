@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de salida tardía para la habitación R303 hasta las 13:00. Le confirmaremos en breve si es posible.\"}",
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su solicitud de salida tardía para la habitación R303 con hora 13:00. Le informamos de que se ofrece una salida tardía gratuita, pendiente de aprobación por parte de recepción.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {
@@ -24,6 +24,6 @@
   "template": "Gracias por su solicitud para la habitación {room}. Salir más tarde, hasta las {time}, parece posible; nuestro personal decidirá y le avisará."
  },
  "violations": [
-  "banned claim 'confirm'"
+  "banned claim 'gratuit'"
  ]
 }

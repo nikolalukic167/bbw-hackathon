@@ -1,0 +1,24 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Room R306 is ready now. Self check-in works.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R306 is ready now; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-01-24T18:30Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1"
+  ],
+  "say": {
+   "t1": "R306"
+  },
+  "t": "2026-01-24T18:30Z",
+  "template": "{t1} is ready now; self check-in works"
+ },
+ "violations": []
+}

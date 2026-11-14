@@ -1,0 +1,24 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Kamer R406 is nu klaar. U kunt zelf inchecken.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R406 is ready now; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-07-22T08:45Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1"
+  ],
+  "say": {
+   "t1": "R406"
+  },
+  "t": "2026-07-22T08:45Z",
+  "template": "{t1} is ready now; self check-in works"
+ },
+ "violations": []
+}

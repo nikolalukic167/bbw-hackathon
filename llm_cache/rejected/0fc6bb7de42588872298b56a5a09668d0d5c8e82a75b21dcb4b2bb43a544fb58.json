@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de salida tardía para la habitación R401 hasta las 13:00. Le confirmaremos en breve si es posible.\"}",
+ "answer": "{\"language\": \"es\", \"text\": \"Hola, hemos recibido su solicitud de salida tardía para la habitación R401 a las 13:00. Le informamos de que una salida tardía está disponible solo como oferta pendiente de aprobación; le confirmaremos lo antes posible si podemos ofrecérsela.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {

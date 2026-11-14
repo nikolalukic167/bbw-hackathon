@@ -1,0 +1,24 @@
+{
+ "answer": "{\"language\": \"fr\", \"text\": \"Bonjour, la chambre R201 est prête maintenant. Vous pouvez effectuer l'enregistrement vous-même.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R201 is ready now; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-08-13T07:00Z",
+  "lane": "s01",
+  "language": "fr",
+  "must_say": [
+   "t1"
+  ],
+  "say": {
+   "t1": "R201"
+  },
+  "t": "2026-08-13T07:00Z",
+  "template": "{t1} is ready now; self check-in works"
+ },
+ "violations": []
+}

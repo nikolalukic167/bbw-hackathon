@@ -8,24 +8,24 @@ are findings about the replay, and every effect of an action is simulated.
 
 ## The year at a glance
 
-Steward turned 2,728 detector signals into 163 incidents, 2,127 routine guest replies, pre-heats
-and battery plans, and 2,942 decisions. 2,770 decisions were autonomous. A person was asked to
+Steward turned 2,746 detector signals into 178 incidents, 2,129 routine guest replies, pre-heats
+and battery plans, and 2,989 decisions. 2,817 decisions were autonomous. A person was asked to
 approve 172, on average every 2.1 days, and 127 of those also need guest consent. 116 of the
 approvals are guest-desk consent requests (maintenance, cleaning), so the manager's own load is
 56.
 
 | Lane | Incidents | Routine | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|---|
-| Room turnaround | 53 | 0 | 224 | 209 | 15 | 0 | 21 of 24 waiting guests had a decision on their room earlier that day |
+| Room turnaround | 53 | 0 | 254 | 239 | 15 | 0 | 21 of 24 waiting guests had a decision on their room earlier that day |
 | Water leaks | 5 | 0 | 23 | 11 | 8 | 4 | 5 of 5 followed by a repair work order |
 | Heat pump and comfort | 31 | 0 | 112 | 101 | 4 | 7 | 2 of 2 heat pump incidents followed by repair of HP1; 29 of 29 cold-room requests answered before their due time |
-| Comfort requests (too hot) | 0 | 185 | 377 | 377 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
+| Comfort requests (too hot) | 0 | 185 | 378 | 378 | 0 | 0 | 201 of 201 too-hot requests answered, 201 before their due time |
 | Guest desk | 0 | 1,331 | 1,454 | 1,338 | 0 | 116 | 1,612 of 1,612 guest requests (all lanes) answered before their due time; 116 got a staff action |
 | Waste and vending | 27 | 0 | 31 | 31 | 0 | 0 | 21 of 25 orders came before a real shortage |
-| Data quality | 16 | 0 | 16 | 16 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
-| Ventilation (AHU filter) | 12 | 0 | 19 | 15 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
+| Data quality | 33 | 0 | 33 | 33 | 0 | 0 | 14 floor outages, 11 of them on GW_F3 |
+| Ventilation (AHU filter) | 12 | 0 | 20 | 16 | 4 | 0 | 5 of 12 filter incidents followed by an AHU1 work order |
 | Busy days and event weekends | 14 | 0 | 67 | 53 | 14 | 0 | 5 of 11 days flagged at the morning plan had a waiting guest |
-| Energy (pre-heat, battery plan) | 5 | 611 | 619 | 619 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |
+| Energy (pre-heat, battery plan) | 3 | 613 | 617 | 617 | 0 | 0 | 1,253 of 1,716 pre-heated rooms at or above 20 degC at check-in |
 
 ## Guest requests
 
@@ -54,16 +54,17 @@ them before the request's due time.
 
 ## Supervisor review
 
-A supervisor LLM (claude-sonnet-5-5, ADR-003) reviewed the rules' decisions at 488 review points
-(364 daily and 124 hotspot). It answered at 481 of them; 7 had no answer, all because the call
+A supervisor LLM (claude-sonnet-5-5, ADR-003) reviewed the rules' decisions at 492 review points
+(364 daily and 128 hotspot). It answered at 482 of them; 10 had no answer, all because the call
 failed. The checks rejected 0 answers. It added 9 decisions (the policy set 9 autonomous) and
-changed or removed none. By action: 9 flag_anomaly; by lane: 6 guest desk and 3 energy
-(pre-heat, battery plan). For example, `SV-D-BUILDING-20260315T0600Z-01`: "R405 reported noise
-at 22:47Z and again at 23:02Z. The first reply did not settle it, and the rules only sent a
-second notify_guest. A repeat noise complaint within 15 minutes points to an ongoing disturbance
-that a..." And `SV-D-BUILDING-20260323T0600Z-01`: "Three noise complaints from R308 (23:01Z),
-R304 (23:44Z) and R108 (00:59Z) arrived within about two hours. The rules treated each as a
-separate guest reply. R304 and R308 are both on floor 3, and R303 on the same..."
+changed or removed none. By action: 8 flag_anomaly and 1 request_inspection; by lane: 6 guest
+desk, 1 heat pump and comfort, 1 energy (pre-heat, battery plan) and 1 ventilation (ahu filter).
+For example, `SV-H-R202-20260415T0952Z-01`: "The guest sent a new request from R202 (GR000341)
+at 09:52Z, seven minutes after the 'R202 is ready now; self check-in works' message at 09:45Z.
+The snapshot shows R202 as clean since 11:45 local. The proposed reply..." And
+`SV-D-BUILDING-20260323T0600Z-01`: "Three noise complaints arrived in under two hours: R308 at
+23:01Z, R304 at 23:44Z and R108 at 00:59Z. Each got only a guest message saying staff look into
+it. R304 and R308 are on the same floor, and R303 on that..."
 
 ## Operating recommendations for PLATO-40 next year (feedback to CLARA)
 
@@ -129,7 +130,7 @@ evidence beside Steward's rules, and check every exchanged meter for backward st
 **Filters: change AHU1 filters on pressure, not on the calendar.** Planned changes ran 97 days
 apart, yet the filters clogged 2 times and were replaced unplanned by EXTERNAL_HVAC, 43 to 87
 days after the previous change; FILTER_DP_HIGH was raised 10 times. *Recommendation:* trigger
-the change on day-mode filter pressure. *Uncertainty:* 2 events. Steward's filter lane made 19
+the change on day-mode filter pressure. *Uncertainty:* 2 events. Steward's filter lane made 20
 decisions on AHU1 this year.
 
 ## Look-alikes and bad data

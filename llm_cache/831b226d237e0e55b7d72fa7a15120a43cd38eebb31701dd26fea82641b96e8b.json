@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Good news: your room R108 is ready now, earlier than the 10:30 we had promised. You can check in yourself.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R108 is ready now, before the promised 10:30 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-12-30T09:15Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R108",
+   "t2": "10:30"
+  },
+  "t": "2026-12-30T09:15Z",
+  "template": "{t1} is ready now, before the promised {t2} local; self check-in works"
+ },
+ "violations": []
+}

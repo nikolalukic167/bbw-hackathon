@@ -1,0 +1,24 @@
+{
+ "answer": "{\"language\": \"en\", \"text\": \"Your room R404 is ready now. Self check-in works.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R404 is ready now; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-12-21T09:15Z",
+  "lane": "s01",
+  "language": "en",
+  "must_say": [
+   "t1"
+  ],
+  "say": {
+   "t1": "R404"
+  },
+  "t": "2026-12-21T09:15Z",
+  "template": "{t1} is ready now; self check-in works"
+ },
+ "violations": []
+}

@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage für einen späteren Check-out aus Zimmer R308 um 13:00 Uhr erhalten. Wir prüfen dies und melden uns bei Ihnen. Ein später Check-out ist bisher nur angeboten und noch nicht bestätigt.\"}",
+ "answer": "{\"language\": \"de\", \"text\": \"Guten Tag, wir haben Ihre Anfrage für einen späteren Check-out aus Zimmer R308 um 13:00 Uhr erhalten. Wir bieten Ihnen einen kostenlosen späteren Check-out an. Bitte bestätigen Sie uns, ob dies für Sie passt.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {
@@ -24,6 +24,6 @@
   "template": "Danke für Ihre Anfrage zu Zimmer {room}. Ein späterer Check-out bis {time} scheint möglich; unser Personal entscheidet und meldet sich bei Ihnen."
  },
  "violations": [
-  "banned claim 'bestätigt'"
+  "banned claim 'kostenlos'"
  ]
 }

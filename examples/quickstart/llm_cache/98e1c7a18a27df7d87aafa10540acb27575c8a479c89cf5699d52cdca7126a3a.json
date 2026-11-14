@@ -1,0 +1,26 @@
+{
+ "answer": "{\"language\": \"nl\", \"text\": \"Goed nieuws: kamer R207 is nu klaar, dus eerder dan de eerder beloofde tijd van 12:45 (lokale tijd). U kunt zelf inchecken.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "english": "R207 is ready now, before the promised 12:45 local; self check-in works"
+  },
+  "hedged": false,
+  "intent": "guest_message",
+  "known_by": "2026-01-23T11:30Z",
+  "lane": "s01",
+  "language": "nl",
+  "must_say": [
+   "t1",
+   "t2"
+  ],
+  "say": {
+   "t1": "R207",
+   "t2": "12:45"
+  },
+  "t": "2026-01-23T11:30Z",
+  "template": "{t1} is ready now, before the promised {t2} local; self check-in works"
+ },
+ "violations": []
+}

@@ -1,0 +1,25 @@
+{
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de almacenamiento de equipaje para la habitación R205. Le escribiremos en cuanto tengamos novedades.\"}",
+ "model": "claude-haiku-5-5",
+ "prompt": "guest_message/4",
+ "task": {
+  "facts": {
+   "request_type": "luggage_storage",
+   "room": "R205"
+  },
+  "hedged": false,
+  "intent": "guest_luggage",
+  "known_by": "2026-04-22T19:15Z",
+  "lane": "s08",
+  "language": "es",
+  "must_say": [
+   "room"
+  ],
+  "say": {
+   "room": "R205"
+  },
+  "t": "2026-04-22T19:15Z",
+  "template": "Gracias por su pregunta sobre la consigna de equipaje para la habitación {room}. Nuestra recepción le explicará cómo funciona."
+ },
+ "violations": []
+}

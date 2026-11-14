@@ -1,5 +1,5 @@
 {
- "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de salida tardía para la habitación R307. Le confirmaremos disponibilidad en breve.\"}",
+ "answer": "{\"language\": \"es\", \"text\": \"Hemos recibido su solicitud de salida tardía para la habitación R307. Le confirmaremos la disponibilidad en breve.\"}",
  "model": "claude-haiku-5-5",
  "prompt": "guest_message/4",
  "task": {
