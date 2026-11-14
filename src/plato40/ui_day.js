@@ -337,6 +337,23 @@
       <input type="range" min="0" max="${D.t.length - 1}" value="${i}" aria-label="Time of day">`;
   }
 
+  // A day without a 15-min extract (picked on the year strip): the timeline, bookmarks and the
+  // hourly sparklines still work; the room tiles and plant strip say they are not extracted.
+  function synth(day) {
+    if (cache["synth:" + day]) return cache["synth:" + day];
+    const noonUtc = Date.parse(`${day}T12:00:00Z`);
+    const localNoon = +new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hourCycle: "h23" }).format(noonUtc);
+    const t0 = Date.parse(`${day}T00:00:00Z`) - (localNoon - 12) * 3600000;
+    const t = Array.from({ length: 96 }, (_, k) => t0 + k * STEP_MS);
+    const D = { t, rooms: {}, states: [], plant: {}, shift: {}, bookmarks: [], synthetic: true };
+    for (const x of items("synth-items:" + day, D)) {
+      if (x.kind === "decision" && !isRoutine(x.e)) {
+        D.bookmarks.push({ t: x.d.timestamp_utc, label: `${x.d.action.replaceAll("_", " ")}: ${(x.d.affected_assets || []).slice(0, 2).join(", ")}`, event_id: x.d.event_id, kind: "decision" });
+      }
+    }
+    return (cache["synth:" + day] = D);
+  }
+
   function stepOfBookmark(D, step) {
     const b = (D.bookmarks || [])[step];
     return b ? { i: indexAt(D, ms(b.t)), b } : null;
@@ -354,7 +371,7 @@
       <section class="panel dv-head">
         <div class="ttl"><h2>${esc(fmtDate.format(D.t[0]))}</h2><span class="muted">PLATO-40 replay, 15-min steps. Tiles are recorded data; Steward's proposals are dashed outlines (simulated).</span></div>
         <div class="now" aria-live="polite">${hhmm(D.t[cur.i])}</div>
-        <div class="dv-days">${days.map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format(DATA.days[k].t[0]))}</button>`).join("")}</div>
+        <div class="dv-days">${(D.synthetic ? [...days, dayKey] : days).map(k => `<button type="button" data-day="${k}" aria-current="${k === dayKey}">${esc(fmtDate.format((DATA.days[k] || D).t[0]))}</button>`).join("")}</div>
       </section>
       <section class="panel dv-scrub" aria-label="Replay controls">
         ${scrubber(D, cur.i)}
@@ -367,7 +384,9 @@
         </div>
       </section>
       <div class="dv-main">
-        <section class="panel dv-plan" aria-label="Building">${floorPlan(D, cur.i, list)}${plant(D, cur.i)}</section>
+        <section class="panel dv-plan" aria-label="Building">${D.synthetic
+          ? `<div class="dv-empty">Room tiles and the plant strip are extracted only for the replay days of this page: ${days.map(k => esc(fmtDate.format(DATA.days[k].t[0]))).join(", ")}. The timeline and the hourly series below are complete for this day.</div>`
+          : floorPlan(D, cur.i, list) + plant(D, cur.i)}</section>
         <section class="panel dv-tl" aria-label="What Steward saw and proposed">${timeline(list, t, flashId)}</section>
       </div>
       <section class="panel dv-spark" aria-label="Day series">${sparks(D, list, t)}</section>
@@ -425,7 +444,7 @@
   // N / P / space while the Day view is shown; the shell's arrow keys set state.step.
   document.addEventListener("keydown", ev => {
     if (!cur.el || !cur.el.isConnected || !cur.day || ev.target.closest?.("input,select,textarea")) return;
-    const D = DATA.days?.[cur.day];
+    const D = DATA.days?.[cur.day] || synth(cur.day);
     if (!D) return;
     const k = ev.key.toLowerCase();
     if (k === "n" || k === "p") {
@@ -443,12 +462,12 @@
     render(el, state) {
       css();
       const days = Object.keys(DATA.days || {}).sort();
-      if (!days.length) {
+      if (!days.length && !state.day) {
         el.innerHTML = `<div class="panel dv-empty">This page has no day extract. Write it with plato40 ui ... --data &lt;dir&gt; --days &lt;date&gt;.</div>`;
         return;
       }
-      const dayKey = state.day && DATA.days[state.day] ? state.day : days[0];
-      const D = DATA.days[dayKey];
+      const dayKey = state.day || days[0];
+      const D = DATA.days[dayKey] || synth(dayKey);
       if (cur.day !== dayKey) { stop(); cur = { ...cur, day: dayKey, i: 0, open: new Set() }; }
       cur.el = el;
       let flash = null;
