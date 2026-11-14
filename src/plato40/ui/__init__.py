@@ -2,7 +2,9 @@
 
 The page has four views: Year (the jury dashboard), Day (the replay of one day), Episode
 (evidence, risk, decisions, verification, with a mock executor kept in the browser) and Trail
-(one decision's chain). Views live in ``ui_*.js`` next to ``ui.html`` and are inlined here.
+(one decision's chain). Views live in ``ui_*.js`` next to ``ui.html`` in this folder and are
+inlined here.
+The folder holds only page code: the pipeline never imports it.
 
 Without ``--data`` the page shows the episodes only. With it, the pipeline runs once more on the
 dataset (same settings, same cache) and the page gets the KPIs, misses, the year strip, hourly
@@ -17,9 +19,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from plato40 import contract, lanes, pipeline, ui_data
+from plato40 import contract, lanes, pipeline
 from plato40.load.reader import load_dataset
 from plato40.settings import Settings
+from plato40.ui import data as ui_data
 
 TEMPLATE = Path(__file__).with_name("ui.html")
 PLACEHOLDER = "/*__DATA__*/null"

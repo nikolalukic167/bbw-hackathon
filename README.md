@@ -172,7 +172,8 @@ src/plato40/
   verify.py       closed loop: checks each outcome when due and follows up on a miss
                   (repair held, room still cold, repeat complaint, ready time missed)
   trace.py        run summary, trace file and explain
-  ui.py, ui.html  operations console: one self-contained HTML page per run
+  ui/            operations console and demo page (page code, views, data extract): one
+                  self-contained HTML per run; separate from the pipeline on purpose
   audit/          one module per audit section, assembled by audit/report.py
   cli.py          plato40 run | arbiter | bus | validate | explain | ui | snapshot | audit
 reports/audit/    generated report and figures (committed, never edited by hand)
