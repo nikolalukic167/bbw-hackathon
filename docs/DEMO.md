@@ -49,7 +49,11 @@ computed when the page is written, so this script quotes none: read them off the
 
 - If the page does not open or freezes, say "here is the recorded run", play the video and
   keep narrating the same steps. Do not debug on stage.
-- If one view breaks, switch to its screenshot in `docs/demo/` and go on.
+- If one view breaks, switch to its screenshot in `docs/demo/` and go on. They are taken from
+  this `decisions.html` at 1440 x 900, one per link above: `00-year.png`; Day A
+  `a1-day-r103-reply`, `a2-day-hp1-dispatch`, `a3-episode-hp1`, `a4-trail-hp1-dispatch`; Day B
+  `b1-day-r201-burst`, `b2-day-floor3-outage`, `b3-episode-r201`, `b4-trail-r201-block`; Day C
+  `c1-day-plan`, `c2-day-r209-promise`, `c3-episode-r209`, `c4-trail-r209`.
 - If a judge asks for another day, click it in the year strip. Days without the room extract
   show the timeline and the building sparklines only; say so.
 
