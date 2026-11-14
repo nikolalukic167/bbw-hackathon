@@ -24,6 +24,33 @@ Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/).
 uv sync --locked
 ```
 
+## Environment
+
+- Python 3.12 (`.python-version`; `pyproject.toml` requires `>=3.12,<3.13`) and
+  [uv](https://docs.astral.sh/uv/). Dependencies are locked in `uv.lock`:
+  `uv sync --locked` installs exactly those versions. Developed and run on Linux.
+- The scored run needs no network and no API key: the rules decide, and LLM answers are
+  read from a committed cache. `uv sync --locked --extra llm` adds the `anthropic` client,
+  needed only to call a model on a cache miss (`PLATO40_LLM=on`).
+- Environment variables: see [.env.example](.env.example) (no secrets in it) and
+  [Models and LLM settings](#models-and-llm-settings) below. Copy it to `.env`, which is
+  gitignored; never commit a key.
+- `make check` runs ruff and mypy --strict.
+
+## Deliverables
+
+Each file in the repository root is made by one command on one dataset directory:
+
+| File | Command |
+|---|---|
+| `decisions.jsonl` (dev) | `uv run plato40 run data/PLATO40_v2_dev --out decisions.jsonl --llm-cache <llm_cache_dir>` |
+| `decisions_holdout.jsonl` | `scripts/holdout.sh <holdout_dir>` ([docs/HOLDOUT.md](docs/HOLDOUT.md)): one run, a rerun from the cache that must be byte-identical, and the contract check |
+| `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache <llm_cache_dir>` |
+| tag `pre-holdout` | set on the commit that produced the dev files, before the holdout release |
+
+`plato40 validate <decisions.jsonl> <data_dir>` checks any of them against the decision
+contract and the autonomy policy.
+
 ## Data
 
 The PLATO-40 v2 datasets are distributed by the organisers and are not committed here
@@ -38,7 +65,7 @@ The script checks each archive against its published SHA-256 sum and unpacks
 `data/PLATO40_v2_quickstart/` (21 days, January) and `data/PLATO40_v2_dev/` (365 days,
 2026). The two are independent synthetic runs and are never concatenated.
 
-Attribution: PLATO-40 synthetic dataset, proximata Hackathon '26 · Rhomberg track.
+Attribution: "PLATO-40 synthetic dataset, Proximata Hackathon '26 – Rhomberg track".
 Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## Run
@@ -169,10 +196,44 @@ Decisions that shape the code are recorded as ADRs:
   `src/plato40/load/units.py`.
 - The audit has no stochastic step; its output is byte-identical across runs with the
   locked environment.
+- The data is a replay: no decision changes later readings, so every effect of an action is
+  labelled simulated, and outcomes are judged against events and work orders people wrote.
+- A guest's language is that of their latest request known at the time; bookings carry no
+  language, so a guest who never wrote gets English.
+- The data has no costs: Steward claims no savings, and "notable cost" in the autonomy rules
+  is a fixed list of actions (`src/plato40/policy.py`), not an amount.
 
 ## Changes after pre-holdout
 
 None.
+
+## Submission text
+
+Paste-ready for the written submission (CHALLENGE section 10). Fill in the bracketed parts.
+
+- **Title:** Steward for PLATO-40
+- **One-line pitch:** Rule lanes run the PLATO-40 hotel day and night, act on their own only
+  where the autonomy rules allow it, cite the data behind every decision, and let a language
+  model word guest messages and flag what the rules missed, never decide in their place.
+- **Team:** [names and roles]
+- **Problem:** Hotel operations signals sit in separate systems, arrive late, drop out or are
+  wrong, and one change creates trouble elsewhere: an early arrival meets a short cleaning
+  shift, a running toilet hides in normal night use, a weak heat pump meets a cold snap.
+  People stitch this together by hand, and the lessons rarely reach the next building.
+- **Solution:** One command turns a dataset into `decisions.jsonl`. Detectors and one rule
+  lane per scenario (turnaround, leaks, heating, filters, busy days, energy, logistics, guest
+  desk) write signals and proposals to a trigger bus; an arbiter checks each against the
+  decision contract, what was known at the time, the staff and robot roster and the autonomy
+  policy, on one shared ledger. A closed loop follows up missed outcomes. Guest messages go
+  out in the guest's language under a contract that forbids invented numbers; a supervisor
+  model reviews the day and may add a few checked decisions. An operations console shows
+  evidence, risk, decision, autonomy and verification, and `insights.md` turns the year into
+  feedback for CLARA and PLATO, every number computed by a script.
+- **Stack:** Python 3.12, uv, pandas, numpy, matplotlib; Claude Haiku 5.5 (guest messages)
+  and Claude Sonnet 5.5 (supervisor) through the Anthropic API, with every answer checked
+  and cached; JSONL contracts; a self-contained HTML console.
+- **Links:** repository [URL in the Proximata organisation], demo video [URL],
+  `insights.md`, [docs/BUS.md](docs/BUS.md), [ADRs](docs/adr/).
 
 ## Licence
 
