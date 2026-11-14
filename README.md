@@ -22,6 +22,9 @@ Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync --locked
+scripts/fetch_data.sh /path/to/Hackathon.zip    # data into data/ (see Data)
+make all DEV=data/PLATO40_v2_dev QS=data/PLATO40_v2_quickstart HOLDOUT=<holdout_dir>
+                                                # every committed output, about 15 min
 ```
 
 ## Environment
