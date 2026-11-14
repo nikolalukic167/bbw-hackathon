@@ -592,6 +592,20 @@ def _turnaround_step(
             verification_plan=f"Guest checks in to {guest.offered} or {room}; escalate if not.",
             confidence=0.7,
         )
+    tz = settings.local_tz
+    overnight = promise is None or promise.tz_convert(tz).date() > s.time.tz_convert(tz).date()
+    if d["waiting"] and overnight and not guest.offered and not guest.escalated:
+        guest.escalated = True
+        chain.add(
+            s,
+            "request_human_approval",
+            "critical",
+            f"The guest is waiting and {room} is ready only at {ready}, with no free room to "
+            "offer; decide on an on-call cleaner or another arrangement now.",
+            expected_outcome="A manager arranges the room tonight or the guest's stay.",
+            verification_plan=f"Guest checks in to {room} today; escalate if not.",
+            confidence=0.6,
+        )
     offer = guest.offered
     message = f"{offer} is offered pending approval; otherwise {room}" if offer else f"{room}"
     chain.add(
