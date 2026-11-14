@@ -84,7 +84,7 @@ uv run plato40 explain decisions.trace.jsonl [episode]  # why it acted, or did n
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html  # console page
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html \
     --data <data_dir> --llm-cache llm_cache --supervisor decisions.supervisor.jsonl \
-    --rerun decisions.rerun.json --days 2026-01-25 2026-05-09   # plus the Year dashboard and
+    --rerun decisions.rerun.json --days 2026-01-25 2026-03-20   # plus the Year dashboard and
                               # the Day replay of the listed local days (demo page)
 uv run plato40 bus <data_dir> --lane s03 --out out/  # one lane (s03-s08) -> bus -> arbiter (docs/BUS.md)
 uv run plato40 snapshot <data_dir> --at 2026-05-09T11:00Z --assets R209 HP1  # supervisor context

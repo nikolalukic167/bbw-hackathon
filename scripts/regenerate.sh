@@ -31,7 +31,7 @@ run_twice() {  # <data> <out> <cache> <trace>
 run_twice "$dev" decisions.jsonl llm_cache decisions.trace.jsonl
 uv run plato40 ui decisions.jsonl decisions.trace.jsonl --out decisions.html \
   --data "$dev" --llm-cache llm_cache --supervisor decisions.supervisor.jsonl \
-  --rerun decisions.rerun.json --days 2026-01-25 2026-05-09 2026-07-20
+  --rerun decisions.rerun.json --days 2026-01-25 2026-03-20 2026-05-09
 uv run python scripts/insights.py "$dev" --out insights.md --llm-cache llm_cache \
   --supervisor decisions.supervisor.jsonl
 
