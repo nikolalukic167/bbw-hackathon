@@ -272,38 +272,12 @@ thresholds, the run's prompts or data processing.
 - `decisions.html`, `examples/quickstart/console.html`: rewritten with the restyled page from the
   same decision files.
 - `decisions_holdout.html`: rewritten with the restyled page from the same holdout decision
-  files, now with the Day replay of 26 Jan, 24 Jun and 28 Nov; `scripts/holdout.sh` passes
-  these days to `plato40 ui` (its run, rerun and validate steps are unchanged).
+  files, now with the Day replay of the demo days (4 Mar, 9 Mar, 15 May, 16 Jul, 25 Jul,
+  22 Aug, 20 Nov, 27 Nov, 6 Dec); `scripts/holdout.sh` passes these days to `plato40 ui` (its
+  run, rerun and validate steps are unchanged).
+- `README.md`: the Submission text section is removed.
 - `Makefile`: `make all DEV=<dir> QS=<dir> HOLDOUT=<dir>` runs `scripts/regenerate.sh` and
   then `scripts/holdout.sh`, so one command rebuilds every committed output.
-
-## Submission text
-
-Paste-ready for the written submission (CHALLENGE section 10). Fill in the bracketed parts.
-
-- **Title:** OSAM for PLATO-40
-- **One-line pitch:** Rule lanes run the PLATO-40 hotel day and night, act on their own only
-  where the autonomy rules allow it, cite the data behind every decision, and let a language
-  model word guest messages and flag what the rules missed, never decide in their place.
-- **Team:** [names and roles]
-- **Problem:** Hotel operations signals sit in separate systems, arrive late, drop out or are
-  wrong, and one change creates trouble elsewhere: an early arrival meets a short cleaning
-  shift, a running toilet hides in normal night use, a weak heat pump meets a cold snap.
-  People stitch this together by hand, and the lessons rarely reach the next building.
-- **Solution:** One command turns a dataset into `decisions.jsonl`. Detectors and one rule
-  lane per scenario (turnaround, leaks, heating, filters, busy days, energy, logistics, guest
-  desk) write signals and proposals to a trigger bus; an arbiter checks each against the
-  decision contract, what was known at the time, the staff and robot roster and the autonomy
-  policy, on one shared ledger. A closed loop follows up missed outcomes. Guest messages go
-  out in the guest's language under a contract that forbids invented numbers; a supervisor
-  model reviews the day and may add a few checked decisions. An operations console shows
-  evidence, risk, decision, autonomy and verification, and `insights.md` turns the year into
-  feedback for CLARA and PLATO, every number computed by a script.
-- **Stack:** Python 3.12, uv, pandas, numpy, matplotlib; Claude Haiku 5.5 (guest messages)
-  and Claude Sonnet 5.5 (supervisor) through the Anthropic API, with every answer checked
-  and cached; JSONL contracts; a self-contained HTML console.
-- **Links:** repository [URL in the Proximata organisation], demo video [URL],
-  `insights.md`, [docs/BUS.md](docs/BUS.md), [ADRs](docs/adr/).
 
 ## Licence
 

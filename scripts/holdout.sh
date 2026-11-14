@@ -33,5 +33,6 @@ echo "rerun byte-identical"
 uv run plato40 validate decisions_holdout.jsonl "$data"
 uv run plato40 ui decisions_holdout.jsonl decisions_holdout.trace.jsonl --out decisions_holdout.html \
   --data "$data" --llm-cache "$cache" --supervisor decisions_holdout.supervisor.jsonl \
-  --rerun decisions_holdout.rerun.json --days 2026-01-26 2026-06-24 2026-11-28
+  --rerun decisions_holdout.rerun.json --days 2026-03-04 2026-03-09 2026-05-15 2026-07-16 2026-07-25 2026-08-22 \
+  2026-11-20 2026-11-27 2026-12-06
 sha256sum decisions_holdout.jsonl
