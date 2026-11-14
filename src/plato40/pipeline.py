@@ -101,6 +101,9 @@ def run(ds: Dataset, settings: Settings) -> Run:
         )
     if settings.supervisor and settings.llm_cache is not None:
         _supervise(ds, settings, result)
+    from plato40.arbiter import finish  # the arbiter imports this module
+
+    finish(result.decisions)
     result.violations = check(ds, states, result.decisions)
     if result.violations:
         raise RuntimeError("decisions violate contract or policy:\n" + "\n".join(result.violations))

@@ -54,6 +54,25 @@ LANE_RANK = {
 guest desk (a critical guest request still wins on priority).
 There is no pre-emption: a lane ranked below s03 claims only from its own ``t``."""
 ROSTER_ROLE = {"cleaner": "cleaner", "robot": "robot", "technician": "technician"}
+UNLABELLED = {
+    "notify_guest": "(simulated: the message is proposed, delivery not confirmed)",
+    "flag_anomaly": "(simulated)",
+    "request_human_approval": "(simulated)",
+}
+"""Actions whose expected outcome some writers state as a fact; ``finish`` labels it."""
+
+
+def finish(decisions: list[Decision]) -> None:
+    """Label every expected outcome as simulated.
+
+    Runs on the final decisions, after the supervisor, whose cached review hashes the
+    decisions it was shown, so its cache stays valid.
+    """
+    for d in decisions:
+        label = UNLABELLED.get(d["action"])
+        text = d.get("expected_outcome")
+        if label and text and "simulated" not in text.lower():
+            d["expected_outcome"] = f"{text.rstrip().rstrip('.')} {label}."
 
 
 class Ledger:
