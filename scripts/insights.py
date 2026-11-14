@@ -1046,8 +1046,8 @@ def render(
     facts |= guest_requests(ds, run)
     facts |= level2(ds, run, settings)
     facts |= supervisor(run, log if log is not None else run.reviews)
-    counts = [len(_of(run, i)) for i in ("water_leak", "heating_comfort")]
-    facts["small_n"] = _span(counts)
+    hp = [e for e in _of(run, "heating_comfort") if any(s.kind == "cop_low" for s in e.signals)]
+    facts["small_n"] = _span([len(_of(run, "water_leak")), len(hp)])
     facts["table"] = lane_table(run, facts)
     return reflow(TEMPLATE.format(**facts))
 
