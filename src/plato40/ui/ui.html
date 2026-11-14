@@ -123,7 +123,7 @@ footer { font-size: 0.8rem; color: var(--muted); }
     <nav class="tabs" id="tabs" aria-label="Views"></nav>
   </header>
   <main id="view"></main>
-  <footer>Times are Europe/Vienna local; hover a time for UTC. Room tiles and series show recorded data; decisions are proposals from a replay, their effects are simulated, and Approve or Reject on this page is a mock executor kept in this browser only. Keys: Y D E T switch views, arrows step a day.</footer>
+  <footer>Times are Europe/Vienna local; hover a time for UTC. Room tiles and series show recorded data; decisions are proposals from a replay, their effects are simulated, and Approve or Reject on this page is a mock executor kept in this browser only. Keys: Y D E T L switch views, arrows step a day.</footer>
 </div>
 
 <script>
@@ -166,7 +166,7 @@ const T0 = Math.min(...EPS.map(e => e.t0)), T1 = Math.max(...EPS.map(e => e.t1))
 
 /* Router: the view and its arguments live in the URL hash, so a presenter step is a link. */
 const VIEWS = {};
-const TABS = [["year", "Year", "Y"], ["day", "Day", "D"], ["episode", "Episode", "E"], ["trail", "Trail", "T"]];
+const TABS = [["year", "Year", "Y"], ["day", "Day", "D"], ["episode", "Episode", "E"], ["trail", "Trail", "T"], ["ask", "LLM", "L"]];
 function parseHash() {
   const p = new URLSearchParams(location.hash.replace(/^#/, ""));
   const s = Object.fromEntries(p.entries());
