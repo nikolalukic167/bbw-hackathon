@@ -43,9 +43,9 @@ Each file in the repository root is made by one command on one dataset directory
 
 | File | Command |
 |---|---|
-| `decisions.jsonl` (dev) | `uv run plato40 run data/PLATO40_v2_dev --out decisions.jsonl --llm-cache <llm_cache_dir>` |
+| `decisions.jsonl` (dev) | `uv run plato40 run data/PLATO40_v2_dev --out decisions.jsonl --llm-cache llm_cache` |
 | `decisions_holdout.jsonl` | `scripts/holdout.sh <holdout_dir>` ([docs/HOLDOUT.md](docs/HOLDOUT.md)): one run, a rerun from the cache that must be byte-identical, and the contract check |
-| `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache <llm_cache_dir>` |
+| `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache llm_cache` |
 | tag `pre-holdout` | set on the commit that produced the dev files, before the holdout release |
 
 `plato40 validate <decisions.jsonl> <data_dir>` checks any of them against the decision
