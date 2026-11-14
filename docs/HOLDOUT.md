@@ -29,16 +29,21 @@ The pipeline runs unchanged.
    `decisions_holdout.supervisor.jsonl`, `decisions_holdout.rerun.json`,
    `decisions_holdout.html` and `llm_cache_holdout/`. Never commit `data/`.
 
-Rehearsed on quickstart as the pretend holdout:
+Rehearsed on quickstart as the pretend holdout, from a fresh worktree with the committed code:
 
 | Step | Result |
 |---|---|
-| LLM run | 148 decisions, 20 guest messages from the LLM, 0 fallbacks |
-| Rerun from the cache | byte-identical |
+| Sync | `uv sync --locked --extra llm` by the script itself (the API client is an extra) |
+| LLM run | 263 decisions, 0 rejected proposals, 40 supervisor reviews |
+| Rerun from the cache | byte-identical, recorded in `decisions_holdout.rerun.json` |
 | Validation | 0 violations |
-| Script wall time | 86 s |
+| Page | `decisions_holdout.html` with Year, Day, Episode and Trail |
+| Script wall time | 135 s |
 
-A dev run takes 37 s with the LLM off and about 2.5 min with it on.
+A dev run takes 37 s with the LLM off; the full dev and quickstart regeneration with the LLM on
+(`scripts/regenerate.sh`) took 20 min. Two live runs differ slightly (message wording, and the
+supervisor added 2 decisions in one run and 3 in another): determinism holds for a run and its
+cache, which is what the holdout procedure records.
 
 ## If something fails
 
