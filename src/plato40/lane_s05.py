@@ -347,7 +347,7 @@ class _Lane:
             "kept), "
             f"{counts['early_arrivals']} arrivals booked at least "
             f"{self.th.surge_early_days:.0f} days ahead; {len(jobs)} departures, "
-            f"{len(arrivals)} arrival rooms, {len(shifts)} cleaners rostered",
+            f"{len(arrivals)} arrival rooms, {len(shifts)} cleaner shifts rostered",
             {
                 "day": str(day.date()),
                 **counts,
@@ -465,17 +465,20 @@ class _Lane:
                 expected_outcome="Shorter human cleaning in arrival rooms (simulated).",
                 verification_plan="robot_floor_cleaning_completed before each human clean.",
             )
+        n = len(plan.cleaners)
+        approval: Row | None = None
         if after:
-            self.board.propose(
+            # The late rooms are assets of the approval too, so a review of one room sees it.
+            approval = self.board.propose(
                 eid,
                 t,
                 sig,
                 "request_extra_cleaning",
                 "request_human_approval",
-                ["BUILDING"],
+                ["BUILDING", *after],
                 "high",
                 f"{len(after)} arrival rooms ({', '.join(after)}) are not ready by check-in at "
-                f"{self._hhmm(checkin)} with the {len(plan.cleaners)} cleaners on shift. "
+                f"{self._hhmm(checkin)} with the {n} cleaner{'' if n == 1 else 's'} on shift. "
                 "Approve extra cleaning help (on-call from 15:30 or a stand-by cleaner); none "
                 "is assumed until approved.",
                 confidence=0.6,
@@ -507,7 +510,7 @@ class _Lane:
                 f"{room} expected ready after {at} local today"
                 if at
                 else f"{room} may not be ready by check-in today; no time is promised until "
-                "extra help is approved"
+                "the extra cleaning help asked for in this plan is approved"
             )
             self.board.propose(
                 eid,
@@ -520,7 +523,7 @@ class _Lane:
                 f"Tell the guest of {booking} in {room} ({language}): {what}; arrival rooms are "
                 "cleaned first (proposed message; delivery not confirmed).",
                 message={"language": language, "text": said.text},
-                needs=[order["id"]],
+                needs=[order["id"]] + ([approval["id"]] if approval and not at else []),
                 confidence=0.6,
                 expected_outcome="The guest does not arrive early and wait.",
                 verification_plan=(

@@ -54,6 +54,8 @@ LANES = {
     "room_turnaround": "Room turnaround",
     "water_leak": "Water leaks",
     "heating_comfort": "Heat pump and comfort",
+    "comfort_hot": "Comfort requests (too hot)",
+    "guest_service": "Guest desk",
     "logistics": "Waste and vending",
     "data_quality": "Data quality",
     "ventilation_maintenance": "Ventilation (AHU filter)",
@@ -69,6 +71,25 @@ OUTCOMES = {
     "{hp_asset}; {cold_ok} of {cold_req} cold-room requests answered before their due time",
     "logistics": "{hits} of {orders} orders came before a real shortage",
     "data_quality": "{outages} floor outages, {top_n} of them on {top_gw}",
+    "comfort_hot": "{hotreq_answered} of {hotreq_n} too-hot requests answered, "
+    "{hotreq_on_time} before their due time",
+    "guest_service": "{req_on_time} of {req_total} guest requests (all lanes) answered before "
+    "their due time; {desk_staff} got a staff action",
+    "ventilation_maintenance": "{vent_wo} of {vent_eps} filter incidents followed by an "
+    "{ahu} work order",
+    "occupancy_surge": "{busy_wait} of {busy_days} days flagged at the morning plan had a "
+    "waiting guest",
+    "energy_optimization": "{pre_ok} of {pre_n} pre-heated rooms at or above {band_lo} degC at "
+    "check-in",
+}
+
+FILTER_NOTES = {
+    "lane": "Steward's filter lane made {filter_rows} decisions on {ahu} this year.",
+    "none": "Steward has no filter detector yet.",
+}
+LIMIT_NOTES = {
+    "lanes": "Steward's energy lane pre-heats arrival rooms but has no battery plan yet.",
+    "none": "Steward has no daily energy plan and no filter detector yet.",
 }
 
 NOTES = {
@@ -101,9 +122,11 @@ effect of an action is simulated.
 
 ## The year at a glance
 
-Steward turned {signals} detector signals into {episodes} incidents and {decisions} decisions.
-{autonomous} decisions were autonomous. A person was asked to approve {approvals}, on average
-every {days_per_approval} days, and {consent} of those also need guest consent.
+Steward turned {signals} detector signals into {episodes} incidents, {routine} routine guest
+replies and pre-heats, and {decisions} decisions. {autonomous} decisions were autonomous. A
+person was asked to approve {approvals}, on average every {days_per_approval} days, and
+{consent} of those also need guest consent. {desk_approvals} of the approvals are guest-desk
+consent requests (maintenance, cleaning), so the manager's own load is {manager_approvals}.
 
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|
@@ -183,8 +206,7 @@ steps. *Uncertainty:* the alarm rules are reconstructed from the values the alar
 {planned_gap} days apart, yet the filters clogged {unplanned_n} times and were replaced
 unplanned by {unplanned_who}, {unplanned_since} days after the previous change;
 FILTER_DP_HIGH was raised {dp_alarms} times. *Recommendation:* trigger the change on
-day-mode filter pressure. *Uncertainty:* {unplanned_n} events, and Steward has no filter
-detector yet.
+day-mode filter pressure. *Uncertainty:* {unplanned_n} events. {filter_note}
 
 ## Design recommendations for the next building
 
@@ -246,8 +268,7 @@ common-area draw every other day, so daily totals cannot reveal a leak.
   incidents per class; the holdout and real operation must confirm them.
 - The data is a replay: no action changes later readings, so outcomes are matched to work
   orders and events that people wrote after the fact.
-- The data has no costs, so the report claims no savings. Steward has no daily energy plan
-  and no filter detector yet.
+- The data has no costs, so the report claims no savings. {limits_note}
 """
 
 
@@ -272,6 +293,8 @@ def check_templates() -> None:
         *OUTCOMES.values(),
         *LANES.values(),
         *NOTES.values(),
+        *FILTER_NOTES.values(),
+        *LIMIT_NOTES.values(),
     ):
         _check_literal(text)
 
@@ -385,7 +408,7 @@ def overview(ds: Dataset, run: pipeline.Run, tz: str) -> Facts:
         "rooms": _n(len(ds.room_ids())),
         "violations": _n(len(run.violations)),
         "signals": _n(len(run.signals)),
-        "episodes": _n(len(_acted(run))),
+        "episodes": _n(len({e.episode_id for e in _acted(run)} - routine(run))),
         "decisions": _n(len(run.decisions)),
         "autonomous": _n(level["autonomous"]),
         "approvals": _n(approvals),
@@ -394,21 +417,42 @@ def overview(ds: Dataset, run: pipeline.Run, tz: str) -> Facts:
     }
 
 
+def _too_hot(run: pipeline.Run) -> set[str]:
+    """Return heating episodes made only of replies to ``temperature_hot`` requests."""
+    return {
+        e.episode_id
+        for e in run.episodes
+        if e.issue_type == "heating_comfort"
+        and e.signals
+        and all(s.kind == "comfort_excess" for s in e.signals)
+    }
+
+
 def lane_table(run: pipeline.Run, facts: Mapping[str, str]) -> str:
-    """Return one markdown row per issue type: incidents, decisions by level, outcome."""
+    """Return one markdown row per issue type: incidents, decisions by level, outcome.
+
+    Replies to "too hot" requests are a row of their own, so the heating row counts heat
+    pump and cold-comfort incidents only.
+    """
+    hot = _too_hot(run)
+
+    def key(issue: str, episode: str) -> str:
+        return "comfort_hot" if issue == "heating_comfort" and episode in hot else issue
+
     rows = []
     order = list(LANES)
+    acted = _acted(run)
     issues = sorted(
-        {e.issue_type for e in _acted(run)},
+        {key(e.issue_type, e.episode_id) for e in acted},
         key=lambda i: (order.index(i) if i in LANES else len(order), i),
     )
     for issue in issues:
-        mine = [d for d in run.decisions if d["issue_type"] == issue]
+        mine = [d for d in run.decisions if key(d["issue_type"], d["episode_id"]) == issue]
         level = Counter(d["autonomy"] for d in mine)
         outcome = OUTCOMES.get(issue, NA).format(**facts)
         cells = [
             LANES.get(issue, issue),
-            _n(len(_of(run, issue))),
+            _n(sum(key(e.issue_type, e.episode_id) == issue for e in acted)),
             _n(len(mine)),
             _n(level["autonomous"]),
             _n(level["human_approval"]),
@@ -880,18 +924,23 @@ def guest_requests(ds: Dataset, run: pipeline.Run) -> Facts:
         for g in d.get("guest_request_ids", []):
             first[g] = min(first.get(g, t), t)
     rows, total, answered, on_time = [], 0, 0, 0
+    hot = {"hotreq_n": _n(0), "hotreq_answered": _n(0), "hotreq_on_time": _n(0)}
     for kind, g in sorted(req.groupby("request_type"), key=lambda x: (-len(x[1]), str(x[0]))):
         ids = g["request_id"].astype(str).tolist()
         due = dict(zip(ids, g["response_due_utc"], strict=True))
         hit = [i for i in ids if i in first]
         ok = [i for i in hit if pd.notna(due[i]) and first[i] <= pd.Timestamp(due[i])]
         rows.append(f"| {kind} | {_n(len(ids))} | {_n(len(hit))} | {_n(len(ok))} |")
+        if kind == "temperature_hot":
+            hot = {"hotreq_n": _n(len(ids)), "hotreq_answered": _n(len(hit))}
+            hot["hotreq_on_time"] = _n(len(ok))
         total, answered, on_time = total + len(ids), answered + len(hit), on_time + len(ok)
     return {
         "req_table": "\n".join(rows),
         "req_total": _n(total),
         "req_answered": _n(answered),
         "req_on_time": _n(on_time),
+        **hot,
     }
 
 
@@ -958,6 +1007,92 @@ def supervisor(run: pipeline.Run, log: list[dict[str, Any]]) -> Facts:
     return {"supervisor": SUPERVISOR.format(**facts)}
 
 
+def routine(run: pipeline.Run) -> set[str]:
+    """Return the episodes that are routine work, not incidents.
+
+    Routine: guest-desk replies, too-hot replies and arrival pre-heat batches.
+    """
+    by_ep: dict[str, set[str]] = defaultdict(set)
+    for d in run.decisions:
+        by_ep[d["episode_id"]].add(d["action"])
+    out = set(_too_hot(run))
+    for e in run.episodes:
+        if e.issue_type == "guest_service" or (
+            e.issue_type == "energy_optimization"
+            and by_ep.get(e.episode_id, set()) <= {"adjust_room_setpoint"}
+        ):
+            out.add(e.episode_id)
+    return out
+
+
+def level2(ds: Dataset, run: pipeline.Run, settings: Settings) -> Facts:
+    """Return the outcomes of the guest desk, filter, busy-day and energy lanes."""
+    tz = settings.local_tz
+    staff = ("order_service", "schedule_cleaning", "request_inspection")
+    desk = [d for d in run.decisions if d["issue_type"] == "guest_service"]
+    desk_staff = {g for d in desk if d["action"] in staff for g in d.get("guest_request_ids", [])}
+    wo = ds.table("work_orders.csv")
+    vent = _of(run, "ventilation_maintenance")
+    first = {
+        e: min(pd.Timestamp(d["timestamp_utc"]) for d in run.decisions if d["episode_id"] == e)
+        for e in {v.episode_id for v in vent}
+    }
+    ahu = plant(ds)["ahu"]
+    orders = wo.loc[wo["asset_id"] == ahu, "created_utc"]
+    window = pd.Timedelta(days=14)
+    vent_wo = sum(bool(((orders >= t) & (orders <= t + window)).any()) for t in first.values())
+    waits = ds.events.loc[ds.events["type"] == "arrival_waiting_room", "timestamp_utc"]
+    wait_days = {_local_date(pd.Timestamp(t), tz) for t in waits}
+    busy = {
+        _local_date(s.time, tz)
+        for s in run.signals
+        if s.issue_type == "occupancy_surge" and s.kind == "day_plan"
+    }
+    lo = float(ds.building["constraints"]["occupied_comfort_c"][0])
+    temp = derive.telemetry_wide(ds, "temperature_c")
+    ev = ds.events
+    ins = ev.loc[ev["type"].isin(["checkin", "checkin_early", "checkin_after_wait"])]
+    entry = {
+        str(r): pd.DatetimeIndex(g["timestamp_utc"]).sort_values()
+        for r, g in ins.groupby("room_id")
+    }
+    pre_n = pre_ok = 0
+    for d in run.decisions:
+        if d["issue_type"] != "energy_optimization" or d["action"] != "adjust_room_setpoint":
+            continue
+        t = pd.Timestamp(d["timestamp_utc"])
+        for room in (a for a in d["affected_assets"] if a in temp.columns):
+            when = entry.get(room, pd.DatetimeIndex([]))
+            nxt = when[(when > t) & (when <= t + pd.Timedelta(hours=12))]
+            if not len(nxt):
+                continue
+            col = temp[room].loc[: nxt[0]].dropna()
+            if col.empty:
+                continue
+            pre_n += 1
+            pre_ok += int(col.iloc[-1] >= lo)
+    s04 = sum(d["issue_type"] == "ventilation_maintenance" for d in run.decisions)
+    s06 = any(d["issue_type"] == "energy_optimization" for d in run.decisions)
+    approvals = [d for d in run.decisions if d["requires_human_approval"]]
+    desk_appr = sum(d["issue_type"] == "guest_service" for d in approvals)
+    note = FILTER_NOTES["lane" if s04 else "none"].format(filter_rows=_n(s04), ahu=ahu)
+    return {
+        "routine": _n(len(routine(run) & {e.episode_id for e in _acted(run)})),
+        "desk_approvals": _n(desk_appr),
+        "manager_approvals": _n(len(approvals) - desk_appr),
+        "desk_staff": _n(len(desk_staff)),
+        "vent_eps": _n(len(vent)),
+        "vent_wo": _n(vent_wo),
+        "busy_days": _n(len(busy)),
+        "busy_wait": _n(len(busy & wait_days)),
+        "band_lo": _n(lo),
+        "pre_n": _n(pre_n),
+        "pre_ok": _n(pre_ok),
+        "filter_note": note,
+        "limits_note": LIMIT_NOTES["lanes" if s06 and s04 else "none"],
+    }
+
+
 def render(
     ds: Dataset, run: pipeline.Run, settings: Settings, log: list[dict[str, Any]] | None = None
 ) -> str:
@@ -977,6 +1112,7 @@ def render(
     facts |= plant(ds)
     facts |= water_gap(ds, run, settings)
     facts |= guest_requests(ds, run)
+    facts |= level2(ds, run, settings)
     facts |= supervisor(run, log if log is not None else run.reviews)
     counts = [len(_of(run, i)) for i in ("water_leak", "heating_comfort")]
     facts["small_n"] = _span(counts)

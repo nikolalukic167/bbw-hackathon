@@ -160,6 +160,8 @@ def _decision(p: Mapping[str, Any]) -> Decision:
         "evidence": list(p["evidence"]),
     }
     d.update({k: p[k] for k in COPIED if k in p})
+    if p.get("needs"):
+        d["dependencies"] = list(p["needs"])
     return d
 
 
