@@ -1,4 +1,4 @@
-.PHONY: help sync lint format typecheck run validate ui audit check
+.PHONY: help sync lint format typecheck run validate ui audit check all
 
 DATA ?=
 AUDIT_OUT ?= reports/audit
@@ -14,6 +14,7 @@ help:
 	@echo "make ui [OUT=...]         write the operations console next to OUT (after make run)"
 	@echo "make audit DATA=<path>    regenerate reports/audit from a data root"
 	@echo "make check                lint + typecheck"
+	@echo "make all DEV=<dir> QS=<dir> HOLDOUT=<dir>  every committed output (scripts/regenerate.sh, scripts/holdout.sh)"
 
 sync:
 	uv sync --locked
@@ -44,3 +45,8 @@ audit:
 	uv run plato40 audit "$(DATA)" --out "$(AUDIT_OUT)"
 
 check: lint typecheck
+
+all:
+	@test -n "$(DEV)" -a -n "$(QS)" -a -n "$(HOLDOUT)" || (echo "usage: make all DEV=<dev_dir> QS=<quickstart_dir> HOLDOUT=<holdout_dir>" && exit 2)
+	scripts/regenerate.sh "$(DEV)" "$(QS)"
+	scripts/holdout.sh "$(HOLDOUT)"

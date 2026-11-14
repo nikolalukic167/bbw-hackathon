@@ -51,7 +51,12 @@ Each file in the repository root is made by one command on one dataset directory
 | tag `pre-holdout` | set before the holdout release; `decisions.jsonl` and `insights.md` reproduce byte for byte at it |
 
 `plato40 validate <decisions.jsonl> <data_dir>` checks any of them against the decision
-contract and the autonomy policy.
+contract and the autonomy policy. One command rebuilds all of them, each LLM run followed by a
+cached rerun that must be byte-identical:
+
+```bash
+make all DEV=data/PLATO40_v2_dev QS=data/PLATO40_v2_quickstart HOLDOUT=<holdout_dir>
+```
 
 ## Data
 
@@ -260,6 +265,11 @@ thresholds, the run's prompts or data processing.
 - `docs/DEMO.md`: step 1's cue now names the lane colours of the year strip.
 - `decisions.html`, `examples/quickstart/console.html`: rewritten with the restyled page from the
   same decision files.
+- `decisions_holdout.html`: rewritten with the restyled page from the same holdout decision
+  files, now with the Day replay of 26 Jan, 24 Jun and 28 Nov; `scripts/holdout.sh` passes
+  these days to `plato40 ui` (its run, rerun and validate steps are unchanged).
+- `Makefile`: `make all DEV=<dir> QS=<dir> HOLDOUT=<dir>` runs `scripts/regenerate.sh` and
+  then `scripts/holdout.sh`, so one command rebuilds every committed output.
 
 ## Submission text
 
