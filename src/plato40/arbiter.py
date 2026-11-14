@@ -60,19 +60,23 @@ UNLABELLED = {
     "request_human_approval": "(simulated)",
 }
 """Actions whose expected outcome some writers state as a fact; ``finish`` labels it."""
+NOTICE_MAX = "high"
+"""A guest notice informs about an action; it is never more urgent than ``high``."""
 
 
 def finish(decisions: list[Decision]) -> None:
-    """Label every expected outcome as simulated.
+    """Label every expected outcome as simulated and cap guest notices at ``NOTICE_MAX``.
 
     Runs on the final decisions, after the supervisor, whose cached review hashes the
-    decisions it was shown, so its cache stays valid.
+    decisions it was shown (priority included), so its cache stays valid.
     """
     for d in decisions:
         label = UNLABELLED.get(d["action"])
         text = d.get("expected_outcome")
         if label and text and "simulated" not in text.lower():
             d["expected_outcome"] = f"{text.rstrip().rstrip('.')} {label}."
+        if d["action"] == "notify_guest" and RANK[d["priority"]] < RANK[NOTICE_MAX]:
+            d["priority"] = NOTICE_MAX
 
 
 class Ledger:
