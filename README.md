@@ -48,7 +48,7 @@ Each file in the repository root is made by one command on one dataset directory
 | `decisions.jsonl` (dev) | `uv run plato40 run data/PLATO40_v2_dev --out decisions.jsonl --llm-cache llm_cache` |
 | `decisions_holdout.jsonl` | `scripts/holdout.sh <holdout_dir>` ([docs/HOLDOUT.md](docs/HOLDOUT.md)): one run, a rerun from the cache that must be byte-identical, and the contract check |
 | `insights.md` | `uv run python scripts/insights.py data/PLATO40_v2_dev --out insights.md --llm-cache llm_cache --supervisor decisions.supervisor.jsonl` |
-| tag `pre-holdout` | set on the commit that produced the dev files, before the holdout release |
+| tag `pre-holdout` | set before the holdout release; `decisions.jsonl` and `insights.md` reproduce byte for byte at it |
 
 `plato40 validate <decisions.jsonl> <data_dir>` checks any of them against the decision
 contract and the autonomy policy.
@@ -213,6 +213,26 @@ Decisions that shape the code are recorded as ADRs:
   battery plan's, simulated against no battery at the published prices; no other saving is
   claimed. "Notable cost" in the autonomy rules is a fixed list of actions
   (`src/plato40/policy.py`), not an amount.
+
+### Threshold provenance: water leaks (S02)
+
+Every threshold lives in `src/plato40/settings.py` with its unit and the measurement behind
+it in the docstring. The S02 values, their basis in the data audit
+(`reports/audit/01_data_audit.md`, sections 5, 6 and 8) and the practice they follow:
+
+| Threshold | Value | Measured on dev (audit) | Practice |
+|---|---|---|---|
+| Continuous night flow | at least 0.2 L in every 15-min night interval, 2 nights in a row | outside leaks every room has a zero night interval on 100 % of nights; running toilets draw 0.9 to 1.1 L per interval | minimum night flow analysis, the standard water-loss method: a meter that never rests at night is leaking, whatever the volume; a running toilet is commonly cited at up to a few hundred litres a day |
+| Burst volume | 250 L in one room in one night window | normal nights reach at most 180 L; one bath alone draws up to 250 L | one night of flow with no rest, above anything a sleeping guest draws |
+| Night gap main minus rooms | median 4 L/h | 95th percentile of normal nights 1.4 to 2.0 L/h; the dev pipe leak ran at 25 to 28 L/h | district metered area night balance: supply minus the sum of consumer meters, at night |
+| Sustained flow at any hour | 10 L per 15 min for 12 intervals (3 h) | heaviest guest use 2.8 L per 15 min, held at most 6 intervals; bursts run 20 h or more | a daytime burst in a vacant room would escape a night-only window |
+
+The rule is persistence first, magnitude second: a slow leak is called on two nights of
+unbroken flow, not on litres. Each value sits several times above normal operation and
+several times below the incidents in the year, so the exact number is not what detects them.
+The thresholds are fixed, not refitted on the window they judge (ADR-001); a past-only
+adaptive variant (95th percentile of the building's own earlier normal nights) is the next
+step and is not in this version.
 
 ## Changes after pre-holdout
 
