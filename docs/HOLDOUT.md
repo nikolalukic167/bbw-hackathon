@@ -29,7 +29,8 @@ The pipeline runs unchanged.
    `decisions_holdout.supervisor.jsonl`, `decisions_holdout.rerun.json`,
    `decisions_holdout.html` and `llm_cache_holdout/`. Never commit `data/`.
 
-Rehearsed on quickstart as the pretend holdout, from a fresh worktree with the committed code:
+Rehearsed on quickstart as the pretend holdout, from a fresh worktree with the code of eda7796.
+The figures below are copied from that run's script output, not computed by a script:
 
 | Step | Result |
 |---|---|
@@ -40,8 +41,8 @@ Rehearsed on quickstart as the pretend holdout, from a fresh worktree with the c
 | Page | `decisions_holdout.html` with Year, Day, Episode and Trail |
 | Script wall time | 135 s |
 
-A dev run takes 37 s with the LLM off; the full dev and quickstart regeneration with the LLM on
-(`scripts/regenerate.sh`) took 20 min. Two live runs differ slightly (message wording, and the
+Timings from the same session's logs: a dev run takes 37 s with the LLM off; the full dev and
+quickstart regeneration with the LLM on (`scripts/regenerate.sh`) took 20 min. Two live runs differ slightly (message wording, and the
 supervisor added 2 decisions in one run and 3 in another): determinism holds for a run and its
 cache, which is what the holdout procedure records.
 
