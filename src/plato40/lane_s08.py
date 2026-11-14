@@ -8,8 +8,9 @@ room turnaround planner already cites are left out, so no request has two answer
 
 - ``late_checkout``: offered pending staff approval if the room has no arrival the same day
   from bookings known at ``t``; otherwise luggage storage is offered instead. Never a promise.
-- ``early_checkin``: "should be ready" only if the room is clean at ``t``; otherwise the
-  guest is told a message follows. No time is quoted that the rules did not plan.
+- ``early_checkin``: "should be ready" only if the room is clean at ``t``, no departure from
+  it is due before the guest's arrival and S05 has not told the guest it may not be ready;
+  otherwise the guest is told a message follows. No time is quoted that the rules did not plan.
 - Everything else gets a notice of what staff will do; no password, price or place is invented.
 
 The message text never holds a booking ID. Every effect is simulated.
@@ -21,12 +22,13 @@ import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from plato40 import llm_guard, plan
+from plato40 import lane_s05, llm_guard, plan
 from plato40.bus import VERSION
 from plato40.detect import turnaround, water
 from plato40.detect.grid import stamp
@@ -680,8 +682,63 @@ def _arrival_same_day(ds: Dataset, req: Mapping[str, Any], t: pd.Timestamp, tz: 
     return bool((later["arrival_utc"].dt.tz_convert(tz).dt.date == day).any())
 
 
+def _delay_notices(
+    ds: Dataset, settings: Settings, cache: Path
+) -> dict[tuple[str, date], pd.Timestamp]:
+    """Return when S05 first told the guest of a room "may not be ready", by room and local day."""
+    out: dict[tuple[str, date], pd.Timestamp] = {}
+    for r in lane_s05.rows(ds, settings, cache, None)[0]:
+        if r["row"] == "proposal" and r["intent"] == "notify_day_delay":
+            t = pd.Timestamp(r["t"])
+            for room in r["assets"]:
+                out.setdefault((room, t.tz_convert(settings.local_tz).date()), t)
+    return out
+
+
+def _ready(
+    ds: Dataset,
+    states: RoomStates,
+    tz: str,
+    req: Mapping[str, Any],
+    t: pd.Timestamp,
+    delayed: Mapping[tuple[str, date], pd.Timestamp],
+) -> bool:
+    """Return whether "should be ready" is supportable for an early check-in request at ``t``.
+
+    The room is clean at ``t``, no departure from it is still due before the guest's arrival
+    (the asked time, else the booked arrival), and S05 has not told the guest of the room
+    that it may not be ready that day.
+    """
+    room = str(req["room_id"])
+    if states.at(room, t) != "clean":
+        return False
+    bk = ds.table("bookings.csv")
+    own = bk.loc[bk["booking_id"] == req["booking_id"]]
+    arrival = pd.Timestamp(own["arrival_utc"].iloc[0]) if len(own) else t
+    day = arrival.tz_convert(tz).date()
+    found = CLOCK.search(str(req["text"]))
+    if found is not None:
+        asked = pd.Timestamp(f"{day} {int(found[1]):02d}:{found[2]}").tz_localize(tz)
+        arrival = asked.tz_convert("UTC")
+    leaving = bk.loc[
+        (bk["room_id"] == room)
+        & (bk["status"] == "confirmed")
+        & (bk["created_utc"] <= t)
+        & (bk["departure_utc"] > t)
+        & (bk["departure_utc"] <= arrival)
+        & (bk["booking_id"] != req["booking_id"])
+    ]
+    notice = delayed.get((room, day))
+    return leaving.empty and (notice is None or notice > t)
+
+
 def _variant(
-    ds: Dataset, states: RoomStates, tz: str, req: Mapping[str, Any], t: pd.Timestamp
+    ds: Dataset,
+    states: RoomStates,
+    tz: str,
+    req: Mapping[str, Any],
+    t: pd.Timestamp,
+    delayed: Mapping[tuple[str, date], pd.Timestamp],
 ) -> tuple[str, dict[str, str], bool, str]:
     """Return the template, its say map, whether it is hedged, and what the rules said."""
     room, kind = str(req["room_id"]), str(req["request_type"])
@@ -695,8 +752,8 @@ def _variant(
         say["time"] = f"{int(found[1]):02d}:{found[2]}"
         return "late_free", say, False, f"a later check-out until {say['time']} looks possible"
     if kind == "early_checkin":
-        if states.at(room, t) == "clean":
-            return "early_ready", say, True, "the room should be ready, expected"
+        if _ready(ds, states, tz, req, t, delayed):
+            return "early_ready", say, False, "the room should be ready"
         return "early_wait", say, False, "the room is not ready, a message follows"
     return ASKS[kind][0], say, False, ASKS[kind][3]
 
@@ -709,6 +766,7 @@ def rows(
     states = RoomStates(ds)
     req = ds.table("guest_requests.csv").sort_values(["timestamp_utc", "request_id"], kind="stable")
     cited = _planner_cited(ds, settings)
+    delayed = _delay_notices(ds, settings, cache)
     items: list[_Item] = []
     for rec in req.to_dict("records"):
         r: dict[str, Any] = {str(k): v for k, v in rec.items()}
@@ -718,7 +776,7 @@ def rows(
         t = pd.Timestamp(r["timestamp_utc"]).ceil("min")
         if t >= pd.Timestamp(r["response_due_utc"]):
             continue
-        variant, say, hedged, says = _variant(ds, states, tz, r, t)
+        variant, say, hedged, says = _variant(ds, states, tz, r, t, delayed)
         task = llm_guard.Task(
             lane=LANE,
             t=stamp(t),
@@ -764,7 +822,7 @@ def rows(
             "answer_request",
             "notify_guest",
             prio,
-            reason + (" expected" if it.task.hedged else "") + ".",
+            reason + ".",
             message={"language": q["language"], "text": said.text},
             guest_request_ids=ids,
             confidence=0.7,
