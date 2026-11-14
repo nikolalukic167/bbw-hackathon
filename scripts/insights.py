@@ -128,8 +128,8 @@ days, and {consent} of those also need guest consent. {desk_approvals} of the ap
 guest-desk consent requests (maintenance, cleaning), so the manager's own load is
 {manager_approvals}.
 
-| Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
-|---|---|---|---|---|---|---|
+| Lane | Incidents | Routine | Decisions | Autonomous | Approval | Approval and consent | Outcome |
+|---|---|---|---|---|---|---|---|
 {table}
 
 ## Guest requests
@@ -422,12 +422,14 @@ def _too_hot(run: pipeline.Run) -> set[str]:
 
 
 def lane_table(run: pipeline.Run, facts: Mapping[str, str]) -> str:
-    """Return one markdown row per issue type: incidents, decisions by level, outcome.
+    """Return one markdown row per issue type: incidents, routine, decisions by level, outcome.
 
     Replies to "too hot" requests are a row of their own, so the heating row counts heat
-    pump and cold-comfort incidents only.
+    pump and cold-comfort incidents only. Incidents and routine episodes (``kpi.routine``)
+    are separate columns, so the incident column sums to the total in the opening.
     """
     hot = _too_hot(run)
+    usual = routine(run)
 
     def key(issue: str, episode: str) -> str:
         return "comfort_hot" if issue == "heating_comfort" and episode in hot else issue
@@ -443,9 +445,11 @@ def lane_table(run: pipeline.Run, facts: Mapping[str, str]) -> str:
         mine = [d for d in run.decisions if key(d["issue_type"], d["episode_id"]) == issue]
         level = Counter(d["autonomy"] for d in mine)
         outcome = OUTCOMES.get(issue, NA).format(**facts)
+        eps = [e.episode_id for e in acted if key(e.issue_type, e.episode_id) == issue]
         cells = [
             LANES.get(issue, issue),
-            _n(sum(key(e.issue_type, e.episode_id) == issue for e in acted)),
+            _n(sum(e not in usual for e in eps)),
+            _n(sum(e in usual for e in eps)),
             _n(len(mine)),
             _n(level["autonomous"]),
             _n(level["human_approval"]),
