@@ -125,7 +125,8 @@ Steward turned {signals} detector signals into {episodes} incidents, {routine} r
 replies, pre-heats and battery plans, and {decisions} decisions. {autonomous} decisions were
 autonomous. A person was asked to approve {approvals}, on average every {days_per_approval}
 days, and {consent} of those also need guest consent. {desk_approvals} of the approvals are
-guest-desk consent requests (maintenance, cleaning), so the manager's own load is {manager_approvals}.
+guest-desk consent requests (maintenance, cleaning), so the manager's own load is
+{manager_approvals}.
 
 | Lane | Incidents | Decisions | Autonomous | Approval | Approval and consent | Outcome |
 |---|---|---|---|---|---|---|
