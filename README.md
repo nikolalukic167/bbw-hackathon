@@ -275,9 +275,12 @@ thresholds, the run's prompts or data processing.
   same decision files.
 - `decisions_holdout.html`: rewritten with the restyled page from the same holdout decision
   files, now with the Day replay of the demo days (4 Mar, 9 Mar, 15 May, 16 Jul, 25 Jul,
-  22 Aug, 20 Nov, 27 Nov, 6 Dec); `scripts/holdout.sh` passes these days to `plato40 ui` (its
+  31 Jul, 22 Aug, 20 Nov, 27 Nov, 6 Dec); `scripts/holdout.sh` passes these days to `plato40 ui` (its
   run, rerun and validate steps are unchanged).
 - `README.md`: the Submission text section is removed.
+- `ui_day.js`: a day button starts the new day at its first bookmark instead of the previous
+  day's step. `ui_ask.js`: the LLM tab opened from the Day view takes the replayed bookmark's
+  time as its clock.
 - `Makefile`: `make all DEV=<dir> QS=<dir> HOLDOUT=<dir>` runs `scripts/regenerate.sh` and
   then `scripts/holdout.sh`, so one command rebuilds every committed output.
 

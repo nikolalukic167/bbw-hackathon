@@ -113,7 +113,9 @@ VIEWS.ask = (() => {
 
   return {
     render(el, st) {
-      const at = st.at ? fromWall(st.at) : T1;
+      // Coming from the Day view, the clock is the replayed bookmark's time.
+      const bm = st.day && st.step != null ? DATA.days?.[st.day]?.bookmarks?.[+st.step] : null;
+      const at = st.at ? fromWall(st.at) : bm ? ms(bm.t) + 15 * 60e3 : T1;
       const from = st.since ? fromWall(st.since) : at - 12 * 3600e3;
       const s = since(at, from);
       const e = EPS.find(x => x.id === st.ep && x.t0 <= at) || s.eps[0];

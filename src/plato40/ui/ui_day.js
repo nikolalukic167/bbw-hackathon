@@ -419,7 +419,7 @@
   function wire(el, D, dayKey) {
     const redraw = () => draw(el, D, dayKey, null);
     el.querySelector("input[type=range]")?.addEventListener("input", ev => { stop(); cur.i = +ev.target.value; cur.step = null; redraw(); });
-    el.querySelectorAll("[data-day]").forEach(b => b.addEventListener("click", () => { stop(); go({ view: "day", day: b.dataset.day }); }));
+    el.querySelectorAll("[data-day]").forEach(b => b.addEventListener("click", () => { stop(); go({ view: "day", day: b.dataset.day, step: null }); }));
     el.querySelectorAll("[data-bm]").forEach(g => g.addEventListener("click", () => { stop(); go({ view: "day", day: dayKey, step: +g.dataset.bm }); }));
     el.querySelectorAll("[data-fold]").forEach(f => f.addEventListener("click", () => { cur.open.add(f.dataset.fold); redraw(); }));
     el.querySelectorAll("[data-trail]").forEach(b => b.addEventListener("click", () => go({ view: "trail", ev: b.dataset.trail })));
@@ -474,7 +474,7 @@
       }
       const dayKey = state.day || days[0];
       const D = DATA.days[dayKey] || synth(dayKey);
-      if (cur.day !== dayKey) { stop(); cur = { ...cur, day: dayKey, i: 0, open: new Set() }; }
+      if (cur.day !== dayKey) { stop(); cur = { ...cur, day: dayKey, i: 0, step: null, open: new Set() }; }
       cur.el = el;
       let flash = null;
       if (state.step != null && state.step !== "") {
