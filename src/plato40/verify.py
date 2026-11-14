@@ -300,6 +300,55 @@ def _promises(decisions: list[Decision], states: RoomStates, settings: Settings,
         )
 
 
+def _early_ready(ds: Dataset, decisions: list[Decision], settings: Settings, out: _Out) -> None:
+    """Tell a guest holding a ready time, and not checked in, that the room is clean now."""
+    tz = settings.local_tz
+    grace = pd.Timedelta(minutes=settings.detect.promise_grace_min)
+    ev = ds.events.sort_values(["timestamp_utc", "event_id"], kind="stable")
+    done = ev.loc[ev["type"] == "cleaning_completed"]
+    entered = ev.loc[ev["type"].isin(["checkin", "checkin_after_wait", "checkin_early"])]
+    said: dict[str, list[pd.Timestamp]] = {}
+    last: dict[str, tuple[Decision, pd.Timestamp, pd.Timestamp, str]] = {}
+    for d in decisions:
+        if d["action"] == "notify_guest":
+            for a in d["affected_assets"]:
+                said.setdefault(a, []).append(pd.Timestamp(d["timestamp_utc"]))
+    for d in sorted(decisions, key=lambda d: d["timestamp_utc"]):
+        found = promised_at(d, tz)
+        if found is not None:
+            room, promised, lang = found
+            last[room] = (d, pd.Timestamp(d["timestamp_utc"]), promised, lang)
+    for room, (d, t0, promised, lang) in last.items():
+        mine = done.loc[(done["room_id"] == room) & (done["timestamp_utc"] > t0)]
+        if mine.empty:
+            continue
+        tc = pd.Timestamp(mine["timestamp_utc"].iloc[0])
+        came = entered.loc[
+            (entered["room_id"] == room) & (entered["timestamp_utc"].between(t0, tc))
+        ]
+        if not came.empty or any(t0 < s <= tc for s in said.get(room, [])):
+            continue
+        out.add(
+            d,
+            tc,
+            "notify_guest",
+            "high",
+            [room],
+            f"Tell the guest ({lang}): {room} is ready now"
+            + (
+                f", before the promised {local_time(promised, tc, tz)}"
+                if tc + grace <= promised
+                else ""
+            )
+            + "; self check-in works"
+            + SUFFIX,
+            [f"events.jsonl:{mine['event_id'].iloc[0]}"],
+            "A check-in to the room follows; escalate if the guest waits on.",
+            expected_outcome="Guest checks in as soon as the room is clean (simulated).",
+            **({"guest_request_ids": d["guest_request_ids"]} if "guest_request_ids" in d else {}),
+        )
+
+
 def follow_ups(
     ds: Dataset,
     episodes: list[Episode],
@@ -313,4 +362,5 @@ def follow_ups(
     _cold_rooms(ds, decisions, states, settings, out)
     _repeats(ds, decisions, out)
     _promises(decisions, states, settings, out)
+    _early_ready(ds, decisions, settings, out)
     return out.decisions
