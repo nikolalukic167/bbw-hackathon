@@ -58,6 +58,12 @@ cached rerun that must be byte-identical:
 make all DEV=data/PLATO40_v2_dev QS=data/PLATO40_v2_quickstart HOLDOUT=<holdout_dir>
 ```
 
+Run it without an API key (no `.env`, no `ANTHROPIC_API_KEY`) to reproduce the committed
+files: it then reads only the committed caches, and every decisions file comes back byte for
+byte. Only the provenance changes: the supervisor logs, the supervisor paragraph of
+`insights.md` and the pages name the cache instead of the live call. With a key, a supervisor
+review that failed in the committed run is called again and can add a decision.
+
 ## Data
 
 The PLATO-40 v2 datasets are distributed by the organisers and are not committed here
