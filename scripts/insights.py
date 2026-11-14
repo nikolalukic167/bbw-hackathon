@@ -82,6 +82,20 @@ OUTCOMES = {
     "check-in",
 }
 
+LOOKALIKE_WATER = {
+    "some": "{lk_water} water episodes got no decision: {lk_short} of them because the night "
+    "flow did not last {persist} nights in a row, {lk_jit} of them on the jittering meter.",
+    "none": "Every water episode got a decision.",
+}
+
+LOOKALIKE_COLD = {
+    "some": 'of the {cold_req} "too cold" requests, {lk_window} came from a room with its window '
+    "reported open, which got a request to close it and no heating flag, and {lk_inband} read "
+    "inside the comfort band, so no setpoint was raised.",
+    "none": 'none of the {cold_req} "too cold" requests came from a room with its window reported '
+    "open or inside the comfort band.",
+}
+
 FILTER_NOTES = {
     "lane": "Steward's filter lane made {filter_rows} decisions on {ahu} this year.",
     "none": "Steward has no filter detector yet.",
@@ -226,6 +240,20 @@ unplanned by {unplanned_who}, {unplanned_since} days after the previous change;
 FILTER_DP_HIGH was raised {dp_alarms} times. *Recommendation:* trigger the change on
 day-mode filter pressure. *Uncertainty:* {unplanned_n} events. {filter_note}
 
+## Look-alikes and bad data
+
+Steward acts on persistence and on what was known at the time, never on a single odd reading.
+
+- **Water:** {lk_water_text} Meter {jit_meter} jitters after its exchange ({jit_nights} nights
+  stepping backwards); on those nights leaks are judged on hourly volumes.
+- **Comfort:** {lk_cold_text} The {hot_req} "too hot" requests were answered as routine and
+  never opened a heat pump incident.
+- **Alarms:** {unsupported} of the {comm_alarms} comm-loss alarms had no gap behind them.
+  Steward's outage flag reads the telemetry, not the alarms: it found {outages} floor-wide
+  outages and none behind those alarms.
+- **Blank data:** blank stays blank, never zero; while a floor is blank, no room on it gets a
+  leak or comfort verdict.
+
 ## Design recommendations for the next building (feedback to PLATO)
 
 **Plan for summer heat.** The building lists its cooling as "{cooling}". Occupied rooms
@@ -312,6 +340,8 @@ def check_templates() -> None:
         *OUTCOMES.values(),
         *LANES.values(),
         *NOTES.values(),
+        *LOOKALIKE_WATER.values(),
+        *LOOKALIKE_COLD.values(),
         *FILTER_NOTES.values(),
         *LIMIT_NOTES.values(),
         *SAVINGS.values(),
@@ -1075,6 +1105,45 @@ def energy(run: pipeline.Run) -> Facts:
     }
 
 
+def lookalikes(run: pipeline.Run, settings: Settings) -> Facts:
+    """Return what Steward saw and did not act on: short or jittery water, benign cold rooms."""
+    acted = {e.episode_id for e in _acted(run)}
+    quiet = [e for e in run.episodes if e.issue_type == "water_leak" and e.episode_id not in acted]
+    persist = settings.detect.leak_persist_nights
+    jittery = {
+        e.assets[0]
+        for e in _of(run, "data_quality")
+        if e.signals and e.signals[0].kind == "meter_jitter"
+    }
+    cold = {
+        str(s.data["request"]): s.data
+        for s in run.signals
+        if s.kind == "comfort_deficit" and "request" in s.data
+    }
+    window = {r for r, x in cold.items() if x.get("window_open") == 1.0}
+    inband = {
+        r
+        for r, x in cold.items()
+        if r not in window
+        and x.get("temperature") is not None
+        and float(x["temperature"]) >= float(x["band"][0])
+    }
+    water = {
+        "lk_water": _n(len(quiet)),
+        "lk_short": _n(
+            sum(all(int(s.data.get("streak", 0)) < persist for s in e.signals) for e in quiet)
+        ),
+        "lk_jit": _n(sum(e.assets[0] in jittery for e in quiet)),
+        "persist": _n(persist),
+    }
+    return {
+        "lk_water_text": LOOKALIKE_WATER["some" if quiet else "none"].format(**water),
+        "lk_cold_text": LOOKALIKE_COLD["some" if window or inband else "none"].format(
+            cold_req=_n(len(cold)), lk_window=_n(len(window)), lk_inband=_n(len(inband))
+        ),
+    }
+
+
 def render(
     ds: Dataset, run: pipeline.Run, settings: Settings, log: list[dict[str, Any]] | None = None
 ) -> str:
@@ -1096,6 +1165,7 @@ def render(
     facts |= guest_requests(ds, run)
     facts |= level2(ds, run, settings)
     facts |= energy(run)
+    facts |= lookalikes(run, settings)
     facts |= supervisor(run, log if log is not None else run.reviews)
     hp = [e for e in _of(run, "heating_comfort") if any(s.kind == "cop_low" for s in e.signals)]
     facts["small_n"] = _span([len(_of(run, "water_leak")), len(hp)])
