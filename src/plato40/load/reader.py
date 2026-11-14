@@ -96,8 +96,12 @@ def _parse_column(
 
 def read_csv(path: Path, schema: FileSchema, issues: list[ParseIssue]) -> pd.DataFrame:
     """Read one CSV with blank-as-missing semantics and type it per ``schema``."""
-    raw = pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
     declared = list(schema.columns)
+    if not path.is_file():
+        issues.append(ParseIssue(schema.name, "*", "file missing; read as empty", 1))
+        raw = pd.DataFrame({c: pd.Series(dtype=object) for c in declared})
+    else:
+        raw = pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
     if list(raw.columns) != declared:
         issues.append(
             ParseIssue(
@@ -107,6 +111,11 @@ def read_csv(path: Path, schema: FileSchema, issues: list[ParseIssue]) -> pd.Dat
                 1,
             )
         )
+    missing = [c for c in declared if c not in raw.columns]
+    if missing:
+        # A later stage reads a missing column as all-missing rather than crashing on it.
+        issues.append(ParseIssue(schema.name, ",".join(missing), "column missing; all missing", 1))
+        raw = raw.assign(**{c: pd.Series(pd.NA, index=raw.index, dtype=object) for c in missing})
     out = pd.DataFrame(index=raw.index)
     for column in raw.columns:
         kind = schema.columns.get(column, Kind.TEXT)

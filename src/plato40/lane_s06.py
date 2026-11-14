@@ -341,7 +341,9 @@ def _energy_breaks(
 ) -> list[tuple[pd.Timestamp, str, str, list[str]]]:
     """Return energy rows breaking the balance or the BAT1 limits from building.json."""
     th = settings.detect
-    bat = next(a for a in ds.building["building"]["assets"] if a["type"] == "battery")
+    bat = next((a for a in ds.building["building"]["assets"] if a["type"] == "battery"), None)
+    if bat is None:
+        return []
     lo, hi = (float(x) for x in bat["soc_bounds_kwh"])
     p_max = float(max(bat["max_charge_kw"], bat["max_discharge_kw"]))
     e = ds.table("energy.csv")
@@ -446,7 +448,9 @@ def _dp(
 def _battery(ds: Dataset, settings: Settings, board: _Board) -> None:
     """UC1: one day-ahead BAT1 plan at each first tariff publication for the next day."""
     th, tz = settings.detect, settings.local_tz
-    bat = next(a for a in ds.building["building"]["assets"] if a["type"] == "battery")
+    bat = next((a for a in ds.building["building"]["assets"] if a["type"] == "battery"), None)
+    if bat is None or ds.table("tariff.csv").empty:
+        return
     lo, hi = (float(x) for x in bat["soc_bounds_kwh"])
     eta = float(bat["round_trip_efficiency"]) ** 0.5
     unit = th.battery_soc_step_kwh
@@ -490,6 +494,8 @@ def _battery(ds: Dataset, settings: Settings, board: _Board) -> None:
         load = mean["building_load_kw"].reindex(keys).to_numpy(dtype=float)
         net = load - pv
         last = e.loc[et <= t].iloc[-1]
+        if pd.isna(last["battery_soc_kwh"]):
+            continue
         soc0 = float(np.clip(last["battery_soc_kwh"], lo, hi))
         terminal = th.battery_terminal_share * eta * eta * float(np.median(price))
         actions, path = _dp(price, net, soc0, (lo, hi), powers, moves, unit, terminal)

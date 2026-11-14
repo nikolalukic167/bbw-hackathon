@@ -983,4 +983,7 @@ def rows(
     count is empty.
     """
     del cache, call
+    needed = {"AHU1/filter_dp_pa", "AHU1/fan_kw", "AHU1/airflow_m3h", *HP1_SERIES}
+    if not needed <= set(equipment_numeric(ds).columns):
+        return [], Counter()
     return _Lane(ds, settings).run(), Counter()

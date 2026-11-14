@@ -159,6 +159,14 @@ class _Plan:
     held: list[int] = field(default_factory=list)
 
 
+SERIES = (
+    "VEND1/stock_drinks",
+    "VEND1/stock_snacks",
+    "WASTE_MAIN/fill_pct",
+    *(f"WASTE_F{n}/fill_pct" for n in FLOORS),
+)
+
+
 def _eid(asset: str, t: pd.Timestamp) -> str:
     return f"EP-{ISSUE}-{asset}-{t.tz_convert('UTC'):%Y%m%dT%H%M}Z"
 
@@ -693,4 +701,8 @@ def rows(
 ) -> tuple[list[Row], Counter[str]]:
     """Return the s07 signal and proposal rows in time order; S07 sends no guest messages."""
     del cache, call
+    lg = logistics_wide(ds)
+    assets = {a["id"] for a in ds.building["building"]["assets"]}
+    if not set(SERIES) <= set(lg.columns) or not {"VEND1", "WASTE_MAIN"} <= assets:
+        return [], Counter()
     return _Lane(ds, settings).run(), Counter()
