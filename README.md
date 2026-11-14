@@ -250,9 +250,16 @@ thresholds, the run's prompts or data processing.
   human) and a question box for a model served by a local copilot. The copilot reads the
   decisions and trace files only, through four tools that cut the rows at the page clock; an
   answer is shown only if every cited id and number is in what the tools returned. It never
-  writes a decision. `ui.html` gains the tab and its key in the footer.
+  writes a decision. `ui.html` gains the tab and its key in the footer. Restyle of the page
+  (every figure unchanged): IBM Carbon g10/g100 surfaces and status colours,
+  Okabe-Ito lane colours keyed by issue type (`data.py`), IBM Plex fonts inlined from
+  `ui/fonts/` (SIL OFL), a light/dark/auto toggle, the Year figures in one band with cards for
+  the replay days, and the Day scrubber's hour labels drawn as text so they no longer stretch.
 - `README.md`: this section, the copilot command, its row in the model table and the `ui/`
   line of the architecture tree.
+- `docs/DEMO.md`: step 1's cue now names the lane colours of the year strip.
+- `decisions.html`, `examples/quickstart/console.html`: rewritten with the restyled page from the
+  same decision files.
 
 ## Submission text
 

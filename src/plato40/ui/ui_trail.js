@@ -8,14 +8,17 @@ VIEWS.trail = (() => {
   .tr-wrap { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 12px; align-items: start; }
   @media (max-width: 900px) { .tr-wrap { grid-template-columns: minmax(0, 1fr); } }
   .tr-pick { padding: 10px 12px; display: grid; gap: 8px; max-height: 80vh; overflow-y: auto; }
-  .tr-pick button { text-align: left; font: inherit; background: none; border: 0; border-bottom: 1px solid var(--grid); padding: 6px 2px; cursor: pointer; color: inherit; display: grid; gap: 2px; }
-  .tr-pick button[aria-current="true"] { box-shadow: inset 3px 0 0 var(--focus); padding-left: 8px; background: var(--sunk); }
+  .tr-pick button { text-align: left; font: inherit; background: none; border: 0; border-bottom: 1px solid var(--grid); padding: 7px 8px; cursor: pointer; color: inherit; display: grid; gap: 2px; }
+  .tr-pick button:hover { background: var(--hover); }
+  .tr-pick button[aria-current="true"] { box-shadow: inset 3px 0 0 var(--focus); background: var(--sunk); }
   .tr-pick small { color: var(--muted); }
-  .tr-chain { padding: 16px; display: grid; gap: 0; min-width: 0; }
+  .tr-main { padding: 18px 20px; min-width: 0; }
+  .tr-main h2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tr-chain { padding-top: 14px; display: grid; gap: 0; min-width: 0; }
   .tr-step { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 4px 14px; padding: 10px 0; border-left: 2px solid var(--line); margin-left: 6px; padding-left: 14px; position: relative; }
-  .tr-step::before { content: ""; position: absolute; left: -6px; top: 15px; width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); }
+  .tr-step::before { content: ""; position: absolute; left: -7px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); }
   .tr-step.here::before { background: var(--focus); border-color: var(--focus); }
-  .tr-step.next::before { border-color: var(--auto); }
+  .tr-step.next::before { border-color: var(--auto); background: var(--auto); }
   .tr-step.none::before { border-style: dashed; }
   .tr-step > h3 { grid-column: 1 / -1; }
   .tr-step .k { color: var(--muted); font-size: 0.85rem; }
@@ -105,7 +108,7 @@ VIEWS.trail = (() => {
             <span>${act(x)} <small>${esc(ex.assets.join(", "))}</small></span><small>${fmtDay.format(ms(x.timestamp_utc))} · ${esc(x.priority)}</small></button>`).join("")}
           ${list.length + (list.includes(pinned) ? 0 : 1) > shown.length ? `<small>${fmtN(list.length + (list.includes(pinned) ? 0 : 1) - shown.length)} more: open one from the Episode view.</small>` : ""}
         </nav>
-        <section class="panel">${chain(d, e)}</section></div>`;
+        <section class="panel tr-main">${chain(d, e)}</section></div>`;
       const pick = el.querySelector(".tr-pick");
       if (pick) pick.scrollTop = 0;
       const cur = el.querySelector('.tr-pick [aria-current="true"]');

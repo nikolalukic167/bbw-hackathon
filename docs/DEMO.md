@@ -22,7 +22,7 @@ computed when the page is written, so this script quotes none: read them off the
 
 | # | Link | Say | The judge sees |
 |---|---|---|---|
-| 1 | `#view=year` | Who runs a hotel at three in the morning? One command turns a year of PLATO-40 data into decisions, each traced to its evidence. | The year strip: grey and quiet, a few clusters. |
+| 1 | `#view=year` | Who runs a hotel at three in the morning? One command turns a year of PLATO-40 data into decisions, each traced to its evidence. | The year strip: quiet, a few coloured clusters per lane. |
 | 2 | `#view=year` | The ten-second read: guest requests answered before their due time, the share OSAM did alone, how often a manager is asked, no violations, and the rerun byte-identical. | The five tiles. |
 | 3 | `#view=day&day=2026-01-25&step=2` | **Day A, 25 Jan.** Minus degrees outside, and the heat pump is losing efficiency. Save energy or keep guests warm? 03:01: a guest in R103 is cold; OSAM raises the setpoint and answers in the guest's language. | The R103 tile, the comfort-deficit signal and the reply. |
 | 4 | `step=3` | Two hours later the room is still cold, so the closed loop asks for an inspection: a person, with the guest's consent. | The follow-up, marked as approval and consent. |

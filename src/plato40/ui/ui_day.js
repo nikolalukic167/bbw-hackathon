@@ -36,38 +36,40 @@
     const s = document.createElement("style");
     s.id = "dv-style";
     s.textContent = `
-:root { --dv-occ: #aab4bd; --dv-dirty: #d3c9b6; --dv-cleaning: #c2d3cf; --dv-clean: #e8ecef; --dv-unknown: #f4f6f8; --dv-tile-fg: #17202a; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --dv-occ: #4a5862; --dv-dirty: #5c5444; --dv-cleaning: #3d5550; --dv-clean: #26323a; --dv-unknown: #1b242a; --dv-tile-fg: #e3e9ee; } }
-:root[data-theme="dark"] { --dv-occ: #4a5862; --dv-dirty: #5c5444; --dv-cleaning: #3d5550; --dv-clean: #26323a; --dv-unknown: #1b242a; --dv-tile-fg: #e3e9ee; }
 .dv { display: grid; gap: 14px; }
 .dv-head { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; padding: 10px 12px; }
 .dv-head .ttl { display: grid; gap: 2px; }
-.dv-head .now { font: 600 1.5rem/1 var(--display); font-variant-numeric: tabular-nums; }
-.dv-badge { font: 600 0.72rem/1 var(--body); text-transform: uppercase; letter-spacing: 0.06em; border: 1px solid var(--line); border-radius: 4px; padding: 4px 7px; color: var(--muted); }
+.dv-head .now { font: 700 2.4rem/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.dv-badge { font: 600 0.75rem/1 var(--body); border: 1px solid var(--line); border-radius: 4px; padding: 4px 7px; color: var(--muted); }
 .dv-days { display: flex; flex-wrap: wrap; gap: 6px; }
-.dv-days button, .dv-ctl button { font: 600 0.82rem var(--body); border: 1px solid var(--line); background: var(--sunk); color: var(--fg); border-radius: 5px; padding: 5px 10px; cursor: pointer; }
-.dv-days button[aria-current="true"] { box-shadow: inset 0 -2px 0 var(--focus); }
+.dv-days button, .dv-ctl button { font: 500 0.85rem var(--body); border: 1px solid var(--line-strong); background: var(--panel); color: var(--fg); border-radius: 2px; padding: 6px 12px; cursor: pointer; }
+.dv-days button:hover, .dv-ctl button:hover { background: var(--hover); }
+.dv-ctl button[data-act="play"] { background: var(--focus); border-color: var(--focus); color: var(--bg); font-weight: 600; }
+.dv-days button[aria-current="true"] { background: var(--fg); border-color: var(--fg); color: var(--panel); font-weight: 600; }
 .dv-scrub { padding: 8px 12px 10px; display: grid; gap: 4px; }
 .dv-scrub svg { display: block; width: 100%; height: 34px; }
 .dv-scrub input[type=range] { width: 100%; margin: 0; }
+.dv-hours { position: relative; height: 14px; font: 0.7rem/1 var(--mono); color: var(--muted); }
+.dv-hours span { position: absolute; top: 0; padding-left: 3px; border-left: 1px solid var(--line); }
 .dv-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.85rem; }
 .dv-ctl .bm { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 200px; }
-.dv-main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.dv-main { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 980px) { .dv-main { grid-template-columns: minmax(0, 1fr); } }
 .dv-plan { padding: 10px 12px; display: grid; gap: 10px; }
 .dv-plan svg { width: 100%; height: auto; display: block; font-family: var(--body); }
 .dv-plan .tile text { fill: var(--dv-tile-fg); font-size: 13px; }
-.dv-plan .tile .id { font-weight: 600; }
+.dv-plan .tile .id { font-weight: 700; font-size: 14px; }
 .dv-plan .tile .t { font-family: var(--mono); font-size: 12px; }
-.dv-plan .tile .cold { fill: #2b63c4; font-weight: 600; }
-.dv-plan .tile .hot { fill: #c45a1c; font-weight: 600; }
+.dv-plan .tile .cold { fill: var(--cold); font-weight: 600; }
+.dv-plan .tile .hot { fill: var(--hot); font-weight: 600; }
 .dv-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.78rem; color: var(--muted); align-items: center; }
 .dv-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
 .dv-legend .prop { border: 2px dashed var(--critical); background: none; }
 .dv-plant { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
-.dv-plant div { background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; min-width: 0; }
+.dv-plant div { background: var(--sunk); border: 1px solid var(--line); border-radius: 3px; padding: 7px 10px; min-width: 0; }
 .dv-plant b { display: block; font: 600 1rem/1.2 var(--display); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dv-plant span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dv-plant span { font-size: 0.75rem; color: var(--muted); }
+.dv-plant .alarm { border-color: var(--critical); box-shadow: inset 3px 0 0 var(--critical); }
 .dv-plant .alarm b { color: var(--critical); }
 .dv-tl { max-height: 70vh; overflow-y: auto; }
 .dv-tl .head { position: sticky; top: 0; background: var(--panel); padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); z-index: 1; display: flex; justify-content: space-between; gap: 8px; }
@@ -80,10 +82,10 @@
 .dv-it .sub { grid-column: 3; font-size: 0.76rem; color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
 .dv-it.sig .act { font-weight: 500; color: var(--muted); }
 .dv-it.routine { opacity: 0.6; }
-.dv-it.human { background: color-mix(in srgb, var(--approve) 9%, transparent); }
+.dv-it.human { background: color-mix(in srgb, var(--approve) 10%, transparent); }
 .dv-it.human.consent { background: color-mix(in srgb, var(--consent) 9%, transparent); }
 .dv-it.flash { background: color-mix(in srgb, var(--focus) 12%, transparent); outline: 2px solid var(--focus); outline-offset: -2px; }
-.dv-it .beat { font: 600 0.68rem/1 var(--body); text-transform: uppercase; letter-spacing: 0.05em; color: var(--approve); }
+.dv-it .beat { font: 600 0.75rem/1 var(--body); color: var(--approve); }
 .dv-it button.lnk { font: inherit; background: none; border: 0; padding: 0; color: var(--focus); cursor: pointer; }
 .dv-it.fold { cursor: pointer; }
 .dv-spark { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; padding: 10px 12px; }
@@ -176,15 +178,15 @@
           sp != null ? `setpoint ${sp.toFixed(1)}` : "", win ? "window open" : "", meta.get(r)?.orientation ? `faces ${meta.get(r).orientation}` : ""].filter(Boolean).join(", ");
         const rec = P.recent.get(r), issue = P.open.get(r);
         svg += `<g class="tile"><title>${esc(tip)}${rec ? esc(` | proposed ${hhmm(rec.t)}: ${rec.d.action} (simulated)`) : ""}</title>`;
-        svg += `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="4" fill="${sty.fill}" stroke="var(--line)"/>`;
+        svg += `<rect x="${x}" y="${y}" width="${W}" height="${H}" rx="3" fill="${sty.fill}" stroke="var(--line-strong)" stroke-opacity="0.45"/>`;
         if (P.blocked.has(r)) svg += `<rect x="${x + 2}" y="${y + 2}" width="${W - 4}" height="${H - 4}" rx="3" fill="none" stroke="var(--critical)" stroke-width="2.5" stroke-dasharray="5 3"/><text x="${x + 6}" y="${y + 52}" font-size="11" style="fill:var(--critical);font-weight:700">BLOCK</text>`;
         else if (rec) svg += `<rect x="${x + 1.5}" y="${y + 1.5}" width="${W - 3}" height="${H - 3}" rx="3" fill="none" stroke="${lane(rec.e.issue).c}" stroke-width="2.5" stroke-dasharray="5 3"/>`;
         svg += `<text class="id" x="${x + 6}" y="${y + 17}">${r}</text>`;
-        if (issue) svg += `<circle cx="${x + W - 11}" cy="${y + 11}" r="8" fill="${lane(issue).c}"/><text x="${x + W - 11}" y="${y + 15}" text-anchor="middle" font-size="10" font-weight="700" style="fill:#fff">${MARK[issue] || "?"}</text>`;
+        if (issue) svg += `<circle cx="${x + W - 12}" cy="${y + 12}" r="8.5" fill="var(--panel)" stroke="${lane(issue).c}" stroke-width="3"/><text x="${x + W - 12}" y="${y + 15.5}" text-anchor="middle" font-size="10" font-weight="700" style="fill:var(--fg)">${MARK[issue] || "?"}</text>`;
         const show = cur.showTemp || tcls;
         if (temp != null && show) svg += `<text class="t ${tcls}" x="${x + 6}" y="${y + 36}">${temp.toFixed(1)}°C</text>`;
         else svg += `<text class="t" x="${x + 6}" y="${y + 36}" style="fill:var(--muted)">${sty.label.split(",")[0]}</text>`;
-        if (win && !P.blocked.has(r)) svg += `<text class="t" x="${x + 6}" y="${y + 52}">window open</text>`;
+        if (win && !P.blocked.has(r)) svg += `<text class="t" x="${x + 6}" y="${y + 52}">window</text>`;
         svg += `</g>`;
       });
     });
@@ -331,9 +333,11 @@
       const x = ((ms(b.t) - t0) / span) * W;
       return `<g data-bm="${k}" style="cursor:pointer"><title>${esc(hhmm(ms(b.t)))} ${esc(b.label)}</title><rect x="${x - 4}" y="0" width="8" height="34" fill="transparent"/><line x1="${x}" x2="${x}" y1="${b.kind === "decision" ? 4 : 12}" y2="30" stroke="${col[b.kind] || "var(--fg)"}" stroke-width="2"/></g>`;
     }).join("");
-    const hours = [0, 6, 12, 18].map(h => { const x = (h * 4 / D.t.length) * W; return `<text x="${x + 2}" y="33" font-size="10" fill="var(--muted)">${String(h).padStart(2, "0")}:00</text>`; }).join("");
+    // Hour labels are HTML: the stretched SVG would distort text.
+    const hours = [0, 3, 6, 9, 12, 15, 18, 21].map(h => `<span style="left:${(h * 4 / D.t.length) * 100}%">${String(h).padStart(2, "0")}:00</span>`).join("");
     const cx = (i / D.t.length) * W;
-    return `<svg viewBox="0 0 ${W} 34" preserveAspectRatio="none">${hours}${ticks}<line x1="${cx}" x2="${cx}" y1="0" y2="34" stroke="var(--focus)" stroke-width="3"/></svg>
+    return `<svg viewBox="0 0 ${W} 34" preserveAspectRatio="none"><rect x="0" y="0" width="${cx}" height="34" fill="var(--focus)" fill-opacity="0.07"/>${ticks}<line x1="${cx}" x2="${cx}" y1="0" y2="34" stroke="var(--focus)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>
+      <div class="dv-hours">${hours}</div>
       <input type="range" min="0" max="${D.t.length - 1}" value="${i}" aria-label="Time of day">`;
   }
 
@@ -428,6 +432,8 @@
           if (cur.timer) { stop(); redraw(); return; }
           if (cur.i >= D.t.length - 1) cur.i = 0;
           cur.timer = setInterval(() => {
+            // Every view renders into #view, so a tab switch must stop the replay, not repaint it.
+            if (state.view !== "day" || state.day && state.day !== dayKey) { stop(); return; }
             if (cur.i >= D.t.length - 1 || cur.el !== el) { stop(); redraw(); return; }
             cur.i++; cur.step = null; redraw();
           }, PLAY_MS);
@@ -443,7 +449,7 @@
 
   // N / P / space while the Day view is shown; the shell's arrow keys set state.step.
   document.addEventListener("keydown", ev => {
-    if (!cur.el || !cur.el.isConnected || !cur.day || ev.target.closest?.("input,select,textarea")) return;
+    if (state.view !== "day" || !cur.el || !cur.el.isConnected || !cur.day || ev.target.closest?.("input,select,textarea")) return;
     const D = DATA.days?.[cur.day] || synth(cur.day);
     if (!D) return;
     const k = ev.key.toLowerCase();

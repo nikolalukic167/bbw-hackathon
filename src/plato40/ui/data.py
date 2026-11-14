@@ -45,7 +45,7 @@ def lanes(issues: Iterable[str]) -> list[dict[str, str]]:
                 "key": issue,
                 "short": code.get(issue, issue[:3].upper()),
                 "label": issue.replace("_", " "),
-                "color": f"var(--l{n % 10})",
+                "color": f"var(--ln-{issue}, var(--l{n % 10}))",
             }
         )
     return out
