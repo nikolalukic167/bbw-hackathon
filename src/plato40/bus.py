@@ -120,10 +120,15 @@ LANES: dict[str, dict[str, Any]] = {
     },
     "s06": {
         "issue_type": "energy_optimization",
-        "kinds": ("arrival_due", "s03_active", "input_stale"),
-        "intents": ("preheat_arrival", "back_off_for_comfort", "flag_energy_data_gap"),
+        "kinds": ("arrival_due", "s03_active", "input_stale", "tariff_published"),
+        "intents": (
+            "preheat_arrival",
+            "back_off_for_comfort",
+            "flag_energy_data_gap",
+            "battery_day_plan",
+        ),
         "actions": ("adjust_room_setpoint", "optimize_energy", "flag_anomaly", "defer_action"),
-        "causes": ("arrival", "s03_backoff", "stale_input", "unknown"),
+        "causes": ("arrival", "s03_backoff", "stale_input", "tariff", "unknown"),
     },
     "s05": {
         "issue_type": "occupancy_surge",

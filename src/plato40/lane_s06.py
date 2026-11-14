@@ -15,6 +15,12 @@
   that breaks the energy balance or the BAT1 limits in ``building.json``: one
   ``flag_anomaly`` per episode, and the rule in the data stays in charge.
 
+- ``tariff_published`` (UC1): at the first publication of tomorrow's prices, a dynamic
+  programme over BAT1's SOC plans charge and discharge to the end of the published prices,
+  against forecast PV and load (the same-time-of-day mean of the last days). One
+  ``optimize_energy`` per day; the saving is against no battery and simulated. The S03
+  back-off does not pause it.
+
 S06 claims no staff and no rooms, and never messages guests. Every effect is simulated.
 """
 
@@ -24,6 +30,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
 
 from plato40 import llm_guard
@@ -40,6 +48,7 @@ from plato40.state import RoomStates
 LANE = "s06"
 ISSUE = "energy_optimization"
 Row = dict[str, Any]
+Floats = npt.NDArray[np.float64]
 
 
 class _Board:
@@ -375,6 +384,177 @@ def _energy_breaks(
     return out
 
 
+def _runs(
+    times: pd.DatetimeIndex, mask: npt.NDArray[np.bool_], ref: pd.Timestamp, tz: str
+) -> list[str]:
+    """Return the runs of ``mask`` as local windows, e.g. ``Fri 16 Jan 02:00 to 05:30``."""
+    out, start = [], None
+    step = pd.Timedelta(minutes=15)
+    for k, on in enumerate([*mask.tolist(), False]):
+        if on and start is None:
+            start = k
+        elif not on and start is not None:
+            end = times[k - 1] + step
+            out.append(f"{local_time(times[start], ref, tz)} to {end.tz_convert(tz):%H:%M}")
+            start = None
+    return out
+
+
+def _dp(
+    price: Floats,
+    net: Floats,
+    soc0: float,
+    bounds: tuple[float, float],
+    powers: Floats,
+    moves: npt.NDArray[np.int_],
+    soc_step: float,
+    terminal: float,
+) -> tuple[npt.NDArray[np.int_], Floats]:
+    """Return the cheapest action index per step and the SOC path, by backward induction.
+
+    The SOC lives on a grid of ``soc_step`` kWh and each action moves it by a whole number of
+    grid steps (``moves``) at the AC power ``powers``, so no rounding creates or loses energy.
+    Cost is the grid import price only, export is worth nothing, and the SOC left at the end
+    is worth ``terminal`` EUR per kWh. Ties take the first action, and 0 kW comes first.
+    """
+    dt = 0.25
+    lo, hi = bounds
+    grid = np.arange(lo, hi + soc_step / 2, soc_step)
+    ns, n = len(grid), len(price)
+    nxt = np.arange(ns)[:, None] + moves[None, :]
+    ok = (nxt >= 0) & (nxt < ns)
+    nxt = np.clip(nxt, 0, ns - 1)
+    value = -terminal * grid
+    policy = np.zeros((n, ns), dtype=int)
+    for k in range(n - 1, -1, -1):
+        cost = price[k] * np.maximum(net[k] + powers, 0.0) * dt
+        total = np.where(ok, cost[None, :] + value[nxt], np.inf)
+        best = np.argmin(total, axis=1)
+        policy[k] = best
+        value = total[np.arange(ns), best]
+    s = int(np.clip(np.rint((soc0 - lo) / soc_step), 0, ns - 1))
+    actions = np.zeros(n, dtype=int)
+    path = np.zeros(n + 1)
+    path[0] = grid[s]
+    for k in range(n):
+        actions[k] = policy[k, s]
+        s = int(nxt[s, actions[k]])
+        path[k + 1] = grid[s]
+    return actions, path
+
+
+def _battery(ds: Dataset, settings: Settings, board: _Board) -> None:
+    """UC1: one day-ahead BAT1 plan at each first tariff publication for the next day."""
+    th, tz = settings.detect, settings.local_tz
+    bat = next(a for a in ds.building["building"]["assets"] if a["type"] == "battery")
+    lo, hi = (float(x) for x in bat["soc_bounds_kwh"])
+    eta = float(bat["round_trip_efficiency"]) ** 0.5
+    unit = th.battery_soc_step_kwh
+    up = int(float(bat["max_charge_kw"]) * 0.25 * eta / unit)
+    down = int(float(bat["max_discharge_kw"]) * 0.25 / eta / unit)
+    moves = np.array(
+        [0] + [m for k in range(1, max(up, down) + 1) for m in (-k, k) if -down <= m <= up]
+    )
+    powers = np.where(moves > 0, moves * unit / (0.25 * eta), moves * unit * eta / 0.25)
+    e = ds.table("energy.csv").sort_values("timestamp_utc", kind="stable")
+    et = pd.DatetimeIndex(e["timestamp_utc"])
+    tariff = ds.table("tariff.csv")
+    day = pd.DatetimeIndex(tariff["timestamp_utc"]).tz_convert(tz).normalize()
+    first = tariff.groupby(day)["published_utc"].min()
+    step = pd.Timedelta(minutes=15)
+    history = pd.Timedelta(days=th.battery_history_d)
+    for t in sorted(set(pd.DatetimeIndex(first.to_numpy()).tz_convert("UTC"))):
+        t = pd.Timestamp(t)
+        if len(et) == 0 or t - et[0] < pd.Timedelta(days=th.battery_min_history_d) or t > et[-1]:
+            continue
+        prices = tariff.loc[tariff["published_utc"] <= t].sort_values(
+            ["timestamp_utc", "published_utc"], kind="stable"
+        )
+        prices = prices.drop_duplicates("timestamp_utc", keep="last").set_index("timestamp_utc")
+        start = t.ceil("15min")
+        end = pd.Timestamp(prices.index.max()) + pd.Timedelta(hours=1)
+        times = pd.date_range(start, end, freq=step, inclusive="left")
+        hour = times.floor("h")
+        if len(times) == 0 or not hour.isin(prices.index).all():
+            continue
+        price = prices["price_eur_kwh"].reindex(hour).to_numpy(dtype=float)
+        known = e.loc[(et <= t) & (et > t - history)]
+        clock = pd.DatetimeIndex(known["timestamp_utc"]).tz_convert(tz)
+        slot = clock.hour * 60 + clock.minute
+        mean = known[["pv_kw", "building_load_kw"]].groupby(np.asarray(slot)).mean()
+        want = times.tz_convert(tz)
+        keys = np.asarray(want.hour * 60 + want.minute)
+        if not np.isin(keys, mean.index).all():
+            continue
+        pv = mean["pv_kw"].reindex(keys).to_numpy(dtype=float)
+        load = mean["building_load_kw"].reindex(keys).to_numpy(dtype=float)
+        net = load - pv
+        last = e.loc[et <= t].iloc[-1]
+        soc0 = float(np.clip(last["battery_soc_kwh"], lo, hi))
+        terminal = th.battery_terminal_share * eta * eta * float(np.median(price))
+        actions, path = _dp(price, net, soc0, (lo, hi), powers, moves, unit, terminal)
+        p = powers[actions]
+        planned = np.maximum(net + p, 0.0) * 0.25
+        base = np.maximum(net, 0.0) * 0.25
+        cost, base_cost = float(planned @ price), float(base @ price)
+        night = (want.hour >= th.battery_night_start_h) | (want.hour < th.battery_night_end_h)
+        grid_charge = (p > 0) & (net + p > 0) & np.asarray(night)
+        tomorrow = np.asarray(want.normalize() > t.tz_convert(tz).normalize())
+        surplus = float(np.maximum(pv - load, 0.0)[tomorrow].sum() * 0.25)
+        room = hi - soc0
+        why = f"forecast PV surplus tomorrow {surplus:.1f} kWh against headroom {room:.1f} kWh" + (
+            ", so PV alone can fill the battery" if surplus > room else ""
+        )
+        charge = _runs(times, p > 0, t, tz)
+        discharge = _runs(times, p < 0, t, tz)
+        saving = base_cost - cost
+        eid = _eid("BAT1", t)
+        stamp_last = stamp(pd.Timestamp(last["timestamp_utc"]))
+        sig = board.signal(
+            eid,
+            t,
+            "tariff_published",
+            ["BAT1", "PV1"],
+            [f"tariff.csv:{stamp(t)}", f"energy.csv:{stamp_last}", "building.json:BAT1"],
+            f"Prices to {local_time(end, t, tz)} published; BAT1 at {soc0:.1f} kWh",
+            {
+                "charge_windows": charge,
+                "discharge_windows": discharge,
+                "planned_import_kwh": round(float(planned.sum()), 1),
+                "baseline_import_kwh": round(float(base.sum()), 1),
+                "plan_cost_eur": round(cost, 2),
+                "baseline_cost_eur": round(base_cost, 2),
+                "saving_eur": round(saving, 2),
+                "forecast_pv_kwh": round(float(pv.sum() * 0.25), 1),
+                "soc_now_kwh": round(soc0, 1),
+                "soc_min_kwh": round(float(path.min()), 1),
+                "soc_max_kwh": round(float(path.max()), 1),
+                "night_grid_charge": bool(grid_charge.any()),
+                "night_rule": why,
+            },
+            "tariff",
+        )
+        board.propose(
+            eid,
+            sig,
+            "battery_day_plan",
+            "optimize_energy",
+            "low",
+            f"BAT1 plan to {local_time(end, t, tz)}: charge "
+            f"{'; '.join(charge) or 'never'}; discharge {'; '.join(discharge) or 'never'}. "
+            f"Forecast PV {float(pv.sum() * 0.25):.1f} kWh and load are the "
+            f"{th.battery_history_d}-day mean at the same time of day. Grid import "
+            f"{float(planned.sum()):.1f} kWh against {float(base.sum()):.1f} kWh with no "
+            f"battery: EUR {cost:.1f} against EUR {base_cost:.1f}, saving EUR {saving:.1f} "
+            f"against no battery (simulated). Night grid charge "
+            f"{'planned' if grid_charge.any() else 'not planned'}: {why}.",
+            f"Grid import cost EUR {cost:.1f} over the plan (simulated).",
+            "SOC follows the plan within 10 kWh at each window boundary; replan if import "
+            "exceeds the plan by 20 %.",
+            0.6,
+        )
+
+
 def rows(
     ds: Dataset, settings: Settings, cache: Path, call: llm_guard.Call | None = None
 ) -> tuple[list[Row], Counter[str]]:
@@ -385,6 +565,7 @@ def rows(
     _preheat(ds, settings, board, [s.time for s in cop])
     _backoff(settings, board, cop)
     _stale(ds, settings, board)
+    _battery(ds, settings, board)
     order = {"signal": 0, "proposal": 1}
     board.rows.sort(key=lambda r: (r.get("t_known") or r["t"], order[r["row"]], r["id"]))
     return board.rows, Counter()

@@ -354,6 +354,28 @@ class DetectorSettings:
     pre-heat plan (bus lane s03). A design value, not fitted: every quickstart HP1 episode
     hour had a 24 h mean outdoor below it."""
 
+    battery_history_d: int = 14
+    """Days of history whose same-time-of-day mean is the PV and load forecast of the S06
+    battery day plan (UC1). A plain, defensible forecast: no weather model."""
+
+    battery_min_history_d: int = 7
+    """Days of energy history needed before a battery day plan is made; before it, none."""
+
+    battery_soc_step_kwh: float = 1.0
+    """SOC grid step (kWh) of the battery day plan's dynamic programme; every action moves the
+    SOC by whole steps, at the AC power that move needs, up to the BAT1 power limits."""
+
+    battery_terminal_share: float = 0.9
+    """A kWh left in BAT1 at the end of the plan is worth this share of the round-trip
+    efficiency times the median horizon price (EUR per kWh); below 1, so the plan does not
+    hoard energy it may never use."""
+
+    battery_night_start_h: int = 22
+    """Local hour from which a battery charge counts as a night charge."""
+
+    battery_night_end_h: int = 6
+    """Local hour (exclusive) at which the night of ``battery_night_start_h`` ends."""
+
     ahu_fan_dp_slope_pa_per_kw: float = 119.2
     """Slope (Pa per kW) of the AHU1 fan-implied filter dp, a least-squares fit on the dev year in
     day mode with the fan below 4.6 kW and airflow at least 4000 m3/h (R2 0.984, residual sd
