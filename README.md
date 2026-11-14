@@ -138,7 +138,7 @@ checked, and both cached so that a rerun without the network is byte-identical
 |---|---|---|---|---|
 | Guest messages in the guest's language | `claude-haiku-5-5` | `guest_message/4`, tool forced | `PLATO40_LLM_MODEL` | `llm_guard.py`, `messages.py` |
 | Supervisor: reviews the rules' decisions daily and at cross-domain hotspots, adds at most 2 checked decisions per review | `claude-sonnet-5-5` | `supervisor/2`, tool `auto` + one retry | `PLATO40_SUPERVISOR_MODEL` | `supervise.py`, `context.py` |
-| Copilot on the page (LLM tab): answers the manager's questions from a finished run's output rows through four read-only tools cut at the page clock; never writes a decision | `claude-sonnet-5-5` | `copilot/1`, tools + one retry | none | `ui/copilot.py`, `ui/ui_ask.js` |
+| Copilot on the page (LLM tab): answers the manager's questions from a finished run's output rows through four read-only tools cut at the page clock; never writes a decision | `claude-sonnet-5-5` | `copilot/3`, tools + one retry | none | `ui/copilot.py`, `ui/ui_ask.js` |
 
 | Env var | Values | Effect |
 |---|---|---|
@@ -261,7 +261,9 @@ thresholds, the run's prompts or data processing.
   human) and a question box for a model served by a local copilot. The copilot reads the
   decisions and trace files only, through four tools that cut the rows at the page clock; an
   answer is shown only if every cited id and number is in what the tools returned. It never
-  writes a decision. `ui.html` gains the tab and its key in the footer. Restyle of the page
+  writes a decision; prompt `copilot/3` keeps an answer to one sentence and at most 3 cited
+  lines (70 words), with one retry when it runs longer. `ui.html` gains the tab and its key in
+  the footer. Restyle of the page
   (every figure unchanged): IBM Carbon g10/g100 surfaces and status colours,
   Okabe-Ito lane colours keyed by issue type (`data.py`), IBM Plex fonts inlined from
   `ui/fonts/` (SIL OFL), a light/dark/auto toggle, the Year figures in one band with cards for

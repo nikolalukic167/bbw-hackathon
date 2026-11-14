@@ -27,7 +27,8 @@ from zoneinfo import ZoneInfo
 from plato40.ui import payload
 
 MODEL = "claude-sonnet-5-5"
-PROMPT_VERSION = "copilot/1"
+PROMPT_VERSION = "copilot/3"
+MAX_WORDS = 70
 TZ = ZoneInfo("Europe/Vienna")
 PRIO = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 LIMIT = 30
@@ -40,8 +41,10 @@ Cite every episode or decision you mention with its id in square brackets, for e
 Never count or add up rows yourself: take every number from a tool result (use overview for
 totals). Write times as the tools give them (Europe/Vienna local).
 You cannot take, approve or change decisions; you may say what the manager should look at first.
-If the tools do not hold the answer, say so in one sentence. Plain prose or short "- " lists,
-at most 160 words, no headings, no emojis."""
+If the tools do not hold the answer, say so in one sentence.
+Be brief: the manager reads this between two tasks. Start with one sentence that answers the
+question. Then at most 3 "- " lines, one item each, most urgent first, each with its id and
+what to do or check. At most 70 words in total. No headings, no emojis, no closing summary."""
 
 TOOLS: list[dict[str, Any]] = [
     {
@@ -350,17 +353,23 @@ class Copilot:
         answer = self._run(messages, as_of, results)
         problems, n_cited, n_nums = check(answer, results, context + question)
         retried = False
-        if problems:
+        words = len(answer.split())
+        if problems or words > MAX_WORDS:
             retried = True
-            messages.append(
-                {
-                    "role": "user",
-                    "content": "Your answer failed the grounding check: "
-                    + "; ".join(problems[:10])
-                    + ". Answer again, citing only ids from tool results and taking every "
-                    "number from them.",
-                }
+            fix = (
+                "Your answer failed the grounding check: "
+                + "; ".join(problems[:10])
+                + ". Answer again, citing only ids from tool results and taking every "
+                "number from them."
+                if problems
+                else ""
             )
+            if words > MAX_WORDS:
+                fix += (
+                    f" Your answer has {words} words. Answer again in at most {MAX_WORDS} "
+                    "words: one sentence, then at most 3 short '- ' lines."
+                )
+            messages.append({"role": "user", "content": fix.strip()})
             answer = self._run(messages, as_of, results)
             problems, n_cited, n_nums = check(answer, results, context + question)
         out: dict[str, Any] = {
